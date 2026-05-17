@@ -1,0 +1,17 @@
+{
+  "name": "gymheart-web3-payment",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "compile": "hardhat compile",
+    "deploy:sapphire-testnet": "hardhat run scripts/deploy-gym-course-payment.js --network sapphireTestnet",
+    "payments:sapphire-testnet": "hardhat run scripts/list-course-payments.js --network sapphireTestnet",
+    "withdraw:sapphire-testnet": "hardhat run scripts/withdraw-gym-course-payment.js --network sapphireTestnet"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "^3.1.0",
+    "dotenv": "^16.4.7",
+    "ethers": "^6.13.5",
+    "hardhat": "^2.22.19"
+  }
+}

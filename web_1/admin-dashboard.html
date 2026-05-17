@@ -1,0 +1,3443 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <meta
+      http-equiv="Cache-Control"
+      content="no-cache, no-store, must-revalidate"
+    />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <script>
+      (function () {
+        const version = "20260408e";
+        const url = new URL(window.location.href);
+        if (url.searchParams.get("v") !== version) {
+          url.searchParams.set("v", version);
+          window.location.replace(url.toString());
+        }
+      })();
+    </script>
+    <title>Admin Dashboard - GymHeart</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800;900&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script id="tailwind-config">
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: "#f42559",
+              "background-light": "#f8f5f6",
+            },
+            fontFamily: {
+              display: ["Lexend"],
+            },
+            borderRadius: {
+              DEFAULT: "0.25rem",
+              lg: "0.5rem",
+              xl: "0.75rem",
+              full: "9999px",
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      body {
+        font-family: "Lexend", sans-serif;
+      }
+      .sidebar-active {
+        @apply bg-pink-50 text-primary border-r-4 border-primary;
+      }
+      .material-symbols-outlined {
+        font-variation-settings:
+          "FILL" 0,
+          "wght" 400,
+          "GRAD" 0,
+          "opsz" 24;
+      }
+      .fill-heart {
+        font-variation-settings: "FILL" 1;
+      }
+    </style>
+  </head>
+  <body class="bg-background-light text-[#1c0d11] antialiased">
+    <div class="flex h-screen overflow-hidden">
+      <!-- Sidebar -->
+      <aside
+        class="w-64 flex-shrink-0 bg-white border-r border-[#e8ced5] flex flex-col"
+      >
+        <div class="p-6 flex items-center gap-2">
+          <span
+            class="material-symbols-outlined text-primary text-3xl fill-heart"
+            >favorite</span
+          >
+          <h2 class="text-xl font-black tracking-tight text-primary">
+            Admin Panel
+          </h2>
+        </div>
+        <div class="px-4 flex flex-col gap-1 grow">
+          <div
+            data-section="dashboard"
+            class="flex items-center gap-3 px-4 py-3 sidebar-active rounded-lg cursor-pointer"
+            onclick="showSection('dashboard')"
+          >
+            <span class="material-symbols-outlined">dashboard</span>
+            <p class="text-sm font-bold">Tổng quan</p>
+          </div>
+          <div
+            data-section="courses"
+            class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-pink-50 transition-colors cursor-pointer"
+            onclick="showSection('courses')"
+          >
+            <span class="material-symbols-outlined">school</span>
+            <p class="text-sm font-medium">Khóa học</p>
+          </div>
+          <div
+            data-section="users"
+            class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-pink-50 transition-colors cursor-pointer"
+            onclick="showSection('users')"
+          >
+            <span class="material-symbols-outlined">group</span>
+            <p class="text-sm font-medium">Người dùng</p>
+            <span
+              id="coach-requests-badge"
+              class="ml-auto px-2 py-1 text-xs font-bold rounded-full bg-orange-500 text-white hidden"
+              >0</span
+            >
+          </div>
+          <div
+            data-section="coaches"
+            class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-pink-50 transition-colors cursor-pointer"
+            onclick="showSection('coaches')"
+          >
+            <span class="material-symbols-outlined">fitness_center</span>
+            <p class="text-sm font-medium">Huấn luyện viên</p>
+          </div>
+          <div
+            data-section="enrollments"
+            class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-pink-50 transition-colors cursor-pointer"
+            onclick="showSection('enrollments')"
+          >
+            <span class="material-symbols-outlined">assignment</span>
+            <p class="text-sm font-medium">Đăng ký</p>
+          </div>
+          <div
+            data-section="schedules"
+            class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-pink-50 transition-colors cursor-pointer"
+            onclick="showSection('schedules')"
+          >
+            <span class="material-symbols-outlined">calendar_today</span>
+            <p class="text-sm font-medium">Lịch học</p>
+          </div>
+        </div>
+        <div class="p-4 border-t border-[#e8ced5]">
+          <div class="flex items-center gap-3 mb-4">
+            <div
+              id="admin-avatar"
+              class="size-10 rounded-full bg-cover bg-center border-2 border-primary/20"
+            ></div>
+            <div class="flex flex-col flex-1">
+              <p id="admin-name" class="text-xs font-bold">Admin</p>
+              <p class="text-[10px] text-[#9c495e]">Quản trị viên</p>
+            </div>
+          </div>
+          <button
+            onclick="logout()"
+            class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-all text-sm font-bold"
+          >
+            <span class="material-symbols-outlined text-sm">logout</span>
+            Đăng xuất
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="flex-1 overflow-y-auto bg-background-light p-8">
+        <!-- Dashboard Section -->
+        <div id="section-dashboard" class="section-content">
+          <div class="mb-8">
+            <h1 class="text-3xl font-black text-[#1c0d11] mb-2">
+              Tổng Quan Hệ Thống
+            </h1>
+            <p class="text-[#9c495e] text-sm">
+              Thống kê và quản lý toàn bộ hệ thống GymHeart
+            </p>
+            <div class="mt-4 flex flex-wrap items-center gap-2">
+              <button
+                id="range-btn-7d"
+                onclick="setDashboardRange('7d')"
+                class="px-3 py-2 text-sm font-bold rounded-lg border border-pink-200 text-[#9c495e] hover:bg-pink-50 transition-colors"
+              >
+                7 ngày
+              </button>
+              <button
+                id="range-btn-30d"
+                onclick="setDashboardRange('30d')"
+                class="px-3 py-2 text-sm font-bold rounded-lg border border-pink-200 text-[#9c495e] hover:bg-pink-50 transition-colors"
+              >
+                30 ngày
+              </button>
+              <button
+                id="range-btn-quarter"
+                onclick="setDashboardRange('quarter')"
+                class="px-3 py-2 text-sm font-bold rounded-lg border border-pink-200 text-[#9c495e] hover:bg-pink-50 transition-colors"
+              >
+                Quý hiện tại
+              </button>
+              <span
+                id="dashboard-range-label"
+                class="ml-2 text-xs text-[#9c495e]"
+              ></span>
+              <div class="ml-auto flex items-center gap-2">
+                <button
+                  onclick="exportDashboardCSV()"
+                  class="px-3 py-2 text-sm font-bold rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors"
+                >
+                  Xuất CSV
+                </button>
+                <button
+                  onclick="exportDashboardReport()"
+                  class="px-3 py-2 text-sm font-bold rounded-lg bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100 transition-colors"
+                >
+                  Xuất báo cáo
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stats Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div
+              class="bg-white p-6 rounded-xl border border-pink-100 shadow-sm"
+            >
+              <div class="flex items-center justify-between mb-4">
+                <span class="material-symbols-outlined text-primary text-3xl"
+                  >group</span
+                >
+                <span
+                  class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-bold"
+                  >+12%</span
+                >
+              </div>
+              <h3 class="text-2xl font-black text-[#1c0d11]" id="stat-users">
+                0
+              </h3>
+              <p class="text-sm text-[#9c495e]">Tổng người dùng</p>
+            </div>
+            <div
+              class="bg-white p-6 rounded-xl border border-pink-100 shadow-sm"
+            >
+              <div class="flex items-center justify-between mb-4">
+                <span class="material-symbols-outlined text-primary text-3xl"
+                  >school</span
+                >
+                <span
+                  class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-bold"
+                  >5 Active</span
+                >
+              </div>
+              <h3 class="text-2xl font-black text-[#1c0d11]" id="stat-courses">
+                0
+              </h3>
+              <p class="text-sm text-[#9c495e]">Khóa học</p>
+            </div>
+            <div
+              class="bg-white p-6 rounded-xl border border-pink-100 shadow-sm"
+            >
+              <div class="flex items-center justify-between mb-4">
+                <span class="material-symbols-outlined text-primary text-3xl"
+                  >fitness_center</span
+                >
+                <span
+                  class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-bold"
+                  >Pro</span
+                >
+              </div>
+              <h3 class="text-2xl font-black text-[#1c0d11]" id="stat-coaches">
+                0
+              </h3>
+              <p class="text-sm text-[#9c495e]">Huấn luyện viên</p>
+            </div>
+            <div
+              class="bg-white p-6 rounded-xl border border-pink-100 shadow-sm"
+            >
+              <div class="flex items-center justify-between mb-4">
+                <span class="material-symbols-outlined text-primary text-3xl"
+                  >payments</span
+                >
+                <span
+                  class="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full font-bold"
+                  >+8%</span
+                >
+              </div>
+              <h3 class="text-2xl font-black text-[#1c0d11]" id="stat-revenue">
+                0đ
+              </h3>
+              <p class="text-sm text-[#9c495e]">Doanh thu tháng</p>
+            </div>
+          </div>
+
+          <!-- Operations KPIs -->
+          <div
+            class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8"
+          >
+            <div
+              class="bg-white p-5 rounded-xl border border-pink-100 shadow-sm"
+            >
+              <p
+                class="text-xs text-[#9c495e] font-semibold mb-2 uppercase tracking-wide"
+              >
+                Yêu cầu chờ duyệt
+              </p>
+              <div class="flex items-end justify-between gap-2">
+                <h4
+                  id="stat-pending-enrollments"
+                  class="text-3xl font-black text-[#1c0d11]"
+                >
+                  0
+                </h4>
+                <span
+                  class="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 font-bold"
+                  >Pending</span
+                >
+              </div>
+            </div>
+            <div
+              class="bg-white p-5 rounded-xl border border-pink-100 shadow-sm"
+            >
+              <p
+                class="text-xs text-[#9c495e] font-semibold mb-2 uppercase tracking-wide"
+              >
+                Khóa học đang mở
+              </p>
+              <div class="flex items-end justify-between gap-2">
+                <h4
+                  id="stat-active-courses"
+                  class="text-3xl font-black text-[#1c0d11]"
+                >
+                  0
+                </h4>
+                <span
+                  class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 font-bold"
+                  >Active</span
+                >
+              </div>
+            </div>
+            <div
+              class="bg-white p-5 rounded-xl border border-pink-100 shadow-sm"
+            >
+              <p
+                class="text-xs text-[#9c495e] font-semibold mb-2 uppercase tracking-wide"
+              >
+                Tỷ lệ lấp đầy lớp
+              </p>
+              <div class="flex items-end justify-between gap-2">
+                <h4
+                  id="stat-occupancy"
+                  class="text-3xl font-black text-[#1c0d11]"
+                >
+                  0%
+                </h4>
+                <span
+                  class="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700 font-bold"
+                  >Capacity</span
+                >
+              </div>
+            </div>
+            <div
+              class="bg-white p-5 rounded-xl border border-pink-100 shadow-sm"
+            >
+              <p
+                id="stat-new-users-label"
+                class="text-xs text-[#9c495e] font-semibold mb-2 uppercase tracking-wide"
+              >
+                Thành viên mới
+              </p>
+              <div class="flex items-end justify-between gap-2">
+                <h4
+                  id="stat-month-new-users"
+                  class="text-3xl font-black text-[#1c0d11]"
+                >
+                  0
+                </h4>
+                <span
+                  class="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700 font-bold"
+                  >Growth</span
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- Alerts Panel -->
+          <div
+            class="bg-white p-6 rounded-xl border border-pink-100 shadow-sm mb-8"
+          >
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-xl font-bold text-[#1c0d11]">
+                Cảnh Báo Vận Hành
+              </h3>
+              <span
+                class="text-xs px-2 py-1 rounded-full bg-red-50 text-red-600 font-bold"
+                >Ưu tiên xử lý</span
+              >
+            </div>
+            <div id="dashboard-alerts" class="space-y-3">
+              <!-- Will be populated by JavaScript -->
+            </div>
+          </div>
+
+          <!-- Charts -->
+          <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
+            <div
+              class="xl:col-span-2 bg-white p-6 rounded-xl border border-pink-100 shadow-sm"
+            >
+              <div class="flex items-center justify-between mb-4">
+                <h3
+                  id="revenue-chart-title"
+                  class="text-lg font-bold text-[#1c0d11]"
+                >
+                  Doanh Thu Theo Bộ Lọc
+                </h3>
+                <span
+                  class="text-xs px-2 py-1 rounded-full bg-pink-50 text-primary font-bold"
+                  >Auto Update</span
+                >
+              </div>
+              <div class="h-[280px]">
+                <canvas id="revenue-trend-chart"></canvas>
+              </div>
+            </div>
+            <div
+              class="bg-white p-6 rounded-xl border border-pink-100 shadow-sm"
+            >
+              <h3 class="text-lg font-bold text-[#1c0d11] mb-4">
+                Phân Bố Trạng Thái Đăng Ký
+              </h3>
+              <div class="h-[280px]">
+                <canvas id="enrollment-status-chart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Top Courses + Recent Activity -->
+          <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div
+              class="bg-white p-6 rounded-xl border border-pink-100 shadow-sm"
+            >
+              <h3 class="text-xl font-bold mb-4">
+                Top Khóa Học Theo Số Học Viên
+              </h3>
+              <div id="dashboard-top-courses" class="space-y-3">
+                <!-- Will be populated by JavaScript -->
+              </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div
+              class="bg-white p-6 rounded-xl border border-pink-100 shadow-sm"
+            >
+              <h3 class="text-xl font-bold mb-4">Hoạt động gần đây</h3>
+              <div id="recent-activities" class="space-y-3">
+                <!-- Will be populated by JavaScript -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Courses Section -->
+        <div id="section-courses" class="section-content hidden">
+          <div class="flex justify-between items-center mb-8">
+            <div>
+              <h1 class="text-3xl font-black text-[#1c0d11] mb-2">
+                Quản Lý Khóa Học
+              </h1>
+              <p class="text-[#9c495e] text-sm">Thêm, sửa, xóa khóa học</p>
+            </div>
+            <button
+              onclick="showAddCourseModal()"
+              class="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg font-bold hover:bg-opacity-90 transition-all"
+            >
+              <span class="material-symbols-outlined">add</span>
+              Thêm khóa học
+            </button>
+          </div>
+
+          <!-- Search Box -->
+          <div
+            class="bg-white rounded-xl border border-pink-100 shadow-sm p-4 mb-6"
+          >
+            <div class="relative">
+              <span
+                class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-pink-400"
+              >
+                search
+              </span>
+              <input
+                type="text"
+                id="courses-search"
+                onkeyup="filterCourses()"
+                placeholder="Tìm kiếm khóa học theo tên, mô tả hoặc huấn luyện viên..."
+                class="w-full pl-10 pr-4 py-3 border border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              />
+            </div>
+          </div>
+
+          <div
+            id="courses-list"
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
+            <!-- Will be populated by JavaScript -->
+          </div>
+        </div>
+
+        <!-- Users Section -->
+        <div id="section-users" class="section-content hidden">
+          <div class="mb-8">
+            <h1 class="text-3xl font-black text-[#1c0d11] mb-2">
+              Quản Lý Người Dùng
+            </h1>
+            <p class="text-[#9c495e] text-sm">
+              Xem và quản lý tất cả người dùng
+            </p>
+          </div>
+
+          <!-- Search Box -->
+          <div
+            class="bg-white rounded-xl border border-pink-100 shadow-sm p-4 mb-6"
+          >
+            <div class="relative">
+              <span
+                class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-pink-400"
+                >search</span
+              >
+              <input
+                type="text"
+                id="users-search"
+                placeholder="Tìm kiếm người dùng theo tên, email hoặc vai trò..."
+                class="w-full pl-10 pr-4 py-3 border border-pink-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                onkeyup="filterUsers()"
+              />
+            </div>
+          </div>
+
+          <div
+            class="bg-white rounded-xl border border-pink-100 shadow-sm overflow-hidden"
+          >
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead class="bg-pink-50">
+                  <tr>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-[#1c0d11] uppercase"
+                    >
+                      Tên
+                    </th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-[#1c0d11] uppercase"
+                    >
+                      Email
+                    </th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-[#1c0d11] uppercase"
+                    >
+                      Vai trò
+                    </th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-[#1c0d11] uppercase"
+                    >
+                      Yêu cầu
+                    </th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-[#1c0d11] uppercase"
+                    >
+                      Trạng thái
+                    </th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-[#1c0d11] uppercase"
+                    >
+                      Hành động
+                    </th>
+                  </tr>
+                </thead>
+                <tbody id="users-table-body" class="divide-y divide-pink-100">
+                  <!-- Will be populated by JavaScript -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Coaches Section -->
+        <div id="section-coaches" class="section-content hidden">
+          <div class="mb-8">
+            <h1 class="text-3xl font-black text-[#1c0d11] mb-2">
+              Huấn Luyện Viên
+            </h1>
+            <p class="text-[#9c495e] text-sm">
+              Quản lý đội ngũ huấn luyện viên
+            </p>
+          </div>
+
+          <!-- Search Box -->
+          <div
+            class="bg-white rounded-xl border border-pink-100 shadow-sm p-4 mb-6"
+          >
+            <div class="relative">
+              <span
+                class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-pink-400"
+              >
+                search
+              </span>
+              <input
+                type="text"
+                id="coaches-search"
+                onkeyup="filterCoaches()"
+                placeholder="Tìm kiếm huấn luyện viên theo tên hoặc email..."
+                class="w-full pl-10 pr-4 py-3 border border-pink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              />
+            </div>
+          </div>
+
+          <div
+            id="coaches-grid"
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
+            <!-- Will be populated by JavaScript -->
+          </div>
+        </div>
+
+        <!-- Enrollments Section -->
+        <div id="section-enrollments" class="section-content hidden">
+          <div class="mb-8">
+            <h1 class="text-3xl font-black text-[#1c0d11] mb-2">
+              Đăng Ký Khóa Học
+            </h1>
+            <p class="text-[#9c495e] text-sm">Quản lý các đăng ký khóa học</p>
+          </div>
+
+          <!-- Search Box -->
+          <div
+            class="bg-white rounded-xl border border-pink-100 shadow-sm p-4 mb-6"
+          >
+            <div class="relative">
+              <span
+                class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-pink-400"
+                >search</span
+              >
+              <input
+                type="text"
+                id="enrollments-search"
+                placeholder="Tìm kiếm đăng ký theo tên học viên hoặc khóa học..."
+                class="w-full pl-10 pr-4 py-3 border border-pink-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                onkeyup="filterEnrollments()"
+              />
+            </div>
+          </div>
+
+          <div
+            class="bg-white rounded-xl border border-pink-100 shadow-sm overflow-hidden"
+          >
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead class="bg-pink-50">
+                  <tr>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-[#1c0d11] uppercase"
+                    >
+                      Học viên
+                    </th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-[#1c0d11] uppercase"
+                    >
+                      Khóa học
+                    </th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-[#1c0d11] uppercase"
+                    >
+                      Ngày đăng ký
+                    </th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-[#1c0d11] uppercase"
+                    >
+                      Trạng thái
+                    </th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-[#1c0d11] uppercase"
+                    >
+                      Tiến độ
+                    </th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-[#1c0d11] uppercase"
+                    >
+                      Hành động
+                    </th>
+                  </tr>
+                </thead>
+                <tbody
+                  id="enrollments-table-body"
+                  class="divide-y divide-pink-100"
+                >
+                  <!-- Will be populated by JavaScript -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Schedules Section -->
+        <div id="section-schedules" class="section-content hidden">
+          <div class="mb-8">
+            <h1 class="text-3xl font-black text-[#1c0d11] mb-2">Lịch Học</h1>
+            <p class="text-[#9c495e] text-sm">Xem lịch học tổng thể</p>
+          </div>
+          <div
+            id="schedules-calendar"
+            class="bg-white rounded-xl border border-pink-100 shadow-sm p-6"
+          >
+            <!-- Will be populated by JavaScript -->
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Modal Chi Tiết Người Dùng -->
+    <div
+      id="user-detail-modal"
+      class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50"
+      onclick="closeUserDetailModal()"
+    >
+      <div
+        class="bg-white rounded-xl shadow-2xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+        onclick="event.stopPropagation()"
+      >
+        <div
+          class="sticky top-0 bg-white border-b border-pink-100 px-6 py-4 flex items-center justify-between"
+        >
+          <h2 class="text-2xl font-black text-[#1c0d11]">
+            Thông Tin Chi Tiết Người Dùng
+          </h2>
+          <button
+            onclick="closeUserDetailModal()"
+            class="p-2 hover:bg-pink-50 rounded-full transition-colors"
+          >
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div id="user-detail-content" class="p-6">
+          <!-- Will be populated by JavaScript -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Thêm/Sửa Khóa Học -->
+    <div
+      id="course-modal"
+      class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50"
+      onclick="closeCourseModal()"
+    >
+      <div
+        class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+        onclick="event.stopPropagation()"
+      >
+        <div
+          class="sticky top-0 bg-white border-b border-pink-100 px-6 py-4 flex items-center justify-between"
+        >
+          <h2 id="modal-title" class="text-2xl font-black text-[#1c0d11]">
+            Thêm Khóa Học
+          </h2>
+          <button
+            onclick="closeCourseModal()"
+            class="p-2 hover:bg-pink-50 rounded-full transition-colors"
+          >
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <form id="course-form" class="p-6">
+          <input type="hidden" id="course-id" />
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label class="block text-sm font-bold text-[#1c0d11] mb-2"
+                >Tên khóa học *</label
+              >
+              <input
+                type="text"
+                id="course-name"
+                required
+                class="w-full px-4 py-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-[#1c0d11] mb-2"
+                >Giá (VNĐ) *</label
+              >
+              <input
+                type="number"
+                id="course-price"
+                required
+                class="w-full px-4 py-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label class="block text-sm font-bold text-[#1c0d11] mb-2"
+              >Mô tả</label
+            >
+            <textarea
+              id="course-description"
+              rows="3"
+              class="w-full px-4 py-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-primary/20"
+            ></textarea>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div>
+              <label class="block text-sm font-bold text-[#1c0d11] mb-2"
+                >Thời lượng (tuần) *</label
+              >
+              <input
+                type="number"
+                id="course-duration"
+                required
+                class="w-full px-4 py-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-[#1c0d11] mb-2"
+                >Số lượng tối đa *</label
+              >
+              <input
+                type="number"
+                id="course-max-students"
+                required
+                class="w-full px-4 py-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-[#1c0d11] mb-2"
+                >Cấp độ *</label
+              >
+              <select
+                id="course-level"
+                required
+                class="w-full px-4 py-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-primary/20"
+              >
+                <option value="beginner">Mới bắt đầu</option>
+                <option value="intermediate">Trung cấp</option>
+                <option value="advanced">Nâng cao</option>
+                <option value="all_levels">Tất cả</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label class="block text-sm font-bold text-[#1c0d11] mb-2"
+              >URL hình ảnh</label
+            >
+            <input
+              type="url"
+              id="course-image"
+              class="w-full px-4 py-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-primary/20"
+              placeholder="https://example.com/image.jpg"
+            />
+          </div>
+
+          <div class="mb-4">
+            <label class="block text-sm font-bold text-[#1c0d11] mb-2"
+              >Huấn luyện viên *</label
+            >
+            <select
+              id="course-coach"
+              required
+              class="w-full px-4 py-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-primary/20"
+            >
+              <option value="">-- Chọn huấn luyện viên --</option>
+              <!-- Will be populated by JavaScript -->
+            </select>
+          </div>
+
+          <div class="flex items-center gap-2 mb-6">
+            <input
+              type="checkbox"
+              id="course-active"
+              class="rounded text-primary focus:ring-primary"
+              checked
+            />
+            <label
+              for="course-active"
+              class="text-sm font-medium text-[#1c0d11]"
+              >Kích hoạt khóa học</label
+            >
+          </div>
+
+          <!-- Lịch học section -->
+          <div
+            class="mb-6 border-t border-pink-200 pt-6"
+            id="schedules-section"
+            style="display: none"
+          >
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-bold text-lg text-[#1c0d11]">Lịch học</h3>
+              <button
+                type="button"
+                onclick="showAddScheduleForm()"
+                class="px-4 py-2 bg-green-50 text-green-600 rounded-lg text-sm font-bold hover:bg-green-100 flex items-center gap-2"
+              >
+                <span class="material-symbols-outlined text-sm">add</span>
+                Thêm lịch
+              </button>
+            </div>
+            <div id="schedules-list" class="space-y-2 mb-4">
+              <!-- Will be populated -->
+            </div>
+
+            <!-- Add/Edit Schedule Form -->
+            <div
+              id="schedule-form-container"
+              class="hidden bg-pink-50 p-4 rounded-lg mb-4"
+            >
+              <input type="hidden" id="schedule-id" />
+              <div class="grid grid-cols-2 gap-3 mb-3">
+                <div>
+                  <label class="block text-xs font-bold text-[#1c0d11] mb-1"
+                    >Tiêu đề *</label
+                  >
+                  <input
+                    type="text"
+                    id="schedule-title"
+                    class="w-full px-3 py-2 border border-pink-200 rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-[#1c0d11] mb-1"
+                    >Thứ *</label
+                  >
+                  <select
+                    id="schedule-day"
+                    class="w-full px-3 py-2 border border-pink-200 rounded-lg text-sm"
+                  >
+                    <option value="0">Chủ nhật</option>
+                    <option value="1">Thứ 2</option>
+                    <option value="2">Thứ 3</option>
+                    <option value="3">Thứ 4</option>
+                    <option value="4">Thứ 5</option>
+                    <option value="5">Thứ 6</option>
+                    <option value="6">Thứ 7</option>
+                  </select>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-3 mb-3">
+                <div>
+                  <label class="block text-xs font-bold text-[#1c0d11] mb-1"
+                    >Giờ bắt đầu *</label
+                  >
+                  <input
+                    type="time"
+                    id="schedule-start"
+                    class="w-full px-3 py-2 border border-pink-200 rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-[#1c0d11] mb-1"
+                    >Giờ kết thúc *</label
+                  >
+                  <input
+                    type="time"
+                    id="schedule-end"
+                    class="w-full px-3 py-2 border border-pink-200 rounded-lg text-sm"
+                  />
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-3 mb-3">
+                <div>
+                  <label class="block text-xs font-bold text-[#1c0d11] mb-1"
+                    >Địa điểm</label
+                  >
+                  <input
+                    type="text"
+                    id="schedule-location"
+                    class="w-full px-3 py-2 border border-pink-200 rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-[#1c0d11] mb-1"
+                    >Phòng</label
+                  >
+                  <input
+                    type="text"
+                    id="schedule-room"
+                    class="w-full px-3 py-2 border border-pink-200 rounded-lg text-sm"
+                  />
+                </div>
+              </div>
+              <div class="flex gap-2">
+                <button
+                  type="button"
+                  onclick="saveSchedule()"
+                  class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-opacity-90"
+                >
+                  Lưu lịch
+                </button>
+                <button
+                  type="button"
+                  onclick="cancelScheduleForm()"
+                  class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-bold hover:bg-gray-300"
+                >
+                  Hủy
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex gap-3">
+            <button
+              type="submit"
+              class="flex-1 px-6 py-3 bg-primary text-white rounded-lg font-bold hover:bg-opacity-90 transition-all"
+            >
+              Lưu khóa học
+            </button>
+            <button
+              type="button"
+              onclick="closeCourseModal()"
+              class="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-bold hover:bg-gray-200 transition-all"
+            >
+              Hủy
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="js/supabase-config.js?v=20260408e"></script>
+    <script src="js/auth.js?v=20260408e"></script>
+    <script>
+      const USER_SAFE_SELECT =
+        "id, email, full_name, phone, avatar_url, date_of_birth, gender, address, role, is_active, bio, specialization, years_of_experience, certification, requested_role, created_at, updated_at";
+
+      // Check authentication
+      const currentUser = requireAuth();
+      if (!currentUser || currentUser.role !== "admin") {
+        alert("Bạn không có quyền truy cập trang này!");
+        window.location.href = "auth.html";
+      }
+
+      // Update user info in sidebar
+      document.getElementById("admin-name").textContent = currentUser.full_name;
+      document.getElementById("admin-avatar").style.backgroundImage =
+        `url('${currentUser.avatar_url}')`;
+
+      // Show/Hide sections
+      function showSection(section) {
+        // Hide all sections
+        document
+          .querySelectorAll(".section-content")
+          .forEach((el) => el.classList.add("hidden"));
+        // Show selected section
+        document
+          .getElementById(`section-${section}`)
+          .classList.remove("hidden");
+
+        // Update active sidebar - remove active from all
+        document.querySelectorAll("[data-section]").forEach((el) => {
+          el.classList.remove("sidebar-active");
+          const textEl = el.querySelector("p");
+          if (textEl) {
+            textEl.classList.remove("font-bold");
+            textEl.classList.add("font-medium");
+          }
+        });
+
+        // Add active to current section
+        const activeEl = document.querySelector(`[data-section="${section}"]`);
+        if (activeEl) {
+          activeEl.classList.add("sidebar-active");
+          const textEl = activeEl.querySelector("p");
+          if (textEl) {
+            textEl.classList.remove("font-medium");
+            textEl.classList.add("font-bold");
+          }
+        }
+
+        // Load data for specific sections
+        if (section === "courses") {
+          loadCourses();
+          loadCoaches(); // Preload coaches for add/edit modal
+        } else if (section === "users") {
+          loadUsers();
+        } else if (section === "coaches") {
+          loadCoachesGrid();
+        } else if (section === "enrollments") {
+          loadEnrollments();
+        } else if (section === "schedules") {
+          loadSchedules();
+        }
+      }
+
+      let revenueTrendChart = null;
+      let enrollmentStatusChart = null;
+      let dashboardRange = "30d";
+      let dashboardSnapshot = null;
+
+      function escapeCsvValue(value) {
+        const str = String(value ?? "");
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      function truncateText(value, max = 80) {
+        const text = String(value ?? "");
+        if (text.length <= max) return text;
+        return `${text.slice(0, max)}...`;
+      }
+
+      function safeDisplayText(value, fallback = "N/A", max = 80) {
+        const raw = String(value ?? "").trim();
+        if (!raw) return fallback;
+
+        const suspiciousPattern =
+          /(function\s+|reportWindow\.|document\.write|const\s+|=>|<script|\{\$|\}\)|\}\s*function)/i;
+        if (suspiciousPattern.test(raw) || raw.length > 300) {
+          return fallback;
+        }
+
+        return truncateText(raw, max);
+      }
+
+      function safeImageUrl(value, fallbackUrl) {
+        const candidate = String(value ?? "").trim();
+        if (!candidate) return fallbackUrl;
+
+        // Guard against malformed template/code-like strings accidentally stored in DB.
+        if (
+          candidate.includes("${") ||
+          candidate.includes("{") ||
+          candidate.includes("}") ||
+          candidate.includes("function ") ||
+          candidate.includes("reportWindow.") ||
+          candidate.length > 500
+        ) {
+          return fallbackUrl;
+        }
+
+        if (
+          candidate.startsWith("https://") ||
+          candidate.startsWith("http://") ||
+          candidate.startsWith("data:image/") ||
+          candidate.startsWith("img/") ||
+          candidate.startsWith("/img/")
+        ) {
+          return candidate;
+        }
+
+        return fallbackUrl;
+      }
+
+      function downloadTextFile(filename, content, mimeType) {
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      function getRangeLabelText() {
+        const labelByRange = {
+          "7d": "7 ngày",
+          "30d": "30 ngày",
+          quarter: "quý hiện tại",
+        };
+        return labelByRange[dashboardRange] || "khoảng tùy chọn";
+      }
+
+      function exportDashboardCSV() {
+        if (!dashboardSnapshot) {
+          alert("Chưa có dữ liệu để xuất. Vui lòng tải dashboard trước.");
+          return;
+        }
+
+        const now = new Date();
+        const dateTag = now.toISOString().slice(0, 10);
+        const lines = [];
+
+        lines.push(
+          ["GymHeart Admin Dashboard Report", "", "", ""]
+            .map(escapeCsvValue)
+            .join(","),
+        );
+        lines.push(
+          ["Khoảng lọc", dashboardSnapshot.rangeLabel, "", ""]
+            .map(escapeCsvValue)
+            .join(","),
+        );
+        lines.push(
+          ["Ngày xuất", now.toLocaleString("vi-VN"), "", ""]
+            .map(escapeCsvValue)
+            .join(","),
+        );
+        lines.push("");
+
+        lines.push(["KPI", "Giá trị"].map(escapeCsvValue).join(","));
+        lines.push(
+          ["Tổng người dùng", dashboardSnapshot.stats.totalUsers]
+            .map(escapeCsvValue)
+            .join(","),
+        );
+        lines.push(
+          ["Tổng khóa học", dashboardSnapshot.stats.totalCourses]
+            .map(escapeCsvValue)
+            .join(","),
+        );
+        lines.push(
+          ["Tổng huấn luyện viên", dashboardSnapshot.stats.totalCoaches]
+            .map(escapeCsvValue)
+            .join(","),
+        );
+        lines.push(
+          ["Doanh thu", dashboardSnapshot.stats.revenueText]
+            .map(escapeCsvValue)
+            .join(","),
+        );
+        lines.push(
+          ["Yêu cầu chờ duyệt", dashboardSnapshot.stats.pendingCount]
+            .map(escapeCsvValue)
+            .join(","),
+        );
+        lines.push(
+          ["Khóa học đang mở", dashboardSnapshot.stats.activeCourses]
+            .map(escapeCsvValue)
+            .join(","),
+        );
+        lines.push(
+          ["Tỷ lệ lấp đầy", `${dashboardSnapshot.stats.occupancyRate}%`]
+            .map(escapeCsvValue)
+            .join(","),
+        );
+        lines.push(
+          ["Thành viên mới", dashboardSnapshot.stats.newUsers]
+            .map(escapeCsvValue)
+            .join(","),
+        );
+        lines.push("");
+
+        lines.push(
+          ["Top Khóa Học", "Học viên hiện tại", "Sức chứa", "Tỷ lệ lấp đầy"]
+            .map(escapeCsvValue)
+            .join(","),
+        );
+        dashboardSnapshot.topCourses.forEach((course) => {
+          lines.push(
+            [
+              course.course_name,
+              course.current_students,
+              course.max_students,
+              `${course.occupancyRate}%`,
+            ]
+              .map(escapeCsvValue)
+              .join(","),
+          );
+        });
+        lines.push("");
+
+        lines.push(
+          ["Doanh thu theo mốc", "Giá trị (VND)"].map(escapeCsvValue).join(","),
+        );
+        Object.entries(dashboardSnapshot.revenueBuckets).forEach(
+          ([label, value]) => {
+            lines.push([label, value].map(escapeCsvValue).join(","));
+          },
+        );
+        lines.push("");
+
+        lines.push(["Cảnh báo", "Mức độ"].map(escapeCsvValue).join(","));
+        dashboardSnapshot.alerts.forEach((alertItem) => {
+          lines.push(
+            [alertItem.message, alertItem.type].map(escapeCsvValue).join(","),
+          );
+        });
+
+        downloadTextFile(
+          `gymheart-dashboard-${dateTag}.csv`,
+          `\uFEFF${lines.join("\n")}`,
+          "text/csv;charset=utf-8;",
+        );
+      }
+
+      function exportDashboardReport() {
+        if (!dashboardSnapshot) {
+          alert("Chưa có dữ liệu để xuất. Vui lòng tải dashboard trước.");
+          return;
+        }
+
+        const reportWindow = window.open("", "_blank");
+        if (!reportWindow) {
+          alert("Không thể mở cửa sổ báo cáo. Vui lòng cho phép pop-up.");
+          return;
+        }
+
+        const now = new Date();
+        const topCoursesHtml = dashboardSnapshot.topCourses
+          .map(
+            (course) => `
+              <tr>
+                <td>${course.course_name}</td>
+                <td>${course.current_students}</td>
+                <td>${course.max_students}</td>
+                <td>${course.occupancyRate}%</td>
+              </tr>
+            `,
+          )
+          .join("");
+
+        const alertsHtml =
+          dashboardSnapshot.alerts.length > 0
+            ? `<ul>${dashboardSnapshot.alerts
+                .map(
+                  (alertItem) =>
+                    `<li>[${alertItem.type.toUpperCase()}] ${alertItem.message}</li>`,
+                )
+                .join("")}</ul>`
+            : "<p>Không có cảnh báo trong khoảng thời gian đã chọn.</p>";
+
+        const html = `
+          <!doctype html>
+          <html lang="vi">
+          <head>
+            <meta charset="utf-8" />
+            <title>Báo cáo Dashboard GymHeart</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 24px; color: #1c0d11; }
+              h1 { margin: 0 0 8px; }
+              .meta { color: #6b7280; margin-bottom: 20px; }
+              .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 16px 0 24px; }
+              .kpi { border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; }
+              .kpi strong { display: block; font-size: 18px; margin-top: 4px; }
+              table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+              th, td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; }
+              th { background: #f9fafb; }
+              section { margin-bottom: 24px; }
+            </style>
+          </head>
+          <body>
+            <h1>Bao Cao Dashboard GymHeart</h1>
+            <p class="meta">Khoang loc: ${dashboardSnapshot.rangeLabel} | Xuat luc: ${now.toLocaleString("vi-VN")}</p>
+            <section>
+              <h2>Tong quan KPI</h2>
+              <div class="kpi-grid">
+                <div class="kpi">Tong nguoi dung<strong>${dashboardSnapshot.stats.totalUsers}</strong></div>
+                <div class="kpi">Tong khoa hoc<strong>${dashboardSnapshot.stats.totalCourses}</strong></div>
+                <div class="kpi">Tong HLV<strong>${dashboardSnapshot.stats.totalCoaches}</strong></div>
+                <div class="kpi">Doanh thu<strong>${dashboardSnapshot.stats.revenueText}</strong></div>
+                <div class="kpi">Cho duyet<strong>${dashboardSnapshot.stats.pendingCount}</strong></div>
+                <div class="kpi">Ty le lap day<strong>${dashboardSnapshot.stats.occupancyRate}%</strong></div>
+              </div>
+            </section>
+            <section>
+              <h2>Top khoa hoc</h2>
+              <table>
+                <thead>
+                  <tr><th>Khoa hoc</th><th>Hoc vien</th><th>Suc chua</th><th>Ty le</th></tr>
+                </thead>
+                <tbody>${topCoursesHtml || "<tr><td colspan='4'>Chua co du lieu</td></tr>"}</tbody>
+              </table>
+            </section>
+            <section>
+              <h2>Canh bao van hanh</h2>
+              ${alertsHtml}
+            </section>
+          ${"</bo" + "dy>"}
+          ${"</ht" + "ml>"}
+        `;
+
+        reportWindow.document.write(html);
+        reportWindow.document.close();
+        reportWindow.focus();
+      }
+
+      function setDashboardRange(range) {
+        dashboardRange = range;
+        updateDashboardRangeButtons();
+        loadDashboardData();
+      }
+
+      function updateDashboardRangeButtons() {
+        const ranges = ["7d", "30d", "quarter"];
+        ranges.forEach((range) => {
+          const button = document.getElementById(`range-btn-${range}`);
+          if (!button) return;
+          const isActive = range === dashboardRange;
+          button.classList.toggle("bg-primary", isActive);
+          button.classList.toggle("text-white", isActive);
+          button.classList.toggle("border-primary", isActive);
+          button.classList.toggle("text-[#9c495e]", !isActive);
+          button.classList.toggle("border-pink-200", !isActive);
+        });
+      }
+
+      function getDashboardRangeBounds(range) {
+        const now = new Date();
+        const end = new Date(now);
+        end.setHours(23, 59, 59, 999);
+
+        const start = new Date(now);
+        start.setHours(0, 0, 0, 0);
+
+        if (range === "7d") {
+          start.setDate(start.getDate() - 6);
+        } else if (range === "30d") {
+          start.setDate(start.getDate() - 29);
+        } else {
+          const quarterStartMonth = Math.floor(start.getMonth() / 3) * 3;
+          start.setMonth(quarterStartMonth, 1);
+        }
+
+        return { start, end };
+      }
+
+      function isInRange(dateValue, bounds) {
+        if (!dateValue) return false;
+        const date = new Date(dateValue);
+        return date >= bounds.start && date <= bounds.end;
+      }
+
+      function formatRangeLabel(bounds) {
+        return `${bounds.start.toLocaleDateString("vi-VN")} - ${bounds.end.toLocaleDateString("vi-VN")}`;
+      }
+
+      function getRevenueBuckets(range, bounds) {
+        const buckets = {};
+
+        if (range === "quarter") {
+          const cursor = new Date(
+            bounds.start.getFullYear(),
+            bounds.start.getMonth(),
+            1,
+          );
+          const endMonth = new Date(
+            bounds.end.getFullYear(),
+            bounds.end.getMonth(),
+            1,
+          );
+          while (cursor <= endMonth) {
+            const label = cursor.toLocaleDateString("vi-VN", {
+              month: "short",
+              year: "2-digit",
+            });
+            buckets[label] = 0;
+            cursor.setMonth(cursor.getMonth() + 1);
+          }
+        } else {
+          const days = range === "7d" ? 7 : 30;
+          for (let i = days - 1; i >= 0; i--) {
+            const d = new Date(bounds.end);
+            d.setDate(d.getDate() - i);
+            const label = d.toLocaleDateString("vi-VN", {
+              day: "2-digit",
+              month: "2-digit",
+            });
+            buckets[label] = 0;
+          }
+        }
+
+        return buckets;
+      }
+
+      function getBucketLabelForPayment(dateValue, range) {
+        const date = new Date(dateValue);
+        if (range === "quarter") {
+          return date.toLocaleDateString("vi-VN", {
+            month: "short",
+            year: "2-digit",
+          });
+        }
+
+        return date.toLocaleDateString("vi-VN", {
+          day: "2-digit",
+          month: "2-digit",
+        });
+      }
+
+      function getRecentMonthLabels(monthCount = 6) {
+        const labels = [];
+        const now = new Date();
+        for (let i = monthCount - 1; i >= 0; i--) {
+          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          labels.push(
+            d.toLocaleDateString("vi-VN", { month: "short", year: "2-digit" }),
+          );
+        }
+        return labels;
+      }
+
+      function renderRevenueChart(monthlyRevenue) {
+        const canvas = document.getElementById("revenue-trend-chart");
+        if (!canvas || typeof Chart === "undefined") return;
+
+        if (revenueTrendChart) {
+          revenueTrendChart.destroy();
+        }
+
+        const labels = Object.keys(monthlyRevenue);
+        const values = Object.values(monthlyRevenue);
+
+        revenueTrendChart = new Chart(canvas, {
+          type: "line",
+          data: {
+            labels,
+            datasets: [
+              {
+                label: "Doanh thu (VND)",
+                data: values,
+                borderColor: "#f42559",
+                backgroundColor: "rgba(244, 37, 89, 0.15)",
+                fill: true,
+                tension: 0.35,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: (context) =>
+                    `${context.dataset.label}: ${Number(context.raw || 0).toLocaleString("vi-VN")}đ`,
+                },
+              },
+            },
+            scales: {
+              y: {
+                ticks: {
+                  callback: (value) =>
+                    `${Number(value).toLocaleString("vi-VN")}đ`,
+                },
+                grid: { color: "rgba(156, 73, 94, 0.12)" },
+              },
+              x: {
+                grid: { display: false },
+              },
+            },
+          },
+        });
+      }
+
+      function renderEnrollmentStatusChart(statusCounts) {
+        const canvas = document.getElementById("enrollment-status-chart");
+        if (!canvas || typeof Chart === "undefined") return;
+
+        if (enrollmentStatusChart) {
+          enrollmentStatusChart.destroy();
+        }
+
+        enrollmentStatusChart = new Chart(canvas, {
+          type: "doughnut",
+          data: {
+            labels: ["Đang học", "Chờ duyệt", "Hoàn thành", "Đã hủy"],
+            datasets: [
+              {
+                data: [
+                  statusCounts.active,
+                  statusCounts.pending,
+                  statusCounts.completed,
+                  statusCounts.cancelled,
+                ],
+                backgroundColor: ["#22c55e", "#f59e0b", "#3b82f6", "#ef4444"],
+                borderWidth: 0,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: { usePointStyle: true, padding: 16 },
+              },
+            },
+          },
+        });
+      }
+
+      function renderTopCourses(courses) {
+        const container = document.getElementById("dashboard-top-courses");
+        if (!container) return;
+
+        const topCourses = (courses || [])
+          .slice()
+          .sort((a, b) => (b.current_students || 0) - (a.current_students || 0))
+          .slice(0, 5);
+
+        if (topCourses.length === 0) {
+          container.innerHTML =
+            '<p class="text-[#9c495e] text-center py-4">Chưa có dữ liệu khóa học</p>';
+          return;
+        }
+
+        container.innerHTML = topCourses
+          .map((course, index) => {
+            const current = course.current_students || 0;
+            const max = course.max_students || 1;
+            const ratio = Math.min(100, Math.round((current / max) * 100));
+            const safeCourseName = escapeHtml(
+              safeDisplayText(course.course_name || "Khóa học", "Khóa học", 60),
+            );
+            return `
+              <div class="p-4 rounded-lg border border-pink-100 bg-pink-50/40">
+                <div class="flex items-center justify-between mb-2">
+                  <p class="font-bold text-sm text-[#1c0d11]">#${index + 1} ${safeCourseName}</p>
+                  <span class="text-xs font-bold text-primary">${current}/${max} HV</span>
+                </div>
+                <div class="w-full h-2 rounded-full bg-pink-100 overflow-hidden">
+                  <div class="h-2 bg-primary rounded-full" style="width:${ratio}%"></div>
+                </div>
+              </div>
+            `;
+          })
+          .join("");
+      }
+
+      function renderDashboardAlerts(courses, enrollments) {
+        const container = document.getElementById("dashboard-alerts");
+        if (!container) return;
+
+        const alerts = [];
+
+        (courses || []).forEach((course) => {
+          const current = Number(course.current_students || 0);
+          const max = Number(course.max_students || 0);
+          if (!max || !course.is_active) return;
+
+          const fillRate = current / max;
+          if (fillRate >= 1) {
+            alerts.push({
+              type: "critical",
+              icon: "warning",
+              message: `Lớp \"${safeDisplayText(course.course_name || "Khóa học", "Khóa học", 60)}\" đã đầy (${current}/${max}).`,
+            });
+          } else if (fillRate >= 0.9) {
+            alerts.push({
+              type: "warning",
+              icon: "error",
+              message: `Lớp \"${safeDisplayText(course.course_name || "Khóa học", "Khóa học", 60)}\" sắp đầy (${current}/${max}).`,
+            });
+          }
+        });
+
+        const now = new Date();
+        const sevenDaysLater = new Date(now);
+        sevenDaysLater.setDate(sevenDaysLater.getDate() + 7);
+
+        (enrollments || []).forEach((enrollment) => {
+          const endDateRaw = enrollment.courses?.end_date;
+          if (enrollment.status !== "active" || !endDateRaw) return;
+
+          const endDate = new Date(endDateRaw);
+          if (endDate >= now && endDate <= sevenDaysLater) {
+            const learnerName = safeDisplayText(
+              enrollment.users?.full_name || "Học viên",
+              "Học viên",
+              40,
+            );
+            const courseName = safeDisplayText(
+              enrollment.courses?.course_name || "Khóa học",
+              "Khóa học",
+              60,
+            );
+            alerts.push({
+              type: "info",
+              icon: "schedule",
+              message: `${learnerName} sắp hết hạn khóa \"${courseName}\" vào ${endDate.toLocaleDateString("vi-VN")}.`,
+            });
+          }
+        });
+
+        const alertStyle = {
+          critical: "bg-red-50 border-red-100 text-red-700",
+          warning: "bg-yellow-50 border-yellow-100 text-yellow-700",
+          info: "bg-blue-50 border-blue-100 text-blue-700",
+        };
+
+        dashboardSnapshot = dashboardSnapshot || {};
+        dashboardSnapshot.alerts = alerts;
+
+        if (alerts.length === 0) {
+          container.innerHTML =
+            '<div class="p-4 rounded-lg border border-green-100 bg-green-50 text-green-700 text-sm font-semibold">Không có cảnh báo quan trọng trong thời điểm hiện tại.</div>';
+          return;
+        }
+
+        container.innerHTML = alerts
+          .slice(0, 8)
+          .map(
+            (alert) => `
+              <div class="p-4 rounded-lg border ${alertStyle[alert.type]} flex items-start gap-3">
+                <span class="material-symbols-outlined">${alert.icon}</span>
+                <p class="text-sm font-semibold">${escapeHtml(alert.message)}</p>
+              </div>
+            `,
+          )
+          .join("");
+      }
+
+      // Load dashboard data
+      async function loadDashboardData() {
+        try {
+          const bounds = getDashboardRangeBounds(dashboardRange);
+          const rangeLabel = document.getElementById("dashboard-range-label");
+          if (rangeLabel) {
+            rangeLabel.textContent = `Khoảng lọc: ${formatRangeLabel(bounds)}`;
+          }
+
+          const newUsersLabel = document.getElementById("stat-new-users-label");
+          if (newUsersLabel) {
+            const labelByRange = {
+              "7d": "Thành viên mới 7 ngày",
+              "30d": "Thành viên mới 30 ngày",
+              quarter: "Thành viên mới quý",
+            };
+            newUsersLabel.textContent =
+              labelByRange[dashboardRange] || "Thành viên mới";
+          }
+
+          // Load stats
+          const { data: users, error: usersError } = await supabaseClient
+            .from("users")
+            .select("id, full_name, avatar_url, role, created_at");
+          const { data: courses } = await supabaseClient
+            .from("courses")
+            .select(
+              "id, course_name, current_students, max_students, is_active, price, end_date",
+            );
+          const { data: enrollments, error: enrollmentsError } =
+            await supabaseClient
+              .from("class_enrollments")
+              .select(
+                "id, user_id, course_id, status, payment_status, payment_date, enrollment_date, created_at",
+              );
+
+          if (usersError) throw usersError;
+          if (enrollmentsError) throw enrollmentsError;
+
+          const coaches = (users || []).filter((u) => u.role === "coach");
+
+          const usersById = Object.fromEntries(
+            (users || []).map((u) => [u.id, u]),
+          );
+          const coursesById = Object.fromEntries(
+            (courses || []).map((c) => [c.id, c]),
+          );
+          const enrollmentsEnhanced = (enrollments || []).map((enrollment) => ({
+            ...enrollment,
+            users: usersById[enrollment.user_id] || null,
+            courses: coursesById[enrollment.course_id] || null,
+          }));
+
+          // Tính doanh thu tháng này - JOIN với courses để lấy giá
+          const now = new Date();
+          const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+          const endOfMonth = new Date(
+            now.getFullYear(),
+            now.getMonth() + 1,
+            0,
+            23,
+            59,
+            59,
+          );
+
+          document.getElementById("stat-users").textContent =
+            users?.length || 0;
+          document.getElementById("stat-courses").textContent =
+            courses?.length || 0;
+          document.getElementById("stat-coaches").textContent =
+            coaches?.length || 0;
+
+          const revenue =
+            enrollmentsEnhanced
+              ?.filter(
+                (e) =>
+                  e.payment_status === "paid" &&
+                  e.payment_date &&
+                  isInRange(e.payment_date, bounds),
+              )
+              .reduce((sum, e) => sum + parseFloat(e.courses?.price || 0), 0) ||
+            0;
+          document.getElementById("stat-revenue").textContent =
+            revenue.toLocaleString("vi-VN") + "đ";
+
+          const pendingCount =
+            enrollmentsEnhanced?.filter(
+              (e) =>
+                e.status === "pending" &&
+                isInRange(e.enrollment_date || e.created_at, bounds),
+            ).length || 0;
+          const activeCourseCount =
+            courses?.filter((c) => c.is_active).length || 0;
+
+          const totalCurrentStudents = (courses || []).reduce(
+            (sum, c) => sum + Number(c.current_students || 0),
+            0,
+          );
+          const totalMaxStudents = (courses || []).reduce(
+            (sum, c) => sum + Number(c.max_students || 0),
+            0,
+          );
+          const occupancyRate =
+            totalMaxStudents > 0
+              ? Math.round((totalCurrentStudents / totalMaxStudents) * 100)
+              : 0;
+
+          const newUsersThisMonth =
+            users?.filter((u) => {
+              if (!u.created_at) return false;
+              return isInRange(u.created_at, bounds);
+            }).length || 0;
+
+          document.getElementById("stat-pending-enrollments").textContent =
+            pendingCount;
+          document.getElementById("stat-active-courses").textContent =
+            activeCourseCount;
+          document.getElementById("stat-occupancy").textContent =
+            `${occupancyRate}%`;
+          document.getElementById("stat-month-new-users").textContent =
+            newUsersThisMonth;
+
+          const revenueBuckets = getRevenueBuckets(dashboardRange, bounds);
+          const monthlyRevenue = Object.keys(revenueBuckets).reduce(
+            (acc, label) => {
+              acc[label] = 0;
+              return acc;
+            },
+            {},
+          );
+
+          (enrollmentsEnhanced || []).forEach((enrollment) => {
+            if (
+              enrollment.payment_status !== "paid" ||
+              !enrollment.payment_date ||
+              !isInRange(enrollment.payment_date, bounds)
+            )
+              return;
+            const label = getBucketLabelForPayment(
+              enrollment.payment_date,
+              dashboardRange,
+            );
+            if (Object.prototype.hasOwnProperty.call(monthlyRevenue, label)) {
+              monthlyRevenue[label] += Number(enrollment.courses?.price || 0);
+            }
+          });
+
+          const statusCounts = {
+            active: 0,
+            pending: 0,
+            completed: 0,
+            cancelled: 0,
+          };
+
+          (enrollmentsEnhanced || []).forEach((enrollment) => {
+            const inRange = isInRange(
+              enrollment.enrollment_date || enrollment.created_at,
+              bounds,
+            );
+            if (inRange && statusCounts[enrollment.status] !== undefined) {
+              statusCounts[enrollment.status] += 1;
+            }
+          });
+
+          const revenueChartTitle = document.getElementById(
+            "revenue-chart-title",
+          );
+          if (revenueChartTitle) {
+            const titleByRange = {
+              "7d": "Doanh Thu 7 Ngày Gần Nhất",
+              "30d": "Doanh Thu 30 Ngày Gần Nhất",
+              quarter: "Doanh Thu Theo Quý Hiện Tại",
+            };
+            revenueChartTitle.textContent =
+              titleByRange[dashboardRange] || "Doanh Thu Theo Bộ Lọc";
+          }
+
+          renderRevenueChart(monthlyRevenue);
+          renderEnrollmentStatusChart(statusCounts);
+          renderTopCourses(courses || []);
+          renderDashboardAlerts(courses || [], enrollmentsEnhanced || []);
+
+          const topCoursesSnapshot = (courses || [])
+            .slice()
+            .sort(
+              (a, b) =>
+                Number(b.current_students || 0) -
+                Number(a.current_students || 0),
+            )
+            .slice(0, 5)
+            .map((course) => {
+              const current = Number(course.current_students || 0);
+              const max = Number(course.max_students || 0);
+              return {
+                course_name: course.course_name || "Khóa học",
+                current_students: current,
+                max_students: max,
+                occupancyRate: max > 0 ? Math.round((current / max) * 100) : 0,
+              };
+            });
+
+          dashboardSnapshot = {
+            range: dashboardRange,
+            rangeLabel: formatRangeLabel(bounds),
+            stats: {
+              totalUsers: users?.length || 0,
+              totalCourses: courses?.length || 0,
+              totalCoaches: coaches?.length || 0,
+              revenue,
+              revenueText: `${revenue.toLocaleString("vi-VN")}đ`,
+              pendingCount,
+              activeCourses: activeCourseCount,
+              occupancyRate,
+              newUsers: newUsersThisMonth,
+            },
+            revenueBuckets: monthlyRevenue,
+            statusCounts,
+            topCourses: topCoursesSnapshot,
+            alerts: dashboardSnapshot?.alerts || [],
+          };
+
+          // Load recent activities
+          renderRecentActivities(enrollmentsEnhanced || [], bounds.start);
+
+          // Update coach requests badge
+          updateCoachRequestsBadge();
+        } catch (error) {
+          console.error("Error loading dashboard:", error);
+        }
+      }
+
+      function renderRecentActivities(data, startDate = null) {
+        try {
+          const container = document.getElementById("recent-activities");
+          const filtered = (data || [])
+            .filter((item) => {
+              if (!startDate) return true;
+              return new Date(item.created_at || 0) >= startDate;
+            })
+            .sort(
+              (a, b) =>
+                new Date(b.created_at || 0).getTime() -
+                new Date(a.created_at || 0).getTime(),
+            )
+            .slice(0, 5);
+
+          container.innerHTML =
+            filtered
+              ?.map((item) => {
+                const rawUserName = safeDisplayText(
+                  item.users?.full_name || "Học viên",
+                  "Học viên",
+                  40,
+                );
+                const userName = escapeHtml(rawUserName);
+                const courseName = escapeHtml(
+                  safeDisplayText(
+                    item.courses?.course_name || "Khóa học",
+                    "Khóa học",
+                    60,
+                  ),
+                );
+                const avatarUrl = safeImageUrl(
+                  item.users?.avatar_url,
+                  `https://ui-avatars.com/api/?name=${encodeURIComponent(rawUserName)}&background=f42559&color=fff&size=80`,
+                );
+                return `
+                    <div class="flex items-center gap-4 p-3 hover:bg-pink-50 rounded-lg transition-colors">
+                        <div class="size-10 rounded-full bg-cover bg-center" style="background-image: url('${avatarUrl}')"></div>
+                        <div class="flex-1">
+                            <p class="text-sm font-semibold">${userName}</p>
+                            <p class="text-xs text-[#9c495e]">Đăng ký khóa ${courseName}</p>
+                        </div>
+                        <span class="text-xs text-[#9c495e]">${new Date(item.created_at).toLocaleDateString("vi-VN")}</span>
+                    </div>
+                `;
+              })
+              .join("") ||
+            '<p class="text-[#9c495e] text-center py-4">Không có hoạt động trong khoảng lọc hiện tại</p>';
+        } catch (error) {
+          console.error("Error loading activities:", error);
+        }
+      }
+
+      let coursesData = []; // Store courses for filtering
+
+      async function loadCourses() {
+        try {
+          const { data, error } = await supabaseClient
+            .from("courses")
+            .select(
+              `
+              *,
+              coach:users!courses_coach_id_fkey(id, full_name)
+            `,
+            )
+            .order("created_at", { ascending: false });
+
+          console.log("Load courses:", { data, error }); // Debug log
+
+          if (error) {
+            console.error("Database error:", error);
+            alert("Lỗi tải khóa học: " + error.message);
+            return;
+          }
+
+          coursesData = data || []; // Store globally
+          displayCourses(coursesData);
+        } catch (error) {
+          console.error("Error loading courses:", error);
+          alert("Lỗi không mong muốn: " + error.message);
+        }
+      }
+
+      function displayCourses(courses) {
+        const container = document.getElementById("courses-list");
+
+        if (!courses || courses.length === 0) {
+          container.innerHTML =
+            '<p class="col-span-3 text-center text-[#9c495e] py-8">Chưa có khóa học nào</p>';
+          return;
+        }
+
+        container.innerHTML = courses
+          .map((course) => {
+            const courseImage = safeImageUrl(
+              course.image_url,
+              "https://via.placeholder.com/400x200?text=No+Image",
+            );
+            return `
+                  <div class="bg-white rounded-xl border border-pink-100 shadow-sm overflow-hidden">
+                      <div class="h-40 bg-cover bg-center relative" style="background-image: url('${courseImage}')">
+                        ${
+                          course.coach
+                            ? `<div class="bg-gradient-to-b from-black/60 to-transparent p-3">
+                          <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-white text-sm">person</span>
+                            <span class="text-white text-xs font-bold">${course.coach.full_name}</span>
+                          </div>
+                        </div>`
+                            : ""
+                        }
+                      </div>
+                      <div class="p-4">
+                          <h3 class="font-bold text-lg mb-2">${course.course_name}</h3>
+                          <p class="text-sm text-[#9c495e] mb-2">${(course.description || "").substring(0, 80)}...</p>
+                          ${!course.coach ? '<p class="text-xs text-orange-600 font-bold mb-2 flex items-center gap-1"><span class="material-symbols-outlined text-sm">warning</span> Chưa có huấn luyện viên</p>' : ""}
+                          <div class="flex items-center justify-between text-sm mb-3">
+                              <span class="text-primary font-bold">${parseFloat(course.price).toLocaleString("vi-VN")}đ</span>
+                              <span class="text-[#9c495e]">${course.current_students || 0}/${course.max_students} học viên</span>
+                          </div>
+                          <div class="flex gap-2">
+                              <button onclick="editCourse('${course.id}')" class="flex-1 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-bold hover:bg-blue-100">
+                                  Sửa
+                              </button>
+                              <button onclick="deleteCourse('${course.id}')" class="flex-1 px-3 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-bold hover:bg-red-100">
+                                  Xóa
+                              </button>
+                          </div>
+                      </div>
+                  </div>
+                    `;
+          })
+          .join("");
+      }
+
+      function filterCourses() {
+        const searchTerm = document
+          .getElementById("courses-search")
+          .value.toLowerCase();
+
+        if (!searchTerm) {
+          displayCourses(coursesData);
+          return;
+        }
+
+        const filtered = coursesData.filter(
+          (course) =>
+            course.course_name?.toLowerCase().includes(searchTerm) ||
+            course.description?.toLowerCase().includes(searchTerm) ||
+            course.coach?.full_name?.toLowerCase().includes(searchTerm),
+        );
+
+        displayCourses(filtered);
+      }
+
+      let usersData = []; // Store users for filtering
+
+      async function loadUsers() {
+        try {
+          const { data, error } = await supabaseClient
+            .from("users")
+            .select(USER_SAFE_SELECT)
+            .order("created_at", { ascending: false });
+
+          if (error) {
+            console.error("Error loading users:", error);
+            alert("Lỗi khi tải danh sách người dùng: " + error.message);
+            return;
+          }
+
+          usersData = data || []; // Store globally
+          displayUsers(usersData);
+        } catch (error) {
+          console.error("Error loading users:", error);
+        }
+      }
+
+      function displayUsers(users) {
+        const tbody = document.getElementById("users-table-body");
+        tbody.innerHTML =
+          users
+            ?.map((user) => {
+              const avatarUrl = safeImageUrl(
+                user.avatar_url,
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(user.full_name || "User")}&background=f42559&color=fff&size=80`,
+              );
+              return `
+                    <tr>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="size-8 rounded-full bg-cover bg-center" style="background-image: url('${avatarUrl}')"></div>
+                                <span class="font-semibold">${user.full_name}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-[#9c495e]">${user.email}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 text-xs font-bold rounded-full ${
+                              user.role === "admin"
+                                ? "bg-purple-100 text-purple-700"
+                                : user.role === "coach"
+                                  ? "bg-blue-100 text-blue-700"
+                                  : "bg-green-100 text-green-700"
+                            }">${user.role.toUpperCase()}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            ${
+                              user.requested_role === "coach"
+                                ? '<span class="px-2 py-1 text-xs font-bold rounded-full bg-orange-100 text-orange-700">YÊU CẦU LÀM COACH</span>'
+                                : '<span class="text-xs text-gray-400">-</span>'
+                            }
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 text-xs font-bold rounded-full ${
+                              user.is_active
+                                ? "bg-green-100 text-green-700"
+                                : "bg-red-100 text-red-700"
+                            }">${user.is_active ? "Active" : "Inactive"}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            ${
+                              user.requested_role === "coach" &&
+                              user.role !== "coach"
+                                ? `<div class="flex gap-2">
+                                   <button onclick="approveCoachRequest('${user.id}')" class="px-3 py-1 text-xs font-bold text-white bg-green-500 hover:bg-green-600 rounded-lg transition">Chấp nhận</button>
+                                   <button onclick="rejectCoachRequest('${user.id}')" class="px-3 py-1 text-xs font-bold text-white bg-red-500 hover:bg-red-600 rounded-lg transition">Từ chối</button>
+                                 </div>`
+                                : `<div class="flex gap-2">
+                                   <button onclick="showUserDetail('${user.id}')" class="px-3 py-1 text-xs font-bold text-blue-600 hover:bg-blue-50 rounded-lg transition">Chi tiết</button>
+                                   <button onclick="toggleUserStatus('${user.id}', ${!user.is_active})" class="px-3 py-1 text-xs font-bold ${user.is_active ? "text-orange-600 hover:bg-orange-50" : "text-green-600 hover:bg-green-50"} rounded-lg transition">
+                                     ${user.is_active ? "Vô hiệu hóa" : "Kích hoạt"}
+                                   </button>
+                                   ${user.role !== "admin" ? `<button onclick="deleteUser('${user.id}', '${user.full_name}')" class="px-3 py-1 text-xs font-bold text-red-600 hover:bg-red-50 rounded-lg transition">Xóa</button>` : ""}
+                                 </div>`
+                            }
+                        </td>
+                    </tr>
+                    `;
+            })
+            .join("") ||
+          '<tr><td colspan="6" class="px-6 py-8 text-center text-[#9c495e]">Chưa có người dùng nào</td></tr>';
+      }
+
+      function filterUsers() {
+        const searchTerm = document
+          .getElementById("users-search")
+          .value.toLowerCase();
+
+        if (!searchTerm) {
+          displayUsers(usersData);
+          return;
+        }
+
+        const filtered = usersData.filter(
+          (user) =>
+            user.full_name?.toLowerCase().includes(searchTerm) ||
+            user.email?.toLowerCase().includes(searchTerm) ||
+            user.role?.toLowerCase().includes(searchTerm),
+        );
+
+        displayUsers(filtered);
+      }
+
+      let coachesData = []; // Store coaches for filtering
+
+      async function loadCoachesGrid() {
+        try {
+          const { data, error } = await supabaseClient
+            .from("users")
+            .select(USER_SAFE_SELECT)
+            .eq("role", "coach")
+            .order("created_at", { ascending: false });
+
+          if (error) {
+            console.error("Error loading coaches:", error);
+            return;
+          }
+
+          coachesData = data || []; // Store globally
+          displayCoaches(coachesData);
+        } catch (error) {
+          console.error("Error:", error);
+        }
+      }
+
+      function displayCoaches(coaches) {
+        const container = document.getElementById("coaches-grid");
+        container.innerHTML =
+          coaches
+            ?.map((coach) => {
+              const coachAvatar = safeImageUrl(
+                coach.avatar_url,
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(coach.full_name || "Coach")}&background=f42559&color=fff`,
+              );
+              return `
+                  <div class="bg-white p-6 rounded-xl border border-pink-100 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="flex items-center gap-4 mb-4">
+                      <div class="size-16 rounded-full bg-cover bg-center border-2 border-primary/20" style="background-image: url('${coachAvatar}')"></div>
+                      <div class="flex-1">
+                        <h3 class="font-bold text-lg">${coach.full_name}</h3>
+                        <p class="text-xs text-[#9c495e]">${coach.email}</p>
+                      </div>
+                    </div>
+                    ${coach.bio ? `<p class="text-sm text-[#9c495e] mb-3">${coach.bio}</p>` : ""}
+                    <div class="flex items-center gap-2 text-xs text-[#9c495e] mb-3">
+                      <span class="material-symbols-outlined text-sm">schedule</span>
+                      <span>Tham gia: ${new Date(coach.created_at).toLocaleDateString("vi-VN")}</span>
+                    </div>
+                    <div class="flex items-center justify-between pt-3 border-t border-pink-100">
+                      <span class="px-2 py-1 text-xs font-bold rounded-full ${
+                        coach.is_active
+                          ? "bg-green-100 text-green-700"
+                          : "bg-red-100 text-red-700"
+                      }">${coach.is_active ? "Hoạt động" : "Không hoạt động"}</span>
+                      <div class="flex gap-2">
+                        <button onclick="toggleUserStatus('${coach.id}', ${!coach.is_active})" class="px-3 py-1 text-xs font-bold ${
+                          coach.is_active
+                            ? "text-orange-600 hover:bg-orange-50"
+                            : "text-green-600 hover:bg-green-50"
+                        } rounded-lg transition" title="${
+                          coach.is_active ? "Vô hiệu hóa" : "Kích hoạt"
+                        }">
+                          <span class="material-symbols-outlined text-sm">${
+                            coach.is_active ? "block" : "check_circle"
+                          }</span>
+                        </button>
+                        <button onclick="deleteCoach('${coach.id}', '${coach.full_name}')" class="px-3 py-1 text-xs font-bold text-red-600 hover:bg-red-50 rounded-lg transition" title="Xóa">
+                          <span class="material-symbols-outlined text-sm">delete</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                `;
+            })
+            .join("") ||
+          '<div class="col-span-3 text-center py-12 text-[#9c495e]">Chưa có huấn luyện viên nào</div>';
+      }
+
+      function filterCoaches() {
+        const searchTerm = document
+          .getElementById("coaches-search")
+          .value.toLowerCase();
+
+        if (!searchTerm) {
+          displayCoaches(coachesData);
+          return;
+        }
+
+        const filtered = coachesData.filter(
+          (coach) =>
+            coach.full_name?.toLowerCase().includes(searchTerm) ||
+            coach.email?.toLowerCase().includes(searchTerm) ||
+            coach.bio?.toLowerCase().includes(searchTerm),
+        );
+
+        displayCoaches(filtered);
+      }
+
+      async function deleteCoach(coachId, coachName) {
+        if (
+          !confirm(
+            `Bạn có chắc muốn xóa huấn luyện viên "${coachName}"?\n\nCảnh báo: Tất cả khóa học và lịch học của HLV này sẽ bị ảnh hưởng!`,
+          )
+        )
+          return;
+
+        try {
+          // Remove coach from courses
+          await supabaseClient
+            .from("courses")
+            .update({ coach_id: null })
+            .eq("coach_id", coachId);
+
+          // Remove coach from schedules
+          await supabaseClient
+            .from("schedules")
+            .update({ coach_id: null })
+            .eq("coach_id", coachId);
+
+          // Delete the coach (change role back to user)
+          const { error } = await supabaseClient
+            .from("users")
+            .update({ role: "user" })
+            .eq("id", coachId);
+
+          if (error) {
+            console.error("Error deleting coach:", error);
+            alert("Đã xảy ra lỗi: " + error.message);
+            return;
+          }
+
+          alert("Đã xóa huấn luyện viên thành công!");
+          loadCoachesGrid();
+          loadDashboardData(); // Refresh dashboard stats
+        } catch (error) {
+          console.error("Error:", error);
+          alert("Có lỗi không mong muốn!");
+        }
+      }
+
+      async function loadCoaches() {
+        try {
+          const { data } = await supabaseClient
+            .from("users")
+            .select("id, full_name")
+            .eq("role", "coach");
+
+          const select = document.getElementById("course-coach");
+          const currentOptions = select.innerHTML;
+          select.innerHTML =
+            '<option value="">-- Chọn huấn luyện viên --</option>' +
+            (data
+              ?.map(
+                (coach) =>
+                  `<option value="${coach.id}">${coach.full_name}</option>`,
+              )
+              .join("") || "");
+        } catch (error) {
+          console.error("Error loading coaches:", error);
+        }
+      }
+
+      async function updateCoachRequestsBadge() {
+        try {
+          const { count, error } = await supabaseClient
+            .from("users")
+            .select("id", { count: "exact", head: true })
+            .eq("requested_role", "coach")
+            .neq("role", "coach");
+
+          if (error) {
+            // Nếu column requested_role chưa tồn tại, bỏ qua
+            if (error.message.includes("requested_role")) {
+              console.warn(
+                "Column requested_role chưa tồn tại. Chạy add_coach_requests.sql",
+              );
+              return;
+            }
+            console.error("Error counting coach requests:", error);
+            return;
+          }
+
+          const badge = document.getElementById("coach-requests-badge");
+          if (badge) {
+            if (count > 0) {
+              badge.textContent = count;
+              badge.classList.remove("hidden");
+            } else {
+              badge.classList.add("hidden");
+            }
+          }
+        } catch (error) {
+          console.error("Error:", error);
+        }
+      }
+
+      async function approveCoachRequest(userId) {
+        if (!confirm("Bạn có chắc muốn chấp nhận yêu cầu làm Coach?")) return;
+
+        try {
+          const { error } = await supabaseClient
+            .from("users")
+            .update({
+              role: "coach",
+              requested_role: null,
+            })
+            .eq("id", userId);
+
+          if (error) {
+            console.error("Error approving coach request:", error);
+            alert("Có lỗi xảy ra khi chấp nhận yêu cầu!");
+            return;
+          }
+
+          alert("Đã chấp nhận! Người dùng trở thành Coach.");
+          loadUsers();
+          loadCoaches(); // Refresh coach dropdown
+          updateCoachRequestsBadge(); // Update badge count
+        } catch (error) {
+          console.error("Error:", error);
+          alert("Có lỗi không mong muốn!");
+        }
+      }
+
+      async function rejectCoachRequest(userId) {
+        if (!confirm("Bạn có chắc muốn từ chối yêu cầu làm Coach?")) return;
+
+        try {
+          const { error } = await supabaseClient
+            .from("users")
+            .update({
+              requested_role: null,
+            })
+            .eq("id", userId);
+
+          if (error) {
+            console.error("Error rejecting coach request:", error);
+          } else {
+            alert("Đã từ chối yêu cầu!");
+            loadUsers();
+            updateCoachRequestsBadge(); // Update badge count
+          }
+        } catch (error) {
+          console.error("Error:", error);
+        }
+      }
+
+      async function deleteUser(userId, userName) {
+        if (
+          !confirm(
+            `Bạn có chắc muốn xóa người dùng "${userName}"?\n\nCảnh báo: Tất cả dữ liệu liên quan (đăng ký khóa học, lịch học) của người dùng này cũng sẽ bị xóa!`,
+          )
+        )
+          return;
+
+        try {
+          const { error } = await supabaseClient
+            .from("users")
+            .delete()
+            .eq("id", userId);
+
+          if (error) {
+            console.error("Error deleting user:", error);
+            alert("Có lỗi xảy ra khi xóa người dùng: " + error.message);
+            return;
+          }
+
+          alert("Đã xóa người dùng thành công!");
+          loadUsers();
+          loadDashboardData(); // Refresh dashboard stats
+        } catch (error) {
+          console.error("Error:", error);
+          alert("Có lỗi không mong muốn!");
+        }
+      }
+
+      async function toggleUserStatus(userId, newStatus) {
+        const action = newStatus ? "kích hoạt" : "vô hiệu hóa";
+        if (!confirm(`Bạn có chắc muốn ${action} tài khoản này?`)) return;
+
+        try {
+          const { error } = await supabaseClient
+            .from("users")
+            .update({ is_active: newStatus })
+            .eq("id", userId);
+
+          if (error) {
+            console.error("Error toggling user status:", error);
+            alert("Có lỗi xảy ra: " + error.message);
+            return;
+          }
+
+          alert(`Đã ${action} tài khoản thành công!`);
+          loadUsers();
+        } catch (error) {
+          console.error("Error:", error);
+          alert("Có lỗi không mong muốn!");
+        }
+      }
+
+      async function showUserDetail(userId) {
+        try {
+          // Load user info
+          const { data: user, error: userError } = await supabaseClient
+            .from("users")
+            .select(USER_SAFE_SELECT)
+            .eq("id", userId)
+            .single();
+
+          if (userError || !user) {
+            alert("Không thể tải thông tin người dùng!");
+            return;
+          }
+
+          // Load user's enrollments
+          const { data: enrollments } = await supabaseClient
+            .from("class_enrollments")
+            .select("*, courses(course_name, price)")
+            .eq("user_id", userId)
+            .order("enrollment_date", { ascending: false });
+
+          // Build HTML content
+          const content = `
+            <div class="space-y-6">
+              <!-- Profile Section -->
+              <div class="flex items-start gap-6 p-6 bg-gradient-to-r from-pink-50 to-purple-50 rounded-xl">
+                <div class="size-24 rounded-full bg-cover bg-center border-4 border-white shadow-lg" 
+                     style="background-image: url('${user.avatar_url || "https://ui-avatars.com/api/?name=" + encodeURIComponent(user.full_name) + "&background=f42559&color=fff"}')">
+                </div>
+                <div class="flex-1">
+                  <h3 class="text-2xl font-bold text-[#1c0d11] mb-2">${user.full_name}</h3>
+                  <div class="flex flex-wrap gap-2 mb-3">
+                    <span class="px-3 py-1 text-xs font-bold rounded-full ${
+                      user.role === "admin"
+                        ? "bg-purple-100 text-purple-700"
+                        : user.role === "coach"
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-green-100 text-green-700"
+                    }">${user.role.toUpperCase()}</span>
+                    <span class="px-3 py-1 text-xs font-bold rounded-full ${
+                      user.is_active
+                        ? "bg-green-100 text-green-700"
+                        : "bg-red-100 text-red-700"
+                    }">${user.is_active ? "Đang hoạt động" : "Không hoạt động"}</span>
+                  </div>
+                  ${user.bio ? `<p class="text-sm text-[#9c495e] mb-2">${user.bio}</p>` : ""}
+                </div>
+              </div>
+
+              <!-- Account Info -->
+              <div class="bg-white border border-pink-100 rounded-xl p-6">
+                <h4 class="text-lg font-bold text-[#1c0d11] mb-4 flex items-center gap-2">
+                  <span class="material-symbols-outlined text-primary">account_circle</span>
+                  Thông tin tài khoản
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="text-xs font-bold text-[#9c495e] uppercase">Email đăng nhập</label>
+                    <p class="text-sm font-semibold text-[#1c0d11] mt-1">${user.email}</p>
+                  </div>
+                  <div>
+                    <label class="text-xs font-bold text-[#9c495e] uppercase">Mật khẩu</label>
+                    <div class="flex items-center gap-2 mt-1">
+                      <p class="text-sm text-[#9c495e] italic">••••••••••</p>
+                      <span class="text-xs text-orange-600 font-semibold">(Đã mã hóa - không thể xem)</span>
+                    </div>
+                    <button onclick="resetUserPassword('${user.id}', '${user.email}')" class="mt-2 px-3 py-1 text-xs font-bold text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition flex items-center gap-1">
+                      <span class="material-symbols-outlined text-sm">lock_reset</span>
+                      Đặt lại mật khẩu
+                    </button>
+                  </div>
+                  <div>
+                    <label class="text-xs font-bold text-[#9c495e] uppercase">Số điện thoại</label>
+                    <p class="text-sm font-semibold text-[#1c0d11] mt-1">${user.phone || "Chưa cập nhật"}</p>
+                  </div>
+                  <div>
+                    <label class="text-xs font-bold text-[#9c495e] uppercase">Ngày tạo tài khoản</label>
+                    <p class="text-sm font-semibold text-[#1c0d11] mt-1">${new Date(user.created_at).toLocaleDateString("vi-VN", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+                  </div>
+                  <div>
+                    <label class="text-xs font-bold text-[#9c495e] uppercase">Cập nhật lần cuối</label>
+                    <p class="text-sm font-semibold text-[#1c0d11] mt-1">${new Date(user.updated_at || user.created_at).toLocaleDateString("vi-VN", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+                  </div>
+                  ${
+                    user.date_of_birth
+                      ? `
+                  <div>
+                    <label class="text-xs font-bold text-[#9c495e] uppercase">Ngày sinh</label>
+                    <p class="text-sm font-semibold text-[#1c0d11] mt-1">${new Date(user.date_of_birth).toLocaleDateString("vi-VN")}</p>
+                  </div>
+                  `
+                      : ""
+                  }
+                  ${
+                    user.address
+                      ? `
+                  <div class="col-span-2">
+                    <label class="text-xs font-bold text-[#9c495e] uppercase">Địa chỉ</label>
+                    <p class="text-sm font-semibold text-[#1c0d11] mt-1">${user.address}</p>
+                  </div>
+                  `
+                      : ""
+                  }
+                </div>
+              </div>
+
+              <!-- Enrollments -->
+              <div class="bg-white border border-pink-100 rounded-xl p-6">
+                <h4 class="text-lg font-bold text-[#1c0d11] mb-4 flex items-center gap-2">
+                  <span class="material-symbols-outlined text-primary">school</span>
+                  Khóa học đã đăng ký (${enrollments?.length || 0})
+                </h4>
+                ${
+                  enrollments && enrollments.length > 0
+                    ? `
+                  <div class="space-y-3">
+                    ${enrollments
+                      .map(
+                        (enrollment) => `
+                      <div class="flex items-center justify-between p-4 bg-pink-50 rounded-lg hover:bg-pink-100 transition">
+                        <div class="flex-1">
+                          <h5 class="font-bold text-sm text-[#1c0d11]">${enrollment.courses?.course_name || "N/A"}</h5>
+                          <div class="flex items-center gap-4 mt-1 text-xs text-[#9c495e]">
+                            <span>Đăng ký: ${new Date(enrollment.enrollment_date || enrollment.created_at).toLocaleDateString("vi-VN")}</span>
+                            <span class="px-2 py-1 rounded-full font-bold ${
+                              enrollment.status === "active"
+                                ? "bg-green-100 text-green-700"
+                                : enrollment.status === "completed"
+                                  ? "bg-blue-100 text-blue-700"
+                                  : enrollment.status === "cancelled"
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-yellow-100 text-yellow-700"
+                            }">${
+                              enrollment.status === "active"
+                                ? "Đang học"
+                                : enrollment.status === "completed"
+                                  ? "Hoàn thành"
+                                  : enrollment.status === "cancelled"
+                                    ? "Đã hủy"
+                                    : "Chờ duyệt"
+                            }</span>
+                            <span class="px-2 py-1 rounded-full font-bold ${
+                              enrollment.payment_status === "paid" ||
+                              enrollment.payment_status === "completed"
+                                ? "bg-green-100 text-green-700"
+                                : "bg-orange-100 text-orange-700"
+                            }">${
+                              enrollment.payment_status === "paid" ||
+                              enrollment.payment_status === "completed"
+                                ? "Đã thanh toán"
+                                : "Chưa thanh toán"
+                            }</span>
+                          </div>
+                        </div>
+                        <div class="text-right">
+                          <p class="font-bold text-primary">${(enrollment.courses?.price || 0).toLocaleString("vi-VN")}đ</p>
+                          ${enrollment.progress_percentage ? `<p class="text-xs text-[#9c495e] mt-1">Tiến độ: ${enrollment.progress_percentage}%</p>` : ""}
+                        </div>
+                      </div>
+                    `,
+                      )
+                      .join("")}
+                  </div>
+                  <div class="mt-4 pt-4 border-t border-pink-200">
+                    <div class="flex justify-between items-center">
+                      <span class="text-sm font-bold text-[#9c495e]">Tổng chi tiêu:</span>
+                      <span class="text-lg font-bold text-primary">${enrollments.reduce((sum, e) => sum + (e.courses?.price || 0), 0).toLocaleString("vi-VN")}đ</span>
+                    </div>
+                  </div>
+                `
+                    : '<p class="text-center text-[#9c495e] py-4">Chưa đăng ký khóa học nào</p>'
+                }
+              </div>
+            </div>
+          `;
+
+          document.getElementById("user-detail-content").innerHTML = content;
+          document
+            .getElementById("user-detail-modal")
+            .classList.remove("hidden");
+          document.getElementById("user-detail-modal").classList.add("flex");
+        } catch (error) {
+          console.error("Error loading user detail:", error);
+          alert("Có lỗi xảy ra khi tải thông tin!");
+        }
+      }
+
+      function closeUserDetailModal() {
+        document.getElementById("user-detail-modal").classList.add("hidden");
+        document.getElementById("user-detail-modal").classList.remove("flex");
+      }
+
+      async function resetUserPassword(userId, userEmail) {
+        const newPassword = prompt(
+          `Đặt mật khẩu mới cho: ${userEmail}\n\n⚠️ LƯU Ý:\n- Mật khẩu tối thiểu 6 ký tự\n- Hãy ghi nhớ để gửi cho người dùng\n\nNhập mật khẩu mới:`,
+        );
+
+        if (!newPassword) return;
+
+        if (newPassword.length < 6) {
+          alert("Mật khẩu phải có ít nhất 6 ký tự!");
+          return;
+        }
+
+        if (
+          !confirm(
+            `Xác nhận đặt lại mật khẩu?\n\nTài khoản: ${userEmail}\nMật khẩu mới: ${newPassword}`,
+          )
+        )
+          return;
+
+        try {
+          // Call RPC function to reset password
+          const { data, error } = await supabaseClient.rpc(
+            "admin_reset_user_password",
+            {
+              target_user_id: userId,
+              new_password: newPassword,
+            },
+          );
+
+          if (error) {
+            console.error("Error resetting password:", error);
+
+            // Nếu function chưa tồn tại, hiển thị hướng dẫn
+            if (error.message.includes("function") || error.code === "42883") {
+              alert(
+                `⚠️ Chưa cài đặt chức năng reset password!\n\nHƯỚNG DẪN:\n1. Vào Supabase Dashboard → SQL Editor\n2. Chạy file: enable_admin_password_reset.sql\n3. Thử lại\n\nHOẶC:\n- Vào Authentication → Users trong Supabase\n- Tìm user và click "Reset Password"\n- Gửi email reset cho user`,
+              );
+            } else {
+              alert("Có lỗi xảy ra: " + error.message);
+            }
+            return;
+          }
+
+          alert(
+            `✅ Đặt lại mật khẩu thành công!\n\n📧 Tài khoản: ${userEmail}\n🔑 Mật khẩu mới: ${newPassword}\n\n⚠️ Hãy gửi thông tin này cho người dùng!`,
+          );
+
+          // Copy to clipboard
+          try {
+            await navigator.clipboard.writeText(
+              `Tài khoản: ${userEmail}\nMật khẩu mới: ${newPassword}`,
+            );
+            console.log("Đã copy thông tin vào clipboard!");
+          } catch (e) {
+            console.log("Không thể copy tự động");
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          alert("Có lỗi không mong muốn: " + error.message);
+        }
+      }
+
+      async function deleteScheduleGlobal(scheduleId) {
+        if (!confirm("Bạn có chắc muốn xóa lịch học này?")) return;
+
+        try {
+          const { error } = await supabaseClient
+            .from("schedules")
+            .delete()
+            .eq("id", scheduleId);
+
+          if (error) {
+            console.error("Error deleting schedule:", error);
+            alert("Có lỗi xảy ra: " + error.message);
+            return;
+          }
+
+          alert("Đã xóa lịch học thành công!");
+          loadSchedules();
+        } catch (error) {
+          console.error("Error:", error);
+          alert("Có lỗi không mong muốn!");
+        }
+      }
+
+      async function editScheduleGlobal(scheduleId, courseId) {
+        try {
+          // Get current schedule data
+          const { data: schedule, error: fetchError } = await supabaseClient
+            .from("schedules")
+            .select("*")
+            .eq("id", scheduleId)
+            .single();
+
+          if (fetchError || !schedule) {
+            alert("Không thể tải thông tin lịch học!");
+            return;
+          }
+
+          // Show edit form
+          const dayNames = [
+            "Chủ nhật",
+            "Thứ 2",
+            "Thứ 3",
+            "Thứ 4",
+            "Thứ 5",
+            "Thứ 6",
+            "Thứ 7",
+          ];
+
+          const title = prompt("Tiêu đề lịch học:", schedule.title);
+          if (!title) return;
+
+          const dayInput = prompt(
+            `Thứ trong tuần (0-6):\n0: Chủ nhật, 1: Thứ 2, 2: Thứ 3, 3: Thứ 4, 4: Thứ 5, 5: Thứ 6, 6: Thứ 7\n\nHiện tại: ${schedule.day_of_week} (${dayNames[schedule.day_of_week]})`,
+            schedule.day_of_week,
+          );
+          if (dayInput === null) return;
+          const day = parseInt(dayInput);
+          if (isNaN(day) || day < 0 || day > 6) {
+            alert("Thứ không hợp lệ!");
+            return;
+          }
+
+          const startTime = prompt(
+            "Giờ bắt đầu (HH:MM):",
+            schedule.start_time?.slice(0, 5),
+          );
+          if (!startTime) return;
+
+          const endTime = prompt(
+            "Giờ kết thúc (HH:MM):",
+            schedule.end_time?.slice(0, 5),
+          );
+          if (!endTime) return;
+
+          const location = prompt("Địa điểm:", schedule.location || "");
+          const roomNumber = prompt("Phòng:", schedule.room_number || "");
+
+          // Update schedule
+          const { error } = await supabaseClient
+            .from("schedules")
+            .update({
+              title: title,
+              day_of_week: day,
+              start_time: startTime + ":00",
+              end_time: endTime + ":00",
+              location: location || null,
+              room_number: roomNumber || null,
+            })
+            .eq("id", scheduleId);
+
+          if (error) {
+            console.error("Error updating schedule:", error);
+            alert("Có lỗi xảy ra: " + error.message);
+            return;
+          }
+
+          alert("Đã cập nhật lịch học thành công!");
+          loadSchedules();
+        } catch (error) {
+          console.error("Error:", error);
+          alert("Có lỗi không mong muốn!");
+        }
+      }
+
+      let enrollmentsData = []; // Store enrollments for filtering
+
+      async function loadEnrollments() {
+        try {
+          const { data, error } = await supabaseClient
+            .from("class_enrollments")
+            .select(
+              "*, users(full_name, email, avatar_url), courses(course_name)",
+            )
+            .order("enrollment_date", { ascending: false });
+
+          if (error) {
+            console.error("Database error:", error);
+            return;
+          }
+
+          enrollmentsData = data || []; // Store globally
+          displayEnrollments(enrollmentsData);
+        } catch (error) {
+          console.error("Error loading enrollments:", error);
+        }
+      }
+
+      function displayEnrollments(enrollments) {
+        const tbody = document.getElementById("enrollments-table-body");
+        tbody.innerHTML =
+          enrollments
+            ?.map((enrollment) => {
+              const enrollmentAvatar = safeImageUrl(
+                enrollment.users?.avatar_url,
+                "https://ui-avatars.com/api/?name=User&background=f42559&color=fff",
+              );
+              return `
+                    <tr>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="size-8 rounded-full bg-cover bg-center" style="background-image: url('${enrollmentAvatar}')"></div>
+                                <div>
+                                    <div class="font-semibold text-sm">${enrollment.users?.full_name || "N/A"}</div>
+                                    <div class="text-xs text-[#9c495e]">${enrollment.users?.email || ""}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="font-semibold text-sm">${enrollment.courses?.course_name || "N/A"}</div>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-[#9c495e]">
+                            ${new Date(enrollment.enrollment_date || enrollment.created_at).toLocaleDateString("vi-VN")}
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 text-xs font-bold rounded-full ${
+                              enrollment.status === "active"
+                                ? "bg-green-100 text-green-700"
+                                : enrollment.status === "completed"
+                                  ? "bg-blue-100 text-blue-700"
+                                  : enrollment.status === "cancelled"
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-yellow-100 text-yellow-700"
+                            }">${
+                              enrollment.status === "active"
+                                ? "Đang học"
+                                : enrollment.status === "completed"
+                                  ? "Hoàn thành"
+                                  : enrollment.status === "cancelled"
+                                    ? "Đã hủy"
+                                    : "Chờ duyệt"
+                            }</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-sm font-bold text-primary">${enrollment.payment_status === "completed" || enrollment.payment_status === "paid" ? "Đã thanh toán" : "Chưa thanh toán"}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex gap-2">
+                                <button onclick="changeEnrollmentStatus('${enrollment.id}')" class="px-3 py-1 text-xs font-bold text-blue-600 hover:bg-blue-50 rounded-lg transition">
+                                    Đổi trạng thái
+                                </button>
+                                <button onclick="deleteEnrollment('${enrollment.id}', '${enrollment.users?.full_name}', '${enrollment.courses?.course_name}')" class="px-3 py-1 text-xs font-bold text-red-600 hover:bg-red-50 rounded-lg transition">
+                                    Xóa
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    `;
+            })
+            .join("") ||
+          '<tr><td colspan="6" class="px-6 py-8 text-center text-[#9c495e]">Chưa có đăng ký nào</td></tr>';
+      }
+
+      function filterEnrollments() {
+        const searchTerm = document
+          .getElementById("enrollments-search")
+          .value.toLowerCase();
+
+        if (!searchTerm) {
+          displayEnrollments(enrollmentsData);
+          return;
+        }
+
+        const filtered = enrollmentsData.filter(
+          (e) =>
+            e.users?.full_name?.toLowerCase().includes(searchTerm) ||
+            e.users?.email?.toLowerCase().includes(searchTerm) ||
+            e.courses?.course_name?.toLowerCase().includes(searchTerm),
+        );
+
+        displayEnrollments(filtered);
+      }
+
+      async function deleteEnrollment(enrollmentId, userName, courseName) {
+        if (
+          !confirm(
+            `Bạn có chắc muốn xóa đăng ký của "${userName}" vào khóa "${courseName}"?`,
+          )
+        )
+          return;
+
+        try {
+          const { error } = await supabaseClient
+            .from("class_enrollments")
+            .delete()
+            .eq("id", enrollmentId);
+
+          if (error) {
+            console.error("Error deleting enrollment:", error);
+            alert("Có lỗi xảy ra: " + error.message);
+            return;
+          }
+
+          alert("Đã xóa đăng ký thành công!");
+          loadEnrollments();
+          loadDashboardData(); // Refresh stats
+        } catch (error) {
+          console.error("Error:", error);
+          alert("Có lỗi không mong muốn!");
+        }
+      }
+
+      async function changeEnrollmentStatus(enrollmentId) {
+        const newStatus = prompt(
+          "Nhập trạng thái mới:\n- active (Đang học)\n- completed (Hoàn thành)\n- cancelled (Đã hủy)\n- pending (Chờ duyệt)",
+        );
+
+        if (!newStatus) return;
+
+        const validStatuses = ["active", "completed", "cancelled", "pending"];
+        if (!validStatuses.includes(newStatus.toLowerCase())) {
+          alert("Trạng thái không hợp lệ!");
+          return;
+        }
+
+        try {
+          const { error } = await supabaseClient
+            .from("class_enrollments")
+            .update({ status: newStatus.toLowerCase() })
+            .eq("id", enrollmentId);
+
+          if (error) {
+            console.error("Error updating status:", error);
+            alert("Có lỗi xảy ra: " + error.message);
+            return;
+          }
+
+          alert("Đã cập nhật trạng thái thành công!");
+          loadEnrollments();
+        } catch (error) {
+          console.error("Error:", error);
+          alert("Có lỗi không mong muốn!");
+        }
+      }
+
+      async function loadSchedules() {
+        try {
+          const { data, error } = await supabaseClient
+            .from("schedules")
+            .select("*, courses(course_name), users(full_name)")
+            .order("day_of_week")
+            .order("start_time");
+
+          if (error) {
+            console.error("Database error:", error);
+            return;
+          }
+
+          const container = document.getElementById("schedules-calendar");
+          const dayNames = [
+            "Chủ nhật",
+            "Thứ 2",
+            "Thứ 3",
+            "Thứ 4",
+            "Thứ 5",
+            "Thứ 6",
+            "Thứ 7",
+          ];
+
+          // Group by day
+          const schedulesByDay = {};
+          data?.forEach((schedule) => {
+            const day = schedule.day_of_week;
+            if (!schedulesByDay[day]) schedulesByDay[day] = [];
+            schedulesByDay[day].push(schedule);
+          });
+
+          container.innerHTML =
+            `
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              ${Object.keys(schedulesByDay)
+                .sort()
+                .map(
+                  (day) => `
+                <div class="border border-pink-200 rounded-lg p-4">
+                  <h3 class="font-bold text-lg mb-3 text-primary">${dayNames[day]}</h3>
+                  <div class="space-y-2">
+                    ${schedulesByDay[day]
+                      .map(
+                        (schedule) => `
+                      <div class="bg-pink-50 p-3 rounded-lg">
+                        <div class="font-semibold text-sm mb-1">${schedule.title}</div>
+                        <div class="text-xs text-[#9c495e] mb-1">${schedule.courses?.course_name || "N/A"}</div>
+                        <div class="text-xs text-[#9c495e]">
+                          <span class="material-symbols-outlined text-xs align-middle">schedule</span>
+                          ${schedule.start_time?.slice(0, 5)} - ${schedule.end_time?.slice(0, 5)}
+                        </div>
+                        <div class="text-xs text-[#9c495e]">
+                          <span class="material-symbols-outlined text-xs align-middle">location_on</span>
+                          ${schedule.location || ""} ${schedule.room_number || ""}
+                        </div>
+                        ${
+                          schedule.users?.full_name
+                            ? `
+                          <div class="text-xs text-[#9c495e]">
+                            <span class="material-symbols-outlined text-xs align-middle">person</span>
+                            ${schedule.users.full_name}
+                          </div>
+                        `
+                            : ""
+                        }
+                        <div class="flex gap-2 mt-2">
+                          <button onclick="editScheduleGlobal('${schedule.id}', '${schedule.course_id}')" class="text-xs px-2 py-1 text-blue-600 hover:bg-blue-100 rounded transition" title="Sửa">
+                            <span class="material-symbols-outlined text-sm">edit</span>
+                          </button>
+                          <button onclick="deleteScheduleGlobal('${schedule.id}')" class="text-xs px-2 py-1 text-red-600 hover:bg-red-100 rounded transition" title="Xóa">
+                            <span class="material-symbols-outlined text-sm">delete</span>
+                          </button>
+                        </div>
+                      </div>
+                    `,
+                      )
+                      .join("")}
+                  </div>
+                </div>
+              `,
+                )
+                .join("")}
+            </div>
+          ` ||
+            '<p class="text-center text-[#9c495e] py-8">Chưa có lịch học nào</p>';
+        } catch (error) {
+          console.error("Error loading schedules:", error);
+        }
+      }
+
+      function showAddCourseModal() {
+        document.getElementById("modal-title").textContent = "Thêm Khóa Học";
+        document.getElementById("course-form").reset();
+        document.getElementById("course-id").value = "";
+        document.getElementById("course-active").checked = true;
+        document.getElementById("schedules-section").style.display = "none"; // Hide schedules for new courses
+        document.getElementById("course-modal").classList.remove("hidden");
+        document.getElementById("course-modal").classList.add("flex");
+        loadCoaches();
+      }
+
+      async function editCourse(id) {
+        try {
+          const { data: course } = await supabaseClient
+            .from("courses")
+            .select("*")
+            .eq("id", id)
+            .single();
+
+          if (!course) {
+            alert("Đã xảy ra lỗi khi tải khóa học!");
+            return;
+          }
+
+          document.getElementById("modal-title").textContent = "Sửa Khóa Học";
+          document.getElementById("course-id").value = course.id;
+          document.getElementById("course-name").value = course.course_name;
+          document.getElementById("course-price").value = course.price;
+          document.getElementById("course-description").value =
+            course.description || "";
+          document.getElementById("course-duration").value =
+            course.duration_weeks;
+          document.getElementById("course-max-students").value =
+            course.max_students;
+          document.getElementById("course-level").value = course.level;
+          document.getElementById("course-image").value =
+            course.image_url || "";
+          document.getElementById("course-coach").value = course.coach_id || "";
+          document.getElementById("course-active").checked = course.is_active;
+
+          // Show schedules section for existing courses
+          document.getElementById("schedules-section").style.display = "block";
+          loadCourseSchedules(course.id);
+
+          document.getElementById("course-modal").classList.remove("hidden");
+          document.getElementById("course-modal").classList.add("flex");
+          await loadCoaches();
+          document.getElementById("course-coach").value = course.coach_id || "";
+        } catch (error) {
+          console.error("Error loading course:", error);
+          alert("Đã xảy ra lỗi khi tải khóa học!");
+        }
+      }
+
+      function closeCourseModal() {
+        document.getElementById("course-modal").classList.add("hidden");
+        document.getElementById("course-modal").classList.remove("flex");
+        document
+          .getElementById("schedule-form-container")
+          .classList.add("hidden");
+      }
+
+      // ===== SCHEDULE MANAGEMENT FUNCTIONS =====
+      let currentSchedules = [];
+      const dayNames = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+
+      async function loadCourseSchedules(courseId) {
+        try {
+          const { data, error } = await supabaseClient
+            .from("schedules")
+            .select("*")
+            .eq("course_id", courseId)
+            .order("day_of_week");
+
+          if (error) throw error;
+
+          currentSchedules = data || [];
+          displaySchedules();
+        } catch (error) {
+          console.error("Error loading schedules:", error);
+        }
+      }
+
+      function displaySchedules() {
+        const container = document.getElementById("schedules-list");
+        if (currentSchedules.length === 0) {
+          container.innerHTML =
+            '<p class="text-sm text-[#9c495e]">Chưa có lịch học nào</p>';
+          return;
+        }
+
+        container.innerHTML = currentSchedules
+          .map(
+            (schedule) => `
+          <div class="flex items-center justify-between bg-white p-3 rounded-lg border border-pink-100">
+            <div class="flex-1">
+              <div class="font-semibold text-sm">${schedule.title}</div>
+              <div class="text-xs text-[#9c495e]">
+                ${dayNames[schedule.day_of_week]} • ${schedule.start_time.slice(0, 5)} - ${schedule.end_time.slice(0, 5)} • ${schedule.location || ""} ${schedule.room_number || ""}
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="editSchedule('${schedule.id}')" class="px-3 py-1 bg-blue-50 text-blue-600 rounded text-xs font-bold hover:bg-blue-100">Sửa</button>
+              <button onclick="deleteSchedule('${schedule.id}')" class="px-3 py-1 bg-red-50 text-red-600 rounded text-xs font-bold hover:bg-red-100">Xóa</button>
+            </div>
+          </div>
+        `,
+          )
+          .join("");
+      }
+
+      function showAddScheduleForm() {
+        document.getElementById("schedule-id").value = "";
+        document.getElementById("schedule-title").value = "";
+        document.getElementById("schedule-day").value = "1";
+        document.getElementById("schedule-start").value = "";
+        document.getElementById("schedule-end").value = "";
+        document.getElementById("schedule-location").value = "";
+        document.getElementById("schedule-room").value = "";
+        document
+          .getElementById("schedule-form-container")
+          .classList.remove("hidden");
+      }
+
+      async function editSchedule(scheduleId) {
+        const schedule = currentSchedules.find((s) => s.id === scheduleId);
+        if (!schedule) return;
+
+        document.getElementById("schedule-id").value = schedule.id;
+        document.getElementById("schedule-title").value = schedule.title;
+        document.getElementById("schedule-day").value = schedule.day_of_week;
+        document.getElementById("schedule-start").value =
+          schedule.start_time.slice(0, 5);
+        document.getElementById("schedule-end").value = schedule.end_time.slice(
+          0,
+          5,
+        );
+        document.getElementById("schedule-location").value =
+          schedule.location || "";
+        document.getElementById("schedule-room").value =
+          schedule.room_number || "";
+        document
+          .getElementById("schedule-form-container")
+          .classList.remove("hidden");
+      }
+
+      async function saveSchedule() {
+        const courseId = document.getElementById("course-id").value;
+        if (!courseId) {
+          alert("Vui lòng lưu khóa học trước khi thêm lịch!");
+          return;
+        }
+
+        // Validate required fields
+        const title = document.getElementById("schedule-title").value;
+        const day = document.getElementById("schedule-day").value;
+        const startTime = document.getElementById("schedule-start").value;
+        const endTime = document.getElementById("schedule-end").value;
+
+        if (!title || !day || !startTime || !endTime) {
+          alert(
+            "Vui lòng điền đầy đủ thông tin bắt buộc (Tiêu đề, Thứ, Giờ bắt đầu, Giờ kết thúc)!",
+          );
+          return;
+        }
+
+        const scheduleId = document.getElementById("schedule-id").value;
+        const coachId = document.getElementById("course-coach").value;
+        const scheduleData = {
+          course_id: courseId,
+          coach_id: coachId || null,
+          title: title,
+          day_of_week: parseInt(day),
+          start_time: startTime + ":00",
+          end_time: endTime + ":00",
+          location: document.getElementById("schedule-location").value,
+          room_number: document.getElementById("schedule-room").value,
+          max_capacity: parseInt(
+            document.getElementById("course-max-students").value,
+          ),
+        };
+
+        try {
+          if (scheduleId) {
+            // Update existing
+            const { error } = await supabaseClient
+              .from("schedules")
+              .update(scheduleData)
+              .eq("id", scheduleId);
+            if (error) throw error;
+          } else {
+            // Insert new
+            const { error } = await supabaseClient
+              .from("schedules")
+              .insert([scheduleData]);
+            if (error) throw error;
+          }
+
+          alert("Đã lưu lịch học!");
+          cancelScheduleForm();
+          loadCourseSchedules(courseId);
+        } catch (error) {
+          console.error("Error saving schedule:", error);
+          alert("Lỗi: " + error.message);
+        }
+      }
+
+      async function deleteSchedule(scheduleId) {
+        if (!confirm("Bạn có chắc muốn xóa lịch học này?")) return;
+
+        try {
+          const { error } = await supabaseClient
+            .from("schedules")
+            .delete()
+            .eq("id", scheduleId);
+
+          if (error) throw error;
+
+          alert("Đã xóa lịch học!");
+          const courseId = document.getElementById("course-id").value;
+          loadCourseSchedules(courseId);
+        } catch (error) {
+          console.error("Error deleting schedule:", error);
+          alert("Lỗi: " + error.message);
+        }
+      }
+
+      function cancelScheduleForm() {
+        document
+          .getElementById("schedule-form-container")
+          .classList.add("hidden");
+      }
+
+      document
+        .getElementById("course-form")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const courseId = document.getElementById("course-id").value;
+          const courseData = {
+            course_name: document.getElementById("course-name").value,
+            price: parseFloat(document.getElementById("course-price").value),
+            description: document.getElementById("course-description").value,
+            duration_weeks: parseInt(
+              document.getElementById("course-duration").value,
+            ),
+            max_students: parseInt(
+              document.getElementById("course-max-students").value,
+            ),
+            level: document.getElementById("course-level").value,
+            image_url: document.getElementById("course-image").value || null,
+            coach_id: document.getElementById("course-coach").value || null,
+            is_active: document.getElementById("course-active").checked,
+          };
+
+          try {
+            let error;
+            if (courseId) {
+              // Update existing course
+              ({ error } = await supabaseClient
+                .from("courses")
+                .update(courseData)
+                .eq("id", courseId));
+            } else {
+              // Create new course
+              courseData.current_students = 0;
+              ({ error } = await supabaseClient
+                .from("courses")
+                .insert([courseData]));
+            }
+
+            if (error) throw error;
+
+            alert(
+              courseId
+                ? "Đã cập nhật khóa học thành công!"
+                : "Đã thêm khóa học thành công!",
+            );
+            closeCourseModal();
+            loadCourses();
+          } catch (error) {
+            console.error("Error saving course:", error);
+            alert("Đã xảy ra lỗi: " + error.message);
+          }
+        });
+
+      async function deleteCourse(id) {
+        if (
+          confirm(
+            "Bạn có chắc muốn xóa khóa học này?\n\nLưu ý: Nếu xóa khóa học, tất cả đăng ký và lịch học liên quan cũng sẽ bị xóa.",
+          )
+        ) {
+          try {
+            // Delete related schedules first
+            await supabaseClient.from("schedules").delete().eq("course_id", id);
+
+            // Delete related enrollments
+            await supabaseClient
+              .from("class_enrollments")
+              .delete()
+              .eq("course_id", id);
+
+            // Delete the course
+            const { error } = await supabaseClient
+              .from("courses")
+              .delete()
+              .eq("id", id);
+
+            if (error) throw error;
+            alert("Đã xóa khóa học thành công!");
+            loadCourses();
+          } catch (error) {
+            console.error("Error deleting course:", error);
+            alert("Đã xảy ra lỗi: " + error.message);
+          }
+        }
+      }
+
+      // Load initial data
+      updateDashboardRangeButtons();
+      loadDashboardData();
+    </script>
+  </body>
+</html>

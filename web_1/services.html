@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Dịch Vụ - GymHeart Fitness</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <!-- Material Symbols -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <!-- Google Fonts: Lexend -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800;900&amp;display=swap"
+      rel="stylesheet"
+    />
+    <script id="tailwind-config">
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: "#f42559",
+              "background-light": "#fcf8f9",
+            },
+            fontFamily: {
+              display: ["Lexend", "sans-serif"],
+            },
+            borderRadius: {
+              DEFAULT: "0.25rem",
+              lg: "0.5rem",
+              xl: "0.75rem",
+              full: "9999px",
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      body {
+        font-family: "Lexend", sans-serif;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      .material-symbols-outlined {
+        font-variation-settings:
+          "FILL" 0,
+          "wght" 400,
+          "GRAD" 0,
+          "opsz" 24;
+      }
+      .fill-heart {
+        font-variation-settings: "FILL" 1;
+      }
+      .nav-link.nav-link-active {
+        color: #f42559 !important;
+        font-weight: 700 !important;
+        border-color: #f42559 !important;
+      }
+
+      /* ====================== LUXURY DARK MODE ====================== */
+
+      *,
+      *::before,
+      *::after {
+        transition:
+          background-color var(--transition-speed) ease,
+          border-color var(--transition-speed) ease,
+          color var(--transition-speed) ease,
+          box-shadow var(--transition-speed) ease;
+      }
+
+      /* Toggle button */
+    </style>
+  </head>
+  <body class="bg-background-light text-[#1c0d11] min-h-screen">
+    <!-- Top Navigation Bar -->
+    <header
+      class="w-full border-b border-solid border-[#f4e7ea] bg-white/80 backdrop-blur-md sticky top-0 z-50"
+    >
+      <div
+        class="max-w-[1200px] mx-auto px-4 sm:px-10 py-3 flex items-center justify-between"
+      >
+        <div class="flex items-center gap-2">
+          <div class="size-8 text-primary">
+            <span
+              class="material-symbols-outlined text-3xl font-bold fill-heart"
+              >favorite</span
+            >
+          </div>
+          <h2
+            class="text-[#1c0d11] text-xl font-bold leading-tight tracking-tight"
+          >
+            GymHeart
+          </h2>
+        </div>
+        <nav class="hidden md:flex items-center gap-8">
+          <a
+            class="nav-link text-[#1c0d11] text-sm font-medium hover:text-primary transition-colors border-b-2 border-transparent pb-1"
+            href="index.html"
+            >Trang chủ</a
+          >
+          <a
+            class="nav-link text-[#1c0d11] text-sm font-medium hover:text-primary transition-colors border-b-2 border-transparent pb-1"
+            href="facilities.html"
+            >Cơ sở vật chất</a
+          >
+          <a
+            class="nav-link text-[#1c0d11] text-sm font-medium hover:text-primary transition-colors border-b-2 border-transparent pb-1"
+            href="coaches.html"
+            >HLV</a
+          >
+          <a
+            class="nav-link text-[#1c0d11] text-sm font-medium hover:text-primary transition-colors border-b-2 border-transparent pb-1"
+            href="services.html"
+            >Dịch vụ</a
+          >
+          <a
+            class="nav-link text-[#1c0d11] text-sm font-medium hover:text-primary transition-colors border-b-2 border-transparent pb-1"
+            href="index.html#community"
+            >Cộng đồng</a
+          >
+          <a
+            class="nav-link text-[#1c0d11] text-sm font-medium hover:text-primary transition-colors border-b-2 border-transparent pb-1"
+            href="index.html#contact"
+            >Liên hệ</a
+          >
+        </nav>
+        <div class="flex gap-3 items-center">
+          <button
+            onclick="window.location.href = 'auth.html'"
+            class="flex min-w-[100px] cursor-pointer items-center justify-center rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold tracking-wide hover:bg-opacity-90 transition-all"
+          >
+            Đăng Nhập
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Services Content -->
+    <section class="py-20 bg-white min-h-screen">
+      <div class="max-w-[1200px] mx-auto px-4 sm:px-10">
+        <!-- Part 1: Các khóa học -->
+        <div class="mb-16">
+          <div class="text-center mb-12">
+            <h2 class="text-4xl font-black text-[#1c0d11] mb-4">
+              Các Khóa Học
+            </h2>
+            <p class="text-[#9c495e] text-lg">
+              Chọn khóa học phù hợp với mục tiêu của bạn
+            </p>
+          </div>
+
+          <!-- Loading state -->
+          <div id="courses-loading" class="text-center py-12">
+            <div
+              class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"
+            ></div>
+            <p class="mt-4 text-[#9c495e]">Đang tải khóa học...</p>
+          </div>
+
+          <!-- Courses grid -->
+          <div
+            id="courses-grid"
+            class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+          >
+            <!-- Courses will be loaded here by JavaScript -->
+          </div>
+        </div>
+
+        <!-- Part 2: Đơn hàng của tôi -->
+        <div class="border-t border-[#f4e7ea] pt-16">
+          <div class="text-center mb-12">
+            <h2 class="text-4xl font-black text-[#1c0d11] mb-4">
+              Đơn Hàng Của Tôi
+            </h2>
+            <p class="text-[#9c495e] text-lg">
+              Theo dõi các khóa học bạn đã đăng ký
+            </p>
+          </div>
+
+          <!-- Not logged in state -->
+          <div
+            id="orders-not-logged-in"
+            class="hidden text-center py-12 bg-background-light rounded-xl"
+          >
+            <span class="material-symbols-outlined text-6xl text-primary mb-4"
+              >lock</span
+            >
+            <h3 class="text-xl font-bold mb-2">Vui lòng đăng nhập</h3>
+            <p class="text-[#9c495e] mb-6">
+              Đăng nhập để xem các khóa học bạn đã đăng ký
+            </p>
+            <button
+              onclick="window.location.href = 'auth.html'"
+              class="px-8 py-3 bg-primary text-white rounded-lg font-bold hover:bg-opacity-90 transition-all"
+            >
+              Đăng nhập ngay
+            </button>
+          </div>
+
+          <!-- Logged in - Loading state -->
+          <div id="orders-loading" class="hidden text-center py-12">
+            <div
+              class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"
+            ></div>
+            <p class="mt-4 text-[#9c495e]">Đang tải đơn hàng...</p>
+          </div>
+
+          <!-- Logged in - Orders list -->
+          <div id="orders-list" class="hidden space-y-6">
+            <!-- Orders will be loaded here by JavaScript -->
+          </div>
+
+          <!-- No orders state -->
+          <div
+            id="orders-empty"
+            class="hidden text-center py-12 bg-background-light rounded-xl"
+          >
+            <span class="material-symbols-outlined text-6xl text-[#9c495e] mb-4"
+              >shopping_bag</span
+            >
+            <h3 class="text-xl font-bold mb-2">Chưa có đơn hàng nào</h3>
+            <p class="text-[#9c495e] mb-6">
+              Hãy đăng ký khóa học để bắt đầu hành trình của bạn!
+            </p>
+            <a
+              href="#courses-grid"
+              class="inline-block px-8 py-3 bg-primary text-white rounded-lg font-bold hover:bg-opacity-90 transition-all"
+            >
+              Xem khóa học
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Course payment modal -->
+    <div
+      id="course-payment-modal"
+      class="hidden fixed inset-0 z-[100] bg-black/50 px-4 py-6 overflow-y-auto"
+      onclick="if (event.target === this) closeCoursePaymentModal()"
+    >
+      <div class="bg-white max-w-xl mx-auto rounded-xl shadow-2xl overflow-hidden">
+        <div class="flex items-center justify-between border-b border-[#f4e7ea] px-6 py-4">
+          <div>
+            <h3 class="text-xl font-black text-[#1c0d11]">
+              Thanh toán khóa học
+            </h3>
+            <p class="text-sm text-[#9c495e]">
+              Oasis Sapphire Testnet qua MetaMask
+            </p>
+          </div>
+          <button
+            type="button"
+            onclick="closeCoursePaymentModal()"
+            class="size-10 inline-flex items-center justify-center rounded-lg hover:bg-background-light transition-all"
+            aria-label="Đóng"
+          >
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div class="p-6 space-y-5">
+          <div class="flex gap-4">
+            <div class="w-28 h-28 rounded-lg overflow-hidden bg-background-light flex-shrink-0">
+              <img
+                id="payment-course-image"
+                src=""
+                alt=""
+                class="w-full h-full object-cover"
+              />
+            </div>
+            <div class="flex-1 min-w-0">
+              <h4
+                id="payment-course-title"
+                class="font-bold text-lg text-[#1c0d11] mb-2"
+              ></h4>
+              <p id="payment-course-meta" class="text-sm text-[#9c495e]"></p>
+              <p
+                id="payment-course-price"
+                class="text-2xl font-black text-primary mt-3"
+              ></p>
+            </div>
+          </div>
+
+          <div class="bg-background-light rounded-lg p-4 grid sm:grid-cols-2 gap-4">
+            <div>
+              <p class="text-xs text-[#9c495e] mb-1">Số token thanh toán</p>
+              <p id="payment-token-amount" class="font-bold text-[#1c0d11]"></p>
+            </div>
+            <div>
+              <p class="text-xs text-[#9c495e] mb-1">Mạng</p>
+              <p class="font-bold text-[#1c0d11]">Oasis Sapphire Testnet</p>
+            </div>
+            <div class="sm:col-span-2">
+              <p class="text-xs text-[#9c495e] mb-1">Smart Contract</p>
+              <p
+                id="payment-contract-address"
+                class="font-mono text-xs text-[#1c0d11] break-all"
+              ></p>
+            </div>
+          </div>
+
+          <div
+            id="web3-payment-status"
+            class="hidden rounded-lg px-4 py-3 text-sm font-semibold"
+          ></div>
+
+          <button
+            id="web3-pay-button"
+            type="button"
+            onclick="paySelectedCourseWithMetaMask()"
+            class="w-full h-12 bg-primary text-white rounded-lg font-bold hover:bg-opacity-90 transition-all flex items-center justify-center gap-2"
+          >
+            <span class="material-symbols-outlined">account_balance_wallet</span>
+            <span id="web3-pay-button-text">Thanh toán Token (MetaMask)</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-[#2d161b] text-white py-8">
+      <div class="max-w-[1200px] mx-auto px-4 sm:px-10 text-center">
+        <p class="text-pink-300">
+          © 2024 GymHeart Fitness. All rights reserved.
+        </p>
+      </div>
+    </footer>
+
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6/dist/ethers.umd.min.js"></script>
+    <script src="js/web3-contract-config.js"></script>
+    <script src="js/web3-smart-payment.js"></script>
+    <script>
+      // Helper functions
+      function formatCurrency(amount) {
+        return new Intl.NumberFormat("vi-VN", {
+          style: "currency",
+          currency: "VND",
+        }).format(amount);
+      }
+
+      function formatDate(dateString) {
+        return new Date(dateString).toLocaleDateString("vi-VN");
+      }
+
+      function formatTxHash(txHash) {
+        if (!txHash) return "";
+        return `${txHash.slice(0, 10)}...${txHash.slice(-8)}`;
+      }
+
+      function getLevelBadge(level) {
+        const badges = {
+          beginner:
+            '<span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-semibold">Mới bắt đầu</span>',
+          intermediate:
+            '<span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full font-semibold">Trung cấp</span>',
+          advanced:
+            '<span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full font-semibold">Nâng cao</span>',
+          all_levels:
+            '<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-semibold">Mọi cấp độ</span>',
+        };
+        return badges[level] || badges.all_levels;
+      }
+
+      function getStatusBadge(status) {
+        const badges = {
+          active:
+            '<span class="bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full font-semibold">Đang học</span>',
+          completed:
+            '<span class="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-semibold">Hoàn thành</span>',
+          pending:
+            '<span class="bg-yellow-100 text-yellow-800 text-xs px-3 py-1 rounded-full font-semibold">Chờ xử lý</span>',
+          cancelled:
+            '<span class="bg-red-100 text-red-800 text-xs px-3 py-1 rounded-full font-semibold">Đã hủy</span>',
+        };
+        return badges[status] || badges.pending;
+      }
+
+      // Load courses from database
+      async function loadCourses() {
+        const coursesLoading = document.getElementById("courses-loading");
+        const coursesGrid = document.getElementById("courses-grid");
+
+        try {
+          const { data: courses, error } = await supabaseClient
+            .from("courses")
+            .select("*")
+            .eq("is_active", true)
+            .order("course_name");
+
+          if (error) throw error;
+
+          if (courses && courses.length > 0) {
+            window.gymheartCoursesById = Object.fromEntries(
+              courses.map((course) => [course.id, course]),
+            );
+
+            coursesGrid.innerHTML = courses
+              .map(
+                (course) => `
+              <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all">
+                <div class="h-48 overflow-hidden">
+                  <img src="${course.image_url || "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800"}" 
+                       alt="${course.course_name}" 
+                       class="w-full h-full object-cover">
+                </div>
+                <div class="p-6">
+                  <div class="flex items-start justify-between mb-3">
+                    <h3 class="text-xl font-bold flex-1">${course.course_name}</h3>
+                    ${getLevelBadge(course.level)}
+                  </div>
+                  <p class="text-[#9c495e] text-sm mb-4 line-clamp-2">
+                    ${course.description || ""}
+                  </p>
+                  <div class="space-y-2 mb-4">
+                    <div class="flex items-center gap-2 text-sm text-[#9c495e]">
+                      <span class="material-symbols-outlined text-sm">schedule</span>
+                      <span>${course.duration_weeks} tuần</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-sm text-[#9c495e]">
+                      <span class="material-symbols-outlined text-sm">people</span>
+                      <span>${course.current_students}/${course.max_students} học viên</span>
+                    </div>
+                  </div>
+                  <div class="flex items-center justify-between pt-4 border-t border-[#f4e7ea]">
+                    <div class="text-primary text-2xl font-black">
+                      ${formatCurrency(course.price)}
+                    </div>
+                    <button
+                      onclick="openCoursePaymentModal('${course.id}')"
+                      class="px-6 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-opacity-90 transition-all"
+                    >
+                      Đăng ký
+                    </button>
+                  </div>
+                </div>
+              </div>
+            `,
+              )
+              .join("");
+
+            coursesLoading.classList.add("hidden");
+            coursesGrid.classList.remove("hidden");
+          } else {
+            coursesLoading.innerHTML =
+              '<p class="text-[#9c495e]">Chưa có khóa học nào</p>';
+          }
+        } catch (error) {
+          console.error("Error loading courses:", error);
+          document.getElementById("courses-loading").innerHTML =
+            '<p class="text-red-500">Lỗi tải khóa học. Vui lòng thử lại sau.</p>';
+        }
+      }
+
+      // Load user orders
+      async function loadOrders() {
+        ["orders-not-logged-in", "orders-loading", "orders-list", "orders-empty"].forEach(
+          (id) => document.getElementById(id)?.classList.add("hidden"),
+        );
+
+        const userStr = localStorage.getItem("gymheart_user");
+
+        if (!userStr) {
+          // Not logged in
+          document
+            .getElementById("orders-not-logged-in")
+            .classList.remove("hidden");
+          return;
+        }
+
+        const user = JSON.parse(userStr);
+        document.getElementById("orders-loading").classList.remove("hidden");
+
+        try {
+          const { data: enrollments, error } = await supabaseClient
+            .from("class_enrollments")
+            .select(
+              `
+              *,
+              courses (
+                course_name,
+                description,
+                image_url,
+                duration_weeks,
+                level
+              )
+            `,
+            )
+            .eq("user_id", user.id)
+            .order("enrollment_date", { ascending: false });
+
+          if (error) throw error;
+
+          document.getElementById("orders-loading").classList.add("hidden");
+
+          if (enrollments && enrollments.length > 0) {
+            const ordersList = document.getElementById("orders-list");
+            ordersList.innerHTML = enrollments
+              .map(
+                (enrollment) => `
+              <div class="bg-background-light rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
+                <div class="flex flex-col md:flex-row gap-6">
+                  <!-- Course Image -->
+                  <div class="w-full md:w-48 h-32 rounded-lg overflow-hidden flex-shrink-0">
+                    <img src="${enrollment.courses.image_url || "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400"}" 
+                         alt="${enrollment.courses.course_name}"
+                         class="w-full h-full object-cover">
+                  </div>
+                  
+                  <!-- Order Info -->
+                  <div class="flex-1">
+                    <div class="flex items-start justify-between mb-3">
+                      <div>
+                        <h3 class="text-xl font-bold mb-1">${enrollment.courses.course_name}</h3>
+                        <p class="text-sm text-[#9c495e]">${enrollment.courses.description || ""}</p>
+                      </div>
+                      ${getStatusBadge(enrollment.status)}
+                    </div>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                      <div>
+                        <p class="text-xs text-[#9c495e] mb-1">Ngày đăng ký</p>
+                        <p class="font-semibold text-sm">${formatDate(enrollment.enrollment_date)}</p>
+                      </div>
+                      <div>
+                        <p class="text-xs text-[#9c495e] mb-1">Thời lượng</p>
+                        <p class="font-semibold text-sm">${enrollment.courses.duration_weeks} tuần</p>
+                      </div>
+                      <div>
+                        <p class="text-xs text-[#9c495e] mb-1">Tiến độ</p>
+                        <div class="flex items-center gap-2">
+                          <div class="flex-1 bg-gray-200 rounded-full h-2">
+                            <div class="bg-primary h-2 rounded-full" style="width: ${enrollment.progress_percentage}%"></div>
+                          </div>
+                          <span class="text-sm font-semibold">${enrollment.progress_percentage}%</span>
+                        </div>
+                      </div>
+                      <div>
+                        <p class="text-xs text-[#9c495e] mb-1">Thanh toán</p>
+                        <p class="font-semibold text-sm text-primary">${formatCurrency(enrollment.payment_amount)}</p>
+                        ${
+                          enrollment.tx_hash
+                            ? `<p class="font-mono text-xs text-[#9c495e] mt-1">Tx: ${formatTxHash(enrollment.tx_hash)}</p>`
+                            : ""
+                        }
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `,
+              )
+              .join("");
+
+            ordersList.classList.remove("hidden");
+          } else {
+            document.getElementById("orders-empty").classList.remove("hidden");
+          }
+        } catch (error) {
+          console.error("Error loading orders:", error);
+          document.getElementById("orders-loading").innerHTML =
+            '<p class="text-red-500">Lỗi tải đơn hàng. Vui lòng thử lại sau.</p>';
+        }
+      }
+
+      function setActiveNavItem() {
+        const navLinks = document.querySelectorAll("header nav a.nav-link");
+        const currentPage = (
+          window.location.pathname.split("/").pop() || "services.html"
+        ).toLowerCase();
+
+        navLinks.forEach((link) => {
+          link.classList.remove("nav-link-active");
+          const href = (link.getAttribute("href") || "").toLowerCase();
+          if (href === currentPage) {
+            link.classList.add("nav-link-active");
+          }
+        });
+      }
+
+      // Initialize when page loads
+      document.addEventListener("DOMContentLoaded", () => {
+        setActiveNavItem();
+        loadCourses();
+        loadOrders();
+      });
+    </script>
+  </body>
+</html>

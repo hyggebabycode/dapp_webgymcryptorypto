@@ -1,0 +1,2312 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Coach Dashboard - GymHeart</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script id="tailwind-config">
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: "#f42559",
+              "background-light": "#f8f5f6",
+            },
+            fontFamily: {
+              display: ["Lexend"],
+            },
+            borderRadius: {
+              DEFAULT: "0.25rem",
+              lg: "0.5rem",
+              xl: "0.75rem",
+              full: "9999px",
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      body {
+        font-family: "Lexend", sans-serif;
+      }
+      .sidebar-active {
+        @apply bg-pink-50 text-primary border-r-4 border-primary;
+      }
+      .material-symbols-outlined {
+        font-variation-settings:
+          "FILL" 0,
+          "wght" 400,
+          "GRAD" 0,
+          "opsz" 24;
+      }
+      .fill-heart {
+        font-variation-settings: "FILL" 1;
+      }
+    </style>
+  </head>
+  <body class="bg-background-light text-[#1c0d11] antialiased">
+    <div class="flex h-screen overflow-hidden">
+      <!-- Sidebar -->
+      <aside
+        class="w-64 flex-shrink-0 bg-white border-r border-[#e8ced5] flex flex-col"
+      >
+        <div class="p-6 flex items-center gap-2">
+          <span
+            class="material-symbols-outlined text-primary text-3xl fill-heart"
+            >favorite</span
+          >
+          <h2 class="text-xl font-black tracking-tight text-primary">
+            PT LOVE
+          </h2>
+        </div>
+        <div class="px-4 flex flex-col gap-1 grow">
+          <div
+            class="flex items-center gap-3 px-4 py-3 sidebar-active rounded-lg cursor-pointer"
+            onclick="showSection('dashboard')"
+          >
+            <span class="material-symbols-outlined">dashboard</span>
+            <p class="text-sm font-bold">Bảng điều khiển</p>
+          </div>
+          <div
+            class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-pink-50 transition-colors cursor-pointer"
+            onclick="showSection('students')"
+          >
+            <span class="material-symbols-outlined">group</span>
+            <p class="text-sm font-medium">Học viên</p>
+          </div>
+          <div
+            class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-pink-50 transition-colors cursor-pointer"
+            onclick="showSection('schedule')"
+          >
+            <span class="material-symbols-outlined">calendar_today</span>
+            <p class="text-sm font-medium">Lịch dạy</p>
+          </div>
+          <div
+            class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-pink-50 transition-colors cursor-pointer"
+            onclick="showSection('lessons')"
+          >
+            <span class="material-symbols-outlined">school</span>
+            <p class="text-sm font-medium">Khóa học của tôi</p>
+          </div>
+          <div
+            class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-pink-50 transition-colors cursor-pointer"
+            onclick="showSection('profile')"
+          >
+            <span class="material-symbols-outlined">person</span>
+            <p class="text-sm font-medium">Hồ sơ cá nhân</p>
+          </div>
+          <div
+            class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-pink-50 transition-colors cursor-pointer relative"
+          >
+            <span class="material-symbols-outlined">volunteer_activism</span>
+            <p class="text-sm font-medium">Tư vấn mới</p>
+            <span
+              class="absolute right-3 top-3 flex h-2 w-2 rounded-full bg-primary"
+            ></span>
+          </div>
+        </div>
+        <div class="p-4 border-t border-[#e8ced5]">
+          <div class="flex items-center gap-3 mb-4">
+            <div
+              id="coach-avatar"
+              class="size-10 rounded-full bg-cover bg-center border-2 border-primary/20"
+            ></div>
+            <div class="flex flex-col flex-1">
+              <p id="coach-name" class="text-xs font-bold">Coach</p>
+              <p class="text-[10px] text-[#9c495e]">Huấn luyện viên Senior</p>
+            </div>
+          </div>
+          <button
+            onclick="logout()"
+            class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-all text-sm font-bold"
+          >
+            <span class="material-symbols-outlined text-sm">logout</span>
+            Đăng xuất
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="flex-1 overflow-y-auto bg-background-light p-8">
+        <!-- Dashboard Section -->
+        <div id="section-dashboard" class="section-content">
+          <div
+            class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8"
+          >
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span
+                  class="material-symbols-outlined text-primary fill-heart text-2xl"
+                  >dashboard</span
+                >
+                <h1 class="text-3xl font-black text-[#1c0d11] tracking-tight">
+                  Dashboard
+                </h1>
+              </div>
+              <p class="text-[#9c495e] text-sm italic">
+                Tổng quan hoạt động huấn luyện của bạn
+              </p>
+            </div>
+          </div>
+
+          <!-- Stats -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div
+              class="bg-white p-6 rounded-xl border border-[#e8ced5] shadow-sm"
+            >
+              <div class="flex items-center justify-between mb-4">
+                <span class="material-symbols-outlined text-primary text-3xl"
+                  >group</span
+                >
+              </div>
+              <h3 class="text-2xl font-black" id="stat-my-students">0</h3>
+              <p class="text-sm text-[#9c495e]">Học viên của tôi</p>
+            </div>
+            <div
+              class="bg-white p-6 rounded-xl border border-[#e8ced5] shadow-sm"
+            >
+              <div class="flex items-center justify-between mb-4">
+                <span class="material-symbols-outlined text-primary text-3xl"
+                  >calendar_month</span
+                >
+              </div>
+              <h3 class="text-2xl font-black" id="stat-classes-week">0</h3>
+              <p class="text-sm text-[#9c495e]">Lớp tuần này</p>
+            </div>
+            <div
+              class="bg-white p-6 rounded-xl border border-[#e8ced5] shadow-sm"
+            >
+              <div class="flex items-center justify-between mb-4">
+                <span class="material-symbols-outlined text-primary text-3xl"
+                  >exercise</span
+                >
+              </div>
+              <h3 class="text-2xl font-black" id="stat-lesson-plans">0</h3>
+              <p class="text-sm text-[#9c495e]">Giáo án</p>
+            </div>
+            <div
+              class="bg-white p-6 rounded-xl border border-[#e8ced5] shadow-sm"
+            >
+              <div class="flex items-center justify-between mb-4">
+                <span class="material-symbols-outlined text-primary text-3xl"
+                  >star</span
+                >
+              </div>
+              <h3 class="text-2xl font-black">4.9</h3>
+              <p class="text-sm text-[#9c495e]">Đánh giá TB</p>
+            </div>
+          </div>
+
+          <!-- Today's Schedule -->
+          <div
+            class="bg-white p-6 rounded-xl border border-[#e8ced5] shadow-sm mb-6"
+          >
+            <h3 class="text-xl font-bold mb-4">Lịch hôm nay</h3>
+            <div id="today-schedule" class="space-y-3">
+              <!-- Will be populated -->
+            </div>
+          </div>
+
+          <!-- My Classes -->
+          <div
+            class="bg-white p-6 rounded-xl border border-[#e8ced5] shadow-sm"
+          >
+            <h3 class="text-xl font-bold mb-4">Khóa học của tôi</h3>
+            <div
+              id="my-courses-list"
+              class="grid grid-cols-1 md:grid-cols-2 gap-4"
+            >
+              <!-- Will be populated -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Students Section -->
+        <div id="section-students" class="section-content hidden">
+          <div class="flex justify-between items-center mb-8">
+            <div>
+              <h1 class="text-3xl font-black text-[#1c0d11] mb-2">
+                Học Viên Của Tôi
+              </h1>
+              <p class="text-[#9c495e] text-sm">
+                Quản lý và theo dõi tiến độ học viên
+              </p>
+            </div>
+            <button
+              onclick="showAddStudentModal()"
+              class="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg font-bold hover:bg-opacity-90 transition-all"
+            >
+              <span class="material-symbols-outlined">person_add</span>
+              Thêm học viên
+            </button>
+          </div>
+
+          <!-- Search Box -->
+          <div
+            class="bg-white rounded-xl border border-pink-100 shadow-sm p-4 mb-6"
+          >
+            <div class="relative">
+              <span
+                class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-pink-400"
+                >search</span
+              >
+              <input
+                type="text"
+                id="students-search"
+                placeholder="Tìm kiếm học viên theo tên hoặc email..."
+                class="w-full pl-10 pr-4 py-3 border border-pink-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                onkeyup="filterStudents()"
+              />
+            </div>
+          </div>
+
+          <div
+            id="students-grid"
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
+            <!-- Will be populated -->
+          </div>
+        </div>
+
+        <!-- Schedule Section -->
+        <div id="section-schedule" class="section-content hidden">
+          <div class="mb-8">
+            <h1 class="text-3xl font-black text-[#1c0d11] mb-2">Lịch Dạy</h1>
+            <p class="text-[#9c495e] text-sm">
+              Xem và quản lý lịch dạy của bạn
+            </p>
+          </div>
+
+          <div class="flex items-center gap-4 mb-6">
+            <button
+              class="px-6 py-2 bg-primary text-white text-sm font-bold rounded-lg shadow-md"
+            >
+              Tuần
+            </button>
+            <button
+              class="px-6 py-2 text-[#9c495e] text-sm font-bold rounded-lg hover:bg-pink-50 transition-all"
+            >
+              Tháng
+            </button>
+          </div>
+
+          <div
+            class="bg-white p-6 rounded-xl border border-[#e8ced5] shadow-sm"
+          >
+            <div id="weekly-schedule" class="space-y-4">
+              <!-- Will be populated -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Lesson Plans Section -->
+        <div id="section-lessons" class="section-content hidden">
+          <div class="mb-8 flex justify-between items-start">
+            <div>
+              <h1 class="text-3xl font-black text-[#1c0d11] mb-2">
+                Khóa Học Của Tôi
+              </h1>
+              <p class="text-[#9c495e] text-sm">
+                Quản lý khóa học và lộ trình học
+              </p>
+            </div>
+            <button
+              onclick="showCreateCourseModal()"
+              class="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg font-bold hover:bg-opacity-90 transition-all"
+            >
+              <span class="material-symbols-outlined">add</span>
+              Tạo khóa học mới
+            </button>
+          </div>
+
+          <div
+            id="my-courses-section"
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
+            <!-- Will be populated with courses -->
+          </div>
+        </div>
+
+        <!-- Profile Section -->
+        <div id="section-profile" class="section-content hidden">
+          <div class="mb-8">
+            <h1 class="text-3xl font-black text-[#1c0d11] mb-2">
+              Hồ Sơ Cá Nhân
+            </h1>
+            <p class="text-[#9c495e] text-sm">
+              Cập nhật thông tin cá nhân của bạn
+            </p>
+          </div>
+
+          <div
+            class="bg-white p-8 rounded-xl border border-[#e8ced5] shadow-sm max-w-3xl"
+          >
+            <form id="profile-form" class="space-y-6">
+              <!-- Avatar Section -->
+              <div
+                class="flex items-center gap-6 pb-6 border-b border-pink-100"
+              >
+                <div
+                  id="profile-avatar-preview"
+                  class="size-24 rounded-full bg-cover bg-center border-4 border-primary/20"
+                ></div>
+                <div class="flex-1">
+                  <label class="block text-sm font-bold text-[#1c0d11] mb-2"
+                    >URL ảnh đại diện</label
+                  >
+                  <input
+                    type="url"
+                    id="profile-avatar"
+                    class="w-full px-4 py-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-primary/20"
+                    placeholder="https://example.com/avatar.jpg"
+                  />
+                  <p class="text-xs text-[#9c495e] mt-1">
+                    Nhập URL ảnh từ internet
+                  </p>
+                </div>
+              </div>
+
+              <!-- Personal Info -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-bold text-[#1c0d11] mb-2"
+                    >Họ và tên *</label
+                  >
+                  <input
+                    type="text"
+                    id="profile-name"
+                    required
+                    class="w-full px-4 py-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-bold text-[#1c0d11] mb-2"
+                    >Ngày sinh</label
+                  >
+                  <input
+                    type="date"
+                    id="profile-dob"
+                    class="w-full px-4 py-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-bold text-[#1c0d11] mb-2"
+                    >Email</label
+                  >
+                  <input
+                    type="email"
+                    id="profile-email"
+                    disabled
+                    class="w-full px-4 py-2 border border-pink-200 rounded-lg bg-gray-50 text-gray-500"
+                  />
+                  <p class="text-xs text-[#9c495e] mt-1">
+                    Email không thể thay đổi
+                  </p>
+                </div>
+                <div>
+                  <label class="block text-sm font-bold text-[#1c0d11] mb-2"
+                    >Số điện thoại</label
+                  >
+                  <input
+                    type="tel"
+                    id="profile-phone"
+                    class="w-full px-4 py-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-primary/20"
+                    placeholder="0123456789"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm font-bold text-[#1c0d11] mb-2"
+                  >Chuyên môn</label
+                >
+                <textarea
+                  id="profile-specialization"
+                  rows="3"
+                  class="w-full px-4 py-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-primary/20"
+                  placeholder="Mô tả chuyên môn, kinh nghiệm của bạn..."
+                ></textarea>
+              </div>
+
+              <div class="flex gap-3 pt-4">
+                <button
+                  type="submit"
+                  class="flex-1 px-6 py-3 bg-primary text-white rounded-lg font-bold hover:bg-opacity-90 transition-all"
+                >
+                  <span
+                    class="material-symbols-outlined text-sm align-middle mr-1"
+                    >save</span
+                  >
+                  Lưu thay đổi
+                </button>
+                <button
+                  type="button"
+                  onclick="loadProfileData()"
+                  class="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-bold hover:bg-gray-200 transition-all"
+                >
+                  Hủy
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Course Detail Modal -->
+    <div
+      id="course-detail-modal"
+      class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50"
+      onclick="closeCourseDetailModal()"
+    >
+      <div
+        class="bg-white rounded-xl shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+        onclick="event.stopPropagation()"
+      >
+        <div
+          class="sticky top-0 bg-white border-b border-pink-100 px-6 py-4 flex items-center justify-between z-10"
+        >
+          <h2
+            id="course-detail-title"
+            class="text-2xl font-black text-[#1c0d11]"
+          ></h2>
+          <button
+            onclick="closeCourseDetailModal()"
+            class="p-2 hover:bg-pink-50 rounded-full transition-colors"
+          >
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex border-b border-pink-100 px-6">
+          <button
+            id="tab-info"
+            onclick="switchCourseTab('info')"
+            class="px-6 py-3 font-bold text-sm border-b-2 border-primary text-primary"
+          >
+            Thông tin
+          </button>
+          <button
+            id="tab-roadmap"
+            onclick="switchCourseTab('roadmap')"
+            class="px-6 py-3 font-bold text-sm border-b-2 border-transparent text-[#9c495e] hover:text-primary"
+          >
+            Lộ trình học
+          </button>
+          <button
+            id="tab-students"
+            onclick="switchCourseTab('students')"
+            class="px-6 py-3 font-bold text-sm border-b-2 border-transparent text-[#9c495e] hover:text-primary"
+          >
+            Học viên
+          </button>
+        </div>
+
+        <div class="p-6">
+          <!-- Course Info Tab -->
+          <div id="tab-content-info" class="tab-content">
+            <form id="edit-course-form" class="space-y-4">
+              <input type="hidden" id="edit-course-id" />
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-bold text-[#1c0d11] mb-2"
+                    >Tên khóa học</label
+                  >
+                  <input
+                    type="text"
+                    id="edit-course-name"
+                    required
+                    class="w-full px-4 py-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-bold text-[#1c0d11] mb-2"
+                    >Giá (VNĐ)</label
+                  >
+                  <input
+                    type="number"
+                    id="edit-course-price"
+                    required
+                    class="w-full px-4 py-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm font-bold text-[#1c0d11] mb-2"
+                  >Mô tả</label
+                >
+                <textarea
+                  id="edit-course-description"
+                  rows="3"
+                  class="w-full px-4 py-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-primary/20"
+                ></textarea>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label class="block text-sm font-bold text-[#1c0d11] mb-2"
+                    >Thời lượng (tuần)</label
+                  >
+                  <input
+                    type="number"
+                    id="edit-course-duration"
+                    required
+                    class="w-full px-4 py-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-bold text-[#1c0d11] mb-2"
+                    >Số lượng tối đa</label
+                  >
+                  <input
+                    type="number"
+                    id="edit-course-max"
+                    required
+                    class="w-full px-4 py-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-bold text-[#1c0d11] mb-2"
+                    >Cấp độ</label
+                  >
+                  <select
+                    id="edit-course-level"
+                    class="w-full px-4 py-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-primary/20"
+                  >
+                    <option value="beginner">Mới bắt đầu</option>
+                    <option value="intermediate">Trung cấp</option>
+                    <option value="advanced">Nâng cao</option>
+                    <option value="all_levels">Tất cả</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="flex gap-3 pt-4">
+                <button
+                  type="submit"
+                  class="flex-1 px-6 py-3 bg-primary text-white rounded-lg font-bold hover:bg-opacity-90 transition-all"
+                >
+                  Lưu thay đổi
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Roadmap Tab -->
+          <div id="tab-content-roadmap" class="tab-content hidden">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-lg font-bold">Lộ trình học tập</h3>
+              <button
+                onclick="showAddLessonForm()"
+                class="px-4 py-2 bg-green-50 text-green-600 rounded-lg text-sm font-bold hover:bg-green-100 flex items-center gap-2"
+              >
+                <span class="material-symbols-outlined text-sm">add</span>
+                Thêm buổi học
+              </button>
+            </div>
+
+            <!-- Add/Edit Lesson Form -->
+            <div
+              id="lesson-form-container"
+              class="hidden mb-6 p-4 bg-pink-50 rounded-lg"
+            >
+              <h4 class="font-bold mb-3">Thêm buổi học</h4>
+              <form id="lesson-form" class="space-y-3">
+                <input type="hidden" id="lesson-id" />
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-xs font-bold text-[#1c0d11] mb-1"
+                      >Buổi số *</label
+                    >
+                    <input
+                      type="number"
+                      id="lesson-order"
+                      min="1"
+                      required
+                      class="w-full px-3 py-2 border border-pink-200 rounded-lg text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-bold text-[#1c0d11] mb-1"
+                      >Tiêu đề *</label
+                    >
+                    <input
+                      type="text"
+                      id="lesson-title"
+                      required
+                      class="w-full px-3 py-2 border border-pink-200 rounded-lg text-sm"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-[#1c0d11] mb-1"
+                    >Nội dung *</label
+                  >
+                  <textarea
+                    id="lesson-content"
+                    rows="3"
+                    required
+                    class="w-full px-3 py-2 border border-pink-200 rounded-lg text-sm"
+                    placeholder="Mô tả nội dung buổi học..."
+                  ></textarea>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-[#1c0d11] mb-1"
+                    >Mục tiêu</label
+                  >
+                  <input
+                    type="text"
+                    id="lesson-objectives"
+                    class="w-full px-3 py-2 border border-pink-200 rounded-lg text-sm"
+                    placeholder="Ví dụ: Nắm vững kỹ thuật cơ bản..."
+                  />
+                </div>
+                <div class="flex gap-2">
+                  <button
+                    type="submit"
+                    class="flex-1 px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-opacity-90"
+                  >
+                    Lưu buổi học
+                  </button>
+                  <button
+                    type="button"
+                    onclick="cancelLessonForm()"
+                    class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-bold hover:bg-gray-200"
+                  >
+                    Hủy
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Lessons List -->
+            <div id="roadmap-lessons-list" class="space-y-3">
+              <!-- Will be populated -->
+            </div>
+          </div>
+
+          <!-- Students Tab -->
+          <div id="tab-content-students" class="tab-content hidden">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-lg font-bold">Danh sách học viên</h3>
+              <div class="text-sm text-gray-600">
+                <span class="font-bold text-primary" id="students-count"
+                  >0</span
+                >
+                học viên
+              </div>
+            </div>
+
+            <!-- Students List -->
+            <div id="course-students-list" class="space-y-3">
+              <!-- Will be populated -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="students-empty-state" class="hidden text-center py-12">
+              <span
+                class="material-symbols-outlined text-6xl text-gray-300 mb-4"
+                >school</span
+              >
+              <p class="text-gray-500 font-medium">
+                Chưa có học viên nào đăng ký khóa học này
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Student Detail Modal -->
+    <div
+      id="student-detail-modal"
+      class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50"
+      onclick="closeStudentDetailModal()"
+    >
+      <div
+        class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+        onclick="event.stopPropagation()"
+      >
+        <div
+          class="sticky top-0 bg-white border-b border-pink-100 px-6 py-4 flex items-center justify-between z-10"
+        >
+          <h2 class="text-2xl font-black text-[#1c0d11]">Thông tin học viên</h2>
+          <button
+            onclick="closeStudentDetailModal()"
+            class="p-2 hover:bg-pink-50 rounded-full transition-colors"
+          >
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div class="p-6">
+          <!-- Student Info -->
+          <div class="flex items-center gap-4 mb-6 p-4 bg-pink-50 rounded-lg">
+            <div
+              id="student-detail-avatar"
+              class="size-20 rounded-full bg-cover bg-center border-4 border-primary/20"
+            ></div>
+            <div class="flex-1">
+              <h3
+                id="student-detail-name"
+                class="text-xl font-bold text-[#1c0d11] mb-1"
+              ></h3>
+              <p
+                id="student-detail-email"
+                class="text-sm text-[#9c495e] mb-1"
+              ></p>
+              <p id="student-detail-phone" class="text-sm text-[#9c495e]"></p>
+            </div>
+          </div>
+
+          <!-- Personal Info -->
+          <div class="mb-6">
+            <h4 class="font-bold text-[#1c0d11] mb-3 flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary">person</span>
+              Thông tin cá nhân
+            </h4>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="text-xs font-semibold text-[#9c495e] mb-1 block"
+                  >Ngày sinh</label
+                >
+                <p
+                  id="student-detail-dob"
+                  class="text-sm font-medium p-2 bg-gray-50 rounded"
+                >
+                  -
+                </p>
+              </div>
+              <div>
+                <label class="text-xs font-semibold text-[#9c495e] mb-1 block"
+                  >Giới tính</label
+                >
+                <p
+                  id="student-detail-gender"
+                  class="text-sm font-medium p-2 bg-gray-50 rounded"
+                >
+                  -
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Course Info -->
+          <div class="mb-6">
+            <h4 class="font-bold text-[#1c0d11] mb-3 flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary">school</span>
+              Thông tin khóa học
+            </h4>
+            <div class="space-y-3">
+              <div>
+                <label class="text-xs font-semibold text-[#9c495e] mb-1 block"
+                  >Khóa học</label
+                >
+                <p
+                  id="student-detail-course"
+                  class="text-sm font-medium p-2 bg-gray-50 rounded"
+                >
+                  -
+                </p>
+              </div>
+              <div>
+                <label class="text-xs font-semibold text-[#9c495e] mb-1 block"
+                  >Ngày đăng ký</label
+                >
+                <p
+                  id="student-detail-enrollment"
+                  class="text-sm font-medium p-2 bg-gray-50 rounded"
+                >
+                  -
+                </p>
+              </div>
+              <div>
+                <label class="text-xs font-semibold text-[#9c495e] mb-1 block"
+                  >Trạng thái</label
+                >
+                <p id="student-detail-status" class="text-sm font-medium"></p>
+              </div>
+              <div>
+                <label class="text-xs font-semibold text-[#9c495e] mb-1 block"
+                  >Tiến độ học tập</label
+                >
+                <div class="flex items-center gap-3">
+                  <div class="flex-1 bg-pink-100 rounded-full h-3">
+                    <div
+                      id="student-detail-progress-bar"
+                      class="bg-primary h-3 rounded-full"
+                      style="width: 0%"
+                    ></div>
+                  </div>
+                  <span
+                    id="student-detail-progress"
+                    class="text-sm font-bold text-primary"
+                    >0%</span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Payment Info -->
+          <div class="mb-6">
+            <h4 class="font-bold text-[#1c0d11] mb-3 flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary"
+                >payments</span
+              >
+              Thông tin thanh toán
+            </h4>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="text-xs font-semibold text-[#9c495e] mb-1 block"
+                  >Trạng thái thanh toán</label
+                >
+                <p
+                  id="student-detail-payment-status"
+                  class="text-sm font-medium"
+                ></p>
+              </div>
+              <div>
+                <label class="text-xs font-semibold text-[#9c495e] mb-1 block"
+                  >Phương thức</label
+                >
+                <p
+                  id="student-detail-payment-method"
+                  class="text-sm font-medium p-2 bg-gray-50 rounded"
+                >
+                  -
+                </p>
+              </div>
+              <div class="col-span-2">
+                <label class="text-xs font-semibold text-[#9c495e] mb-1 block"
+                  >Ngày thanh toán</label
+                >
+                <p
+                  id="student-detail-payment-date"
+                  class="text-sm font-medium p-2 bg-gray-50 rounded"
+                >
+                  -
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div id="student-notes-section" class="hidden">
+            <h4 class="font-bold text-[#1c0d11] mb-3 flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary">note</span>
+              Ghi chú
+            </h4>
+            <p
+              id="student-detail-notes"
+              class="text-sm text-[#9c495e] p-3 bg-gray-50 rounded"
+            ></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create Course Modal -->
+    <div
+      id="create-course-modal"
+      class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50"
+      onclick="closeCreateCourseModal()"
+    >
+      <div
+        class="bg-white rounded-xl shadow-2xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+        onclick="event.stopPropagation()"
+      >
+        <div
+          class="sticky top-0 bg-white border-b border-pink-100 px-6 py-4 flex items-center justify-between z-10"
+        >
+          <h2 class="text-2xl font-black text-[#1c0d11]">Tạo Khóa Học Mới</h2>
+          <button
+            onclick="closeCreateCourseModal()"
+            class="p-2 hover:bg-pink-50 rounded-full transition-colors"
+          >
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <form id="create-course-form" class="p-6 space-y-6">
+          <!-- Basic Info -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-bold text-[#1c0d11]">Thông tin cơ bản</h3>
+
+            <div>
+              <label class="block text-sm font-bold text-[#1c0d11] mb-2"
+                >Tên khóa học *</label
+              >
+              <input
+                type="text"
+                id="new-course-name"
+                required
+                class="w-full px-4 py-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-primary/20"
+                placeholder="Ví dụ: Yoga Cơ Bản cho Người Mới"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-bold text-[#1c0d11] mb-2"
+                >Mô tả khóa học *</label
+              >
+              <textarea
+                id="new-course-description"
+                required
+                rows="4"
+                class="w-full px-4 py-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-primary/20"
+                placeholder="Giới thiệu về khóa học..."
+              ></textarea>
+            </div>
+
+            <div>
+              <label class="block text-sm font-bold text-[#1c0d11] mb-2"
+                >URL hình ảnh</label
+              >
+              <input
+                type="url"
+                id="new-course-image"
+                class="w-full px-4 py-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-primary/20"
+                placeholder="https://example.com/image.jpg"
+              />
+            </div>
+          </div>
+
+          <!-- Course Details -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-bold text-[#1c0d11]">Chi tiết khóa học</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-bold text-[#1c0d11] mb-2"
+                  >Giá tiền (VNĐ) *</label
+                >
+                <input
+                  type="number"
+                  id="new-course-price"
+                  required
+                  min="0"
+                  class="w-full px-4 py-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-primary/20"
+                  placeholder="1500000"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-bold text-[#1c0d11] mb-2"
+                  >Thời lượng (tuần) *</label
+                >
+                <input
+                  type="number"
+                  id="new-course-duration"
+                  required
+                  min="1"
+                  class="w-full px-4 py-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-primary/20"
+                  placeholder="8"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-bold text-[#1c0d11] mb-2"
+                  >Số học viên tối đa *</label
+                >
+                <input
+                  type="number"
+                  id="new-course-max"
+                  required
+                  min="1"
+                  class="w-full px-4 py-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-primary/20"
+                  placeholder="20"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-bold text-[#1c0d11] mb-2"
+                  >Cấp độ *</label
+                >
+                <select
+                  id="new-course-level"
+                  required
+                  class="w-full px-4 py-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-primary/20"
+                >
+                  <option value="">-- Chọn cấp độ --</option>
+                  <option value="beginner">Mới bắt đầu</option>
+                  <option value="intermediate">Trung cấp</option>
+                  <option value="advanced">Nâng cao</option>
+                  <option value="all_levels">Tất cả cấp độ</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-bold text-[#1c0d11] mb-2"
+                  >Ngày bắt đầu</label
+                >
+                <input
+                  type="date"
+                  id="new-course-start"
+                  class="w-full px-4 py-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-bold text-[#1c0d11] mb-2"
+                  >Ngày kết thúc</label
+                >
+                <input
+                  type="date"
+                  id="new-course-end"
+                  class="w-full px-4 py-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-bold text-[#1c0d11] mb-2"
+                >Mô tả lịch học</label
+              >
+              <textarea
+                id="new-course-schedule"
+                rows="3"
+                class="w-full px-4 py-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-primary/20"
+                placeholder="Ví dụ: Thứ 2, 4, 6 - 18:00-19:30"
+              ></textarea>
+            </div>
+          </div>
+
+          <!-- Additional Info -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-bold text-[#1c0d11]">Thông tin bổ sung</h3>
+
+            <div>
+              <label class="block text-sm font-bold text-[#1c0d11] mb-2"
+                >Lợi ích</label
+              >
+              <textarea
+                id="new-course-benefits"
+                rows="3"
+                class="w-full px-4 py-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-primary/20"
+                placeholder="Mỗi lợi ích trên một dòng...&#10;Ví dụ:&#10;Cải thiện sức khỏe&#10;Tăng cường thể lực&#10;Giảm căng thẳng"
+              ></textarea>
+              <p class="text-xs text-[#9c495e] mt-1">
+                Mỗi lợi ích trên một dòng
+              </p>
+            </div>
+
+            <div>
+              <label class="block text-sm font-bold text-[#1c0d11] mb-2"
+                >Yêu cầu</label
+              >
+              <textarea
+                id="new-course-requirements"
+                rows="3"
+                class="w-full px-4 py-2 border border-pink-200 rounded-lg focus:ring-2 focus:ring-primary/20"
+                placeholder="Mỗi yêu cầu trên một dòng...&#10;Ví dụ:&#10;Không cần kinh nghiệm&#10;Trang phục tập luyện&#10;Khăn và nước uống"
+              ></textarea>
+              <p class="text-xs text-[#9c495e] mt-1">
+                Mỗi yêu cầu trên một dòng
+              </p>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex gap-3 pt-4 border-t border-pink-100">
+            <button
+              type="submit"
+              class="flex-1 px-6 py-3 bg-primary text-white rounded-lg font-bold hover:bg-opacity-90 transition-all"
+            >
+              Tạo khóa học
+            </button>
+            <button
+              type="button"
+              onclick="closeCreateCourseModal()"
+              class="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-bold hover:bg-gray-200 transition-all"
+            >
+              Hủy
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="js/supabase-config.js"></script>
+    <script src="js/auth.js?v=20260408"></script>
+    <script>
+      // Check authentication
+      const currentUser = requireAuth();
+      if (!currentUser || currentUser.role !== "coach") {
+        alert("Bạn không có quyền truy cập trang này!");
+        window.location.href = "auth.html";
+      }
+
+      // Update user info
+      document.getElementById("coach-name").textContent = currentUser.full_name;
+      document.getElementById("coach-avatar").style.backgroundImage =
+        `url('${currentUser.avatar_url}')`;
+
+      // Show/Hide sections
+      function showSection(section) {
+        document
+          .querySelectorAll(".section-content")
+          .forEach((el) => el.classList.add("hidden"));
+        document
+          .getElementById(`section-${section}`)
+          .classList.remove("hidden");
+
+        document
+          .querySelectorAll("aside > div:nth-child(2) > div")
+          .forEach((el) => {
+            el.classList.remove("sidebar-active", "font-bold");
+            el.classList.add("font-medium");
+            el.querySelector("p").classList.remove("font-bold");
+            el.querySelector("p").classList.add("font-medium");
+          });
+        event.currentTarget.classList.add("sidebar-active");
+        event.currentTarget.querySelector("p").classList.remove("font-medium");
+        event.currentTarget.querySelector("p").classList.add("font-bold");
+
+        // Load data when switching sections
+        if (section === "students") {
+          loadStudents();
+        } else if (section === "schedule") {
+          loadWeeklySchedule();
+        } else if (section === "profile") {
+          loadProfileData();
+        } else if (section === "lessons") {
+          loadMyCoursesFull();
+        }
+      }
+
+      // Load dashboard data
+      async function loadDashboardData() {
+        try {
+          // Get my courses
+          const { data: myCourses } = await supabaseClient
+            .from("courses")
+            .select("*, class_enrollments(count)")
+            .eq("coach_id", currentUser.id);
+
+          document.getElementById("stat-my-students").textContent =
+            myCourses?.reduce(
+              (sum, c) => sum + (c.class_enrollments?.[0]?.count || 0),
+              0,
+            ) || 0;
+
+          // Get schedules
+          const { data: schedules } = await supabaseClient
+            .from("schedules")
+            .select("*")
+            .eq("coach_id", currentUser.id);
+
+          document.getElementById("stat-classes-week").textContent =
+            schedules?.length || 0;
+
+          // Get lesson plans
+          const { data: lessons } = await supabaseClient
+            .from("lesson_plans")
+            .select("*")
+            .eq("coach_id", currentUser.id);
+
+          document.getElementById("stat-lesson-plans").textContent =
+            lessons?.length || 0;
+
+          // Load today's schedule
+          loadTodaySchedule();
+          loadMyCourses();
+        } catch (error) {
+          console.error("Error loading dashboard:", error);
+        }
+      }
+
+      async function loadTodaySchedule() {
+        const today = new Date().getDay();
+        try {
+          const { data } = await supabaseClient
+            .from("schedules")
+            .select("*, courses(course_name)")
+            .eq("coach_id", currentUser.id)
+            .eq("day_of_week", today);
+
+          const container = document.getElementById("today-schedule");
+          container.innerHTML =
+            data
+              ?.map(
+                (schedule) => `
+                    <div class="flex items-center gap-4 p-4 bg-pink-50 rounded-lg">
+                        <div class="flex-shrink-0 text-center">
+                            <p class="text-2xl font-black text-primary">${schedule.start_time.substring(0, 5)}</p>
+                            <p class="text-xs text-[#9c495e]">${schedule.end_time.substring(0, 5)}</p>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-sm mb-1">${schedule.title}</h4>
+                            <p class="text-xs text-[#9c495e]">${schedule.courses?.course_name} - ${schedule.location}</p>
+                        </div>
+                        <button class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-opacity-90">
+                            Chi tiết
+                        </button>
+                    </div>
+                `,
+              )
+              .join("") ||
+            '<p class="text-[#9c495e] text-center py-4">Không có lớp học hôm nay</p>';
+        } catch (error) {
+          console.error("Error loading schedule:", error);
+        }
+      }
+
+      async function loadWeeklySchedule() {
+        try {
+          const { data, error } = await supabaseClient
+            .from("schedules")
+            .select("*, courses(course_name, current_students, max_students)")
+            .eq("coach_id", currentUser.id)
+            .order("day_of_week", { ascending: true })
+            .order("start_time", { ascending: true });
+
+          if (error) throw error;
+
+          const daysOfWeek = [
+            "Chủ nhật",
+            "Thứ 2",
+            "Thứ 3",
+            "Thứ 4",
+            "Thứ 5",
+            "Thứ 6",
+            "Thứ 7",
+          ];
+          const schedulesByDay = {};
+
+          // Group schedules by day
+          data?.forEach((schedule) => {
+            const day = schedule.day_of_week;
+            if (!schedulesByDay[day]) {
+              schedulesByDay[day] = [];
+            }
+            schedulesByDay[day].push(schedule);
+          });
+
+          const container = document.getElementById("weekly-schedule");
+          let html = "";
+
+          for (let day = 0; day < 7; day++) {
+            const daySchedules = schedulesByDay[day] || [];
+            html += `
+              <div class="border-b border-pink-100 pb-4">
+                <h4 class="font-bold text-lg mb-3 text-primary">${daysOfWeek[day]}</h4>
+                <div class="space-y-2">
+            `;
+
+            if (daySchedules.length === 0) {
+              html +=
+                '<p class="text-sm text-[#9c495e] italic">Không có lịch dạy</p>';
+            } else {
+              daySchedules.forEach((schedule) => {
+                html += `
+                  <div class="flex items-center gap-4 p-3 bg-pink-50 rounded-lg">
+                    <div class="flex-shrink-0 text-center">
+                      <p class="text-lg font-black text-primary">${schedule.start_time.substring(0, 5)}</p>
+                      <p class="text-xs text-[#9c495e]">${schedule.end_time.substring(0, 5)}</p>
+                    </div>
+                    <div class="flex-1">
+                      <h5 class="font-bold text-sm">${schedule.title}</h5>
+                      <p class="text-xs text-[#9c495e]">${schedule.courses?.course_name || "N/A"}</p>
+                      <p class="text-xs text-[#9c495e]">${schedule.location} ${schedule.room_number ? "- Phòng " + schedule.room_number : ""}</p>
+                    </div>
+                    <div class="text-right">
+                      <p class="text-xs text-[#9c495e]">${schedule.courses?.current_students || 0}/${schedule.max_capacity} HV</p>
+                    </div>
+                  </div>
+                `;
+              });
+            }
+
+            html += `
+                </div>
+              </div>
+            `;
+          }
+
+          container.innerHTML = html;
+        } catch (error) {
+          console.error("Error loading weekly schedule:", error);
+          document.getElementById("weekly-schedule").innerHTML =
+            '<p class="text-red-500 text-center py-4">Lỗi khi tải lịch dạy</p>';
+        }
+      }
+
+      async function loadMyCourses() {
+        try {
+          const { data } = await supabaseClient
+            .from("courses")
+            .select("*")
+            .eq("coach_id", currentUser.id)
+            .eq("is_active", true);
+
+          const container = document.getElementById("my-courses-list");
+          container.innerHTML =
+            data
+              ?.map(
+                (course) => `
+                    <div class="p-4 bg-pink-50 rounded-lg">
+                        <h4 class="font-bold mb-2">${course.course_name}</h4>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-[#9c495e]">${course.current_students}/${course.max_students} học viên</span>
+                            <span class="text-primary font-bold">${parseFloat(course.price).toLocaleString("vi-VN")}đ</span>
+                        </div>
+                        <button class="w-full mt-3 px-4 py-2 bg-white text-primary rounded-lg text-sm font-bold hover:bg-primary hover:text-white transition-all">
+                            Xem chi tiết
+                        </button>
+                    </div>
+                `,
+              )
+              .join("") ||
+            '<p class="col-span-2 text-[#9c495e] text-center py-4">Chưa có khóa học nào</p>';
+        } catch (error) {
+          console.error("Error loading courses:", error);
+        }
+      }
+
+      let studentsData = []; // Store students for filtering
+
+      async function loadStudents() {
+        try {
+          // First, get all courses taught by this coach
+          const { data: coachCourses, error: courseError } =
+            await supabaseClient
+              .from("courses")
+              .select("id")
+              .eq("coach_id", currentUser.id);
+
+          if (courseError) throw courseError;
+
+          if (!coachCourses || coachCourses.length === 0) {
+            document.getElementById("students-grid").innerHTML =
+              '<p class="col-span-3 text-[#9c495e] text-center py-8">Chưa có học viên nào</p>';
+            return;
+          }
+
+          const courseIds = coachCourses.map((c) => c.id);
+
+          // Then get all enrollments for those courses
+          const { data, error } = await supabaseClient
+            .from("class_enrollments")
+            .select(
+              `
+                        *,
+                        users(id, full_name, email, avatar_url, phone),
+                        courses(course_name, coach_id)
+                    `,
+            )
+            .in("course_id", courseIds)
+            .eq("status", "active");
+
+          if (error) throw error;
+
+          studentsData = data || []; // Store globally
+          displayStudents(studentsData);
+        } catch (error) {
+          console.error("Error loading students:", error);
+        }
+      }
+
+      function displayStudents(students) {
+        const container = document.getElementById("students-grid");
+        container.innerHTML =
+          students
+            ?.map(
+              (enrollment) => `
+                    <div class="bg-white p-6 rounded-xl border border-[#e8ced5] shadow-sm">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="size-16 rounded-full bg-cover bg-center border-2 border-primary/20"
+                                 style="background-image: url('${enrollment.users?.avatar_url}')"></div>
+                            <div class="flex-1">
+                                <h4 class="font-bold">${enrollment.users?.full_name}</h4>
+                                <p class="text-xs text-[#9c495e]">${enrollment.courses?.course_name}</p>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-[#9c495e]">Tiến độ</span>
+                                <span class="font-bold text-primary">${enrollment.progress_percentage}%</span>
+                            </div>
+                            <div class="w-full bg-pink-100 rounded-full h-2">
+                                <div class="bg-primary h-2 rounded-full" style="width: ${enrollment.progress_percentage}%"></div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="showStudentDetail('${enrollment.id}')" class="flex-1 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-bold hover:bg-blue-100">
+                                Chi tiết
+                            </button>
+                            <button onclick="removeStudent('${enrollment.id}')" class="flex-1 px-3 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-bold hover:bg-red-100">
+                                Xóa
+                            </button>
+                        </div>
+                    </div>
+                `,
+            )
+            .join("") ||
+          '<p class="col-span-3 text-[#9c495e] text-center py-8">Chưa có học viên nào</p>';
+      }
+
+      function filterStudents() {
+        const searchTerm = document
+          .getElementById("students-search")
+          .value.toLowerCase();
+
+        if (!searchTerm) {
+          displayStudents(studentsData);
+          return;
+        }
+
+        const filtered = studentsData.filter(
+          (e) =>
+            e.users?.full_name?.toLowerCase().includes(searchTerm) ||
+            e.users?.email?.toLowerCase().includes(searchTerm) ||
+            e.courses?.course_name?.toLowerCase().includes(searchTerm),
+        );
+
+        displayStudents(filtered);
+      }
+
+      async function removeStudent(enrollmentId) {
+        if (confirm("Bạn có chắc muốn xóa học viên này khỏi lớp?")) {
+          try {
+            const { error } = await supabaseClient
+              .from("class_enrollments")
+              .update({ status: "cancelled" })
+              .eq("id", enrollmentId);
+
+            if (error) throw error;
+            alert("Đã xóa học viên thành công!");
+            loadStudents();
+          } catch (error) {
+            console.error("Error removing student:", error);
+            alert("Không thể xóa học viên!");
+          }
+        }
+      }
+
+      function showAddStudentModal() {
+        alert("Chức năng thêm học viên - Cần implement modal");
+      }
+
+      async function showStudentDetail(enrollmentId) {
+        try {
+          const { data, error } = await supabaseClient
+            .from("class_enrollments")
+            .select(
+              `
+              *,
+              users (
+                id,
+                full_name,
+                email,
+                phone,
+                date_of_birth,
+                gender,
+                avatar_url
+              ),
+              courses (
+                id,
+                course_name
+              )
+            `,
+            )
+            .eq("id", enrollmentId)
+            .single();
+
+          if (error) throw error;
+
+          if (!data) {
+            alert("Không tìm thấy thông tin học viên!");
+            return;
+          }
+
+          const student = data.users;
+          const course = data.courses;
+
+          // Avatar
+          const defaultAvatar =
+            "https://ui-avatars.com/api/?name=" +
+            encodeURIComponent(student.full_name) +
+            "&background=ec4899&color=fff&size=200";
+          document.getElementById(
+            "student-detail-avatar",
+          ).style.backgroundImage =
+            `url('${student.avatar_url || defaultAvatar}')`;
+
+          // Basic Info
+          document.getElementById("student-detail-name").textContent =
+            student.full_name || "-";
+          document.getElementById("student-detail-email").textContent =
+            student.email || "-";
+          document.getElementById("student-detail-phone").textContent =
+            student.phone || "Chưa cập nhật";
+
+          // Personal Info
+          document.getElementById("student-detail-dob").textContent =
+            student.date_of_birth
+              ? new Date(student.date_of_birth).toLocaleDateString("vi-VN")
+              : "-";
+          document.getElementById("student-detail-gender").textContent =
+            student.gender || "-";
+
+          // Course Info
+          document.getElementById("student-detail-course").textContent =
+            course.course_name || "-";
+          document.getElementById("student-detail-enrollment").textContent =
+            data.enrollment_date
+              ? new Date(data.enrollment_date).toLocaleDateString("vi-VN")
+              : "-";
+
+          // Status
+          const statusEl = document.getElementById("student-detail-status");
+          const statusClass =
+            data.status === "active"
+              ? "text-green-600 bg-green-50"
+              : "text-gray-600 bg-gray-50";
+          const statusText =
+            data.status === "active" ? "Đang học" : "Đã hoàn thành";
+          statusEl.innerHTML = `<span class="px-3 py-1 rounded-full text-xs font-bold ${statusClass}">${statusText}</span>`;
+
+          // Progress
+          const progress = data.progress_percentage || 0;
+          document.getElementById("student-detail-progress").textContent =
+            `${progress}%`;
+          document.getElementById("student-detail-progress-bar").style.width =
+            `${progress}%`;
+
+          // Payment Info
+          const paymentStatusEl = document.getElementById(
+            "student-detail-payment-status",
+          );
+          const paymentStatusClass =
+            data.payment_status === "paid"
+              ? "text-green-600 bg-green-50"
+              : "text-orange-600 bg-orange-50";
+          const paymentStatusText =
+            data.payment_status === "paid"
+              ? "Đã thanh toán"
+              : "Chưa thanh toán";
+          paymentStatusEl.innerHTML = `<span class="px-3 py-1 rounded-full text-xs font-bold ${paymentStatusClass}">${paymentStatusText}</span>`;
+
+          const paymentMethod = {
+            cash: "Tiền mặt",
+            qr: "QR Code",
+            card: "Thẻ tín dụng",
+            transfer: "Chuyển khoản",
+          };
+          document.getElementById("student-detail-payment-method").textContent =
+            paymentMethod[data.payment_method] || data.payment_method || "-";
+
+          document.getElementById("student-detail-payment-date").textContent =
+            data.payment_date
+              ? new Date(data.payment_date).toLocaleDateString("vi-VN")
+              : "-";
+
+          // Notes
+          if (data.notes) {
+            document
+              .getElementById("student-notes-section")
+              .classList.remove("hidden");
+            document.getElementById("student-detail-notes").textContent =
+              data.notes;
+          } else {
+            document
+              .getElementById("student-notes-section")
+              .classList.add("hidden");
+          }
+
+          // Show modal
+          document
+            .getElementById("student-detail-modal")
+            .classList.remove("hidden");
+          document.getElementById("student-detail-modal").classList.add("flex");
+        } catch (error) {
+          console.error("Error loading student details:", error);
+          alert("Không thể tải thông tin học viên!");
+        }
+      }
+
+      function closeStudentDetailModal() {
+        document.getElementById("student-detail-modal").classList.add("hidden");
+        document
+          .getElementById("student-detail-modal")
+          .classList.remove("flex");
+      }
+
+      // Course Management Functions
+      async function loadMyCoursesFull() {
+        try {
+          const { data, error } = await supabaseClient
+            .from("courses")
+            .select("*")
+            .eq("coach_id", currentUser.id)
+            .order("created_at", { ascending: false });
+
+          if (error) throw error;
+
+          const container = document.getElementById("my-courses-section");
+          if (!data || data.length === 0) {
+            container.innerHTML =
+              '<p class="col-span-3 text-[#9c495e] text-center py-8">Chưa có khóa học nào</p>';
+            return;
+          }
+
+          container.innerHTML = data
+            .map(
+              (course) => `
+              <div class="bg-white p-6 rounded-xl border border-[#e8ced5] shadow-sm hover:shadow-md transition-shadow">
+                <div class="mb-4">
+                  ${course.image_url ? `<div class="w-full h-40 bg-cover bg-center rounded-lg mb-3" style="background-image: url('${course.image_url}')"></div>` : ""}
+                  <h3 class="font-bold text-lg mb-2">${course.course_name}</h3>
+                  <p class="text-sm text-[#9c495e] line-clamp-2">${course.description || "Không có mô tả"}</p>
+                </div>
+                <div class="space-y-2 mb-4">
+                  <div class="flex items-center justify-between text-sm">
+                    <span class="text-[#9c495e]">Học viên:</span>
+                    <span class="font-bold">${course.current_students || 0}/${course.max_students}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-sm">
+                    <span class="text-[#9c495e]">Giá:</span>
+                    <span class="font-bold text-primary">${parseFloat(course.price).toLocaleString("vi-VN")}đ</span>
+                  </div>
+                  <div class="flex items-center justify-between text-sm">
+                    <span class="text-[#9c495e]">Cấp độ:</span>
+                    <span class="font-bold">${getLevelText(course.level)}</span>
+                  </div>
+                  <div class="flex items-center justify-between text-sm">
+                    <span class="text-[#9c495e]">Trạng thái:</span>
+                    <span class="px-2 py-1 rounded text-xs font-bold ${course.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"}">
+                      ${course.is_active ? "Đang hoạt động" : "Tạm dừng"}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onclick="showCourseDetail('${course.id}')"
+                  class="w-full px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-opacity-90 transition-all"
+                >
+                  Xem chi tiết & Lộ trình
+                </button>
+              </div>
+            `,
+            )
+            .join("");
+        } catch (error) {
+          console.error("Error loading courses:", error);
+        }
+      }
+
+      function getLevelText(level) {
+        const levels = {
+          beginner: "Mới bắt đầu",
+          intermediate: "Trung cấp",
+          advanced: "Nâng cao",
+          all_levels: "Tất cả",
+        };
+        return levels[level] || level;
+      }
+
+      let currentCourseId = null;
+
+      async function showCourseDetail(courseId) {
+        currentCourseId = courseId;
+        try {
+          const { data, error } = await supabaseClient
+            .from("courses")
+            .select("*")
+            .eq("id", courseId)
+            .single();
+
+          if (error) throw error;
+
+          // Populate form
+          document.getElementById("edit-course-id").value = data.id;
+          document.getElementById("edit-course-name").value = data.course_name;
+          document.getElementById("edit-course-price").value = data.price;
+          document.getElementById("edit-course-description").value =
+            data.description || "";
+          document.getElementById("edit-course-duration").value =
+            data.duration_weeks;
+          document.getElementById("edit-course-max").value = data.max_students;
+          document.getElementById("edit-course-level").value = data.level;
+
+          document.getElementById("course-detail-title").textContent =
+            data.course_name;
+
+          // Show modal
+          document
+            .getElementById("course-detail-modal")
+            .classList.remove("hidden");
+          document.getElementById("course-detail-modal").classList.add("flex");
+
+          // Load roadmap
+          switchCourseTab("info");
+        } catch (error) {
+          console.error("Error loading course:", error);
+          alert("Không thể tải thông tin khóa học!");
+        }
+      }
+
+      function closeCourseDetailModal() {
+        document.getElementById("course-detail-modal").classList.add("hidden");
+        document.getElementById("course-detail-modal").classList.remove("flex");
+        currentCourseId = null;
+      }
+
+      // Create Course Modal Functions
+      function showCreateCourseModal() {
+        document
+          .getElementById("create-course-modal")
+          .classList.remove("hidden");
+        document.getElementById("create-course-modal").classList.add("flex");
+        document.getElementById("create-course-form").reset();
+      }
+
+      function closeCreateCourseModal() {
+        document.getElementById("create-course-modal").classList.add("hidden");
+        document.getElementById("create-course-modal").classList.remove("flex");
+      }
+
+      // Handle create course form submission
+      document
+        .getElementById("create-course-form")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          // Get form values
+          const courseName = document.getElementById("new-course-name").value;
+          const description = document.getElementById(
+            "new-course-description",
+          ).value;
+          const imageUrl =
+            document.getElementById("new-course-image").value || null;
+          const price = parseFloat(
+            document.getElementById("new-course-price").value,
+          );
+          const duration = parseInt(
+            document.getElementById("new-course-duration").value,
+          );
+          const maxStudents = parseInt(
+            document.getElementById("new-course-max").value,
+          );
+          const level = document.getElementById("new-course-level").value;
+          const startDate =
+            document.getElementById("new-course-start").value || null;
+          const endDate =
+            document.getElementById("new-course-end").value || null;
+          const scheduleDesc =
+            document.getElementById("new-course-schedule").value || null;
+
+          // Parse benefits and requirements (split by newline, filter empty)
+          const benefitsText = document.getElementById(
+            "new-course-benefits",
+          ).value;
+          const benefits = benefitsText
+            ? benefitsText
+                .split("\n")
+                .filter((b) => b.trim())
+                .map((b) => b.trim())
+            : null;
+
+          const requirementsText = document.getElementById(
+            "new-course-requirements",
+          ).value;
+          const requirements = requirementsText
+            ? requirementsText
+                .split("\n")
+                .filter((r) => r.trim())
+                .map((r) => r.trim())
+            : null;
+
+          try {
+            const { data, error } = await supabaseClient
+              .from("courses")
+              .insert([
+                {
+                  course_name: courseName,
+                  description: description,
+                  price: price,
+                  duration_weeks: duration,
+                  level: level,
+                  max_students: maxStudents,
+                  current_students: 0,
+                  image_url: imageUrl,
+                  coach_id: currentUser.id,
+                  created_by: currentUser.id,
+                  is_active: true,
+                  start_date: startDate,
+                  end_date: endDate,
+                  schedule_description: scheduleDesc,
+                  benefits: benefits,
+                  requirements: requirements,
+                },
+              ])
+              .select();
+
+            if (error) throw error;
+
+            alert("Đã tạo khóa học mới thành công!");
+            closeCreateCourseModal();
+            loadMyCoursesFull(); // Reload courses list
+            loadDashboardData(); // Reload dashboard stats
+          } catch (error) {
+            console.error("Error creating course:", error);
+            alert("Lỗi khi tạo khóa học: " + error.message);
+          }
+        });
+
+      function switchCourseTab(tab) {
+        // Update tab buttons
+        document.querySelectorAll("[id^='tab-']").forEach((btn) => {
+          btn.classList.remove("border-primary", "text-primary");
+          btn.classList.add("border-transparent", "text-[#9c495e]");
+        });
+        document
+          .getElementById(`tab-${tab}`)
+          .classList.add("border-primary", "text-primary");
+        document
+          .getElementById(`tab-${tab}`)
+          .classList.remove("border-transparent", "text-[#9c495e]");
+
+        // Update content
+        document.querySelectorAll(".tab-content").forEach((content) => {
+          content.classList.add("hidden");
+        });
+        document
+          .getElementById(`tab-content-${tab}`)
+          .classList.remove("hidden");
+
+        if (tab === "roadmap") {
+          loadCourseLessons(currentCourseId);
+        } else if (tab === "students") {
+          loadCourseStudents(currentCourseId);
+        }
+      }
+
+      // Handle edit course form
+      document
+        .getElementById("edit-course-form")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const courseId = document.getElementById("edit-course-id").value;
+          const courseData = {
+            course_name: document.getElementById("edit-course-name").value,
+            price: parseFloat(
+              document.getElementById("edit-course-price").value,
+            ),
+            description: document.getElementById("edit-course-description")
+              .value,
+            duration_weeks: parseInt(
+              document.getElementById("edit-course-duration").value,
+            ),
+            max_students: parseInt(
+              document.getElementById("edit-course-max").value,
+            ),
+            level: document.getElementById("edit-course-level").value,
+          };
+
+          try {
+            const { error } = await supabaseClient
+              .from("courses")
+              .update(courseData)
+              .eq("id", courseId);
+
+            if (error) throw error;
+
+            alert("Đã cập nhật khóa học thành công!");
+            document.getElementById("course-detail-title").textContent =
+              courseData.course_name;
+            loadMyCoursesFull();
+          } catch (error) {
+            console.error("Error updating course:", error);
+            alert("Lỗi khi cập nhật khóa học: " + error.message);
+          }
+        });
+
+      // Lesson/Roadmap Management
+      async function loadCourseLessons(courseId) {
+        try {
+          const { data, error } = await supabaseClient
+            .from("course_lessons")
+            .select("*")
+            .eq("course_id", courseId)
+            .order("lesson_order", { ascending: true });
+
+          if (error) throw error;
+
+          const container = document.getElementById("roadmap-lessons-list");
+          if (!data || data.length === 0) {
+            container.innerHTML =
+              '<p class="text-[#9c495e] text-center py-4 italic">Chưa có buổi học nào. Hãy thêm buổi học đầu tiên!</p>';
+            return;
+          }
+
+          container.innerHTML = data
+            .map(
+              (lesson) => `
+              <div class="p-4 bg-pink-50 rounded-lg">
+                <div class="flex items-start gap-4">
+                  <div class="flex-shrink-0 w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center font-black text-lg">
+                    ${lesson.lesson_order}
+                  </div>
+                  <div class="flex-1">
+                    <h4 class="font-bold mb-1">${lesson.title}</h4>
+                    <p class="text-sm text-[#9c495e] mb-2">${lesson.content}</p>
+                    ${lesson.objectives ? `<p class="text-xs text-blue-600"><strong>Mục tiêu:</strong> ${lesson.objectives}</p>` : ""}
+                  </div>
+                  <div class="flex gap-2">
+                    <button
+                      onclick="editLesson('${lesson.id}')"
+                      class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"
+                      title="Sửa"
+                    >
+                      <span class="material-symbols-outlined text-sm">edit</span>
+                    </button>
+                    <button
+                      onclick="deleteLesson('${lesson.id}')"
+                      class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"
+                      title="Xóa"
+                    >
+                      <span class="material-symbols-outlined text-sm">delete</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            `,
+            )
+            .join("");
+        } catch (error) {
+          console.error("Error loading lessons:", error);
+        }
+      }
+
+      async function loadCourseStudents(courseId) {
+        try {
+          const { data, error } = await supabaseClient
+            .from("class_enrollments")
+            .select(
+              `
+              id,
+              enrollment_date,
+              status,
+              user_id,
+              users (
+                id,
+                full_name,
+                email,
+                phone,
+                gender
+              )
+            `,
+            )
+            .eq("course_id", courseId)
+            .order("enrollment_date", { ascending: false });
+
+          if (error) throw error;
+
+          const container = document.getElementById("course-students-list");
+          const emptyState = document.getElementById("students-empty-state");
+          const countElement = document.getElementById("students-count");
+
+          countElement.textContent = data ? data.length : 0;
+
+          if (!data || data.length === 0) {
+            container.innerHTML = "";
+            emptyState.classList.remove("hidden");
+            return;
+          }
+
+          emptyState.classList.add("hidden");
+          container.innerHTML = data
+            .map((enrollment) => {
+              const student = enrollment.users;
+              const statusClass =
+                enrollment.status === "active"
+                  ? "bg-green-50 text-green-600"
+                  : "bg-gray-50 text-gray-600";
+              const statusText =
+                enrollment.status === "active" ? "Đang học" : "Đã hoàn thành";
+              const enrollDate = new Date(
+                enrollment.enrollment_date,
+              ).toLocaleDateString("vi-VN");
+
+              return `
+                  <div class="p-4 bg-white border border-pink-100 rounded-lg hover:shadow-md transition-shadow">
+                    <div class="flex items-center gap-4">
+                      <div class="flex-shrink-0">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-pink-400 to-pink-600 flex items-center justify-center text-white font-black text-lg">
+                          ${student.full_name.charAt(0).toUpperCase()}
+                        </div>
+                      </div>
+                      <div class="flex-1">
+                        <h4 class="font-bold text-[#1c0d11]">${student.full_name}</h4>
+                        <div class="flex items-center gap-3 text-sm text-[#9c495e] mt-1">
+                          <span class="flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm">email</span>
+                            ${student.email}
+                          </span>
+                          ${
+                            student.phone
+                              ? `
+                            <span class="flex items-center gap-1">
+                              <span class="material-symbols-outlined text-sm">phone</span>
+                              ${student.phone}
+                            </span>
+                          `
+                              : ""
+                          }
+                          ${
+                            student.gender
+                              ? `
+                            <span class="flex items-center gap-1">
+                              <span class="material-symbols-outlined text-sm">${student.gender === "Nam" ? "male" : "female"}</span>
+                              ${student.gender}
+                            </span>
+                          `
+                              : ""
+                          }
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1">
+                          Đăng ký: ${enrollDate}
+                        </div>
+                      </div>
+                      <div class="flex-shrink-0">
+                        <span class="px-3 py-1 rounded-full text-xs font-bold ${statusClass}">
+                          ${statusText}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                `;
+            })
+            .join("");
+        } catch (error) {
+          console.error("Error loading students:", error);
+          document.getElementById("course-students-list").innerHTML =
+            '<p class="text-red-500 text-center py-4">Không thể tải danh sách học viên</p>';
+        }
+      }
+
+      function showAddLessonForm() {
+        document
+          .getElementById("lesson-form-container")
+          .classList.remove("hidden");
+        document.getElementById("lesson-form").reset();
+        document.getElementById("lesson-id").value = "";
+      }
+
+      function cancelLessonForm() {
+        document
+          .getElementById("lesson-form-container")
+          .classList.add("hidden");
+      }
+
+      async function editLesson(lessonId) {
+        try {
+          const { data, error } = await supabaseClient
+            .from("course_lessons")
+            .select("*")
+            .eq("id", lessonId)
+            .single();
+
+          if (error) throw error;
+
+          document.getElementById("lesson-id").value = data.id;
+          document.getElementById("lesson-order").value = data.lesson_order;
+          document.getElementById("lesson-title").value = data.title;
+          document.getElementById("lesson-content").value = data.content;
+          document.getElementById("lesson-objectives").value =
+            data.objectives || "";
+
+          document
+            .getElementById("lesson-form-container")
+            .classList.remove("hidden");
+        } catch (error) {
+          console.error("Error loading lesson:", error);
+          alert("Không thể tải thông tin buổi học!");
+        }
+      }
+
+      async function deleteLesson(lessonId) {
+        if (!confirm("Bạn có chắc muốn xóa buổi học này?")) return;
+
+        try {
+          const { error } = await supabaseClient
+            .from("course_lessons")
+            .delete()
+            .eq("id", lessonId);
+
+          if (error) throw error;
+
+          alert("Đã xóa buổi học!");
+          loadCourseLessons(currentCourseId);
+        } catch (error) {
+          console.error("Error deleting lesson:", error);
+          alert("Lỗi khi xóa buổi học: " + error.message);
+        }
+      }
+
+      // Handle lesson form submission
+      document
+        .getElementById("lesson-form")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const lessonId = document.getElementById("lesson-id").value;
+          const lessonData = {
+            course_id: currentCourseId,
+            lesson_order: parseInt(
+              document.getElementById("lesson-order").value,
+            ),
+            title: document.getElementById("lesson-title").value,
+            content: document.getElementById("lesson-content").value,
+            objectives:
+              document.getElementById("lesson-objectives").value || null,
+          };
+
+          try {
+            let error;
+            if (lessonId) {
+              // Update existing lesson
+              ({ error } = await supabaseClient
+                .from("course_lessons")
+                .update(lessonData)
+                .eq("id", lessonId));
+            } else {
+              // Create new lesson
+              ({ error } = await supabaseClient
+                .from("course_lessons")
+                .insert([lessonData]));
+            }
+
+            if (error) throw error;
+
+            alert(lessonId ? "Đã cập nhật buổi học!" : "Đã thêm buổi học mới!");
+            cancelLessonForm();
+            loadCourseLessons(currentCourseId);
+          } catch (error) {
+            console.error("Error saving lesson:", error);
+            alert("Lỗi: " + error.message);
+          }
+        });
+
+      function showAddLessonModal() {
+        alert("Chức năng tạo giáo án - Cần implement modal");
+      }
+
+      // Profile functions
+      async function loadProfileData() {
+        try {
+          const { data, error } = await supabaseClient
+            .from("users")
+            .select(
+              "id, email, full_name, phone, avatar_url, date_of_birth, specialization",
+            )
+            .eq("id", currentUser.id)
+            .single();
+
+          if (error) throw error;
+
+          // Update form fields
+          document.getElementById("profile-name").value = data.full_name || "";
+          document.getElementById("profile-email").value = data.email || "";
+          document.getElementById("profile-phone").value = data.phone || "";
+          document.getElementById("profile-dob").value =
+            data.date_of_birth || "";
+          document.getElementById("profile-avatar").value =
+            data.avatar_url || "";
+          document.getElementById("profile-specialization").value =
+            data.specialization || "";
+
+          // Update avatar preview
+          if (data.avatar_url) {
+            document.getElementById(
+              "profile-avatar-preview",
+            ).style.backgroundImage = `url('${data.avatar_url}')`;
+          }
+        } catch (error) {
+          console.error("Error loading profile:", error);
+          alert("Không thể tải thông tin hồ sơ!");
+        }
+      }
+
+      // Update avatar preview when URL changes
+      document
+        .getElementById("profile-avatar")
+        .addEventListener("input", (e) => {
+          const url = e.target.value;
+          if (url) {
+            document.getElementById(
+              "profile-avatar-preview",
+            ).style.backgroundImage = `url('${url}')`;
+          }
+        });
+
+      // Handle profile form submission
+      document
+        .getElementById("profile-form")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const profileData = {
+            full_name: document.getElementById("profile-name").value,
+            phone: document.getElementById("profile-phone").value || null,
+            date_of_birth: document.getElementById("profile-dob").value || null,
+            avatar_url: document.getElementById("profile-avatar").value || null,
+            specialization:
+              document.getElementById("profile-specialization").value || null,
+          };
+
+          try {
+            const { error } = await supabaseClient
+              .from("users")
+              .update(profileData)
+              .eq("id", currentUser.id);
+
+            if (error) throw error;
+
+            alert("Đã cập nhật hồ sơ thành công!");
+
+            // Update currentUser object
+            currentUser.full_name = profileData.full_name;
+            currentUser.avatar_url = profileData.avatar_url;
+            currentUser.phone = profileData.phone;
+            currentUser.date_of_birth = profileData.date_of_birth;
+            currentUser.specialization = profileData.specialization;
+
+            // Update session storage
+            sessionStorage.setItem("currentUser", JSON.stringify(currentUser));
+
+            // Update sidebar display
+            document.getElementById("coach-name").textContent =
+              currentUser.full_name;
+            if (currentUser.avatar_url) {
+              document.getElementById("coach-avatar").style.backgroundImage =
+                `url('${currentUser.avatar_url}')`;
+            }
+          } catch (error) {
+            console.error("Error updating profile:", error);
+            alert("Lỗi khi cập nhật hồ sơ: " + error.message);
+          }
+        });
+
+      // Load initial data
+      loadDashboardData();
+    </script>
+  </body>
+</html>

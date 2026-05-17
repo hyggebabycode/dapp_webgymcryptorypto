@@ -1,0 +1,9 @@
+{
+  "network": "Oasis Sapphire Testnet",
+  "chainId": 23295,
+  "contractName": "GymCoursePayment",
+  "contractAddress": "0x0d65e4f39748FB912850c4871d0a05A65821623F",
+  "adminWallet": "0xC91DD3d721f7146e4DC759716b158546F2a4E551",
+  "deployedBy": "0xC91DD3d721f7146e4DC759716b158546F2a4E551",
+  "deployedAt": "2026-05-12T16:43:31.293Z"
+}

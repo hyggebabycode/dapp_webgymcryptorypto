@@ -1,0 +1,1042 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>GymHeart Fitness - Phòng Gym Hiện Đại</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <!-- Material Symbols -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <!-- Google Fonts: Lexend -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800;900&amp;display=swap"
+      rel="stylesheet"
+    />
+    <script id="tailwind-config">
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: "#f42559",
+              "background-light": "#fcf8f9",
+            },
+            fontFamily: {
+              display: ["Lexend", "sans-serif"],
+            },
+            borderRadius: {
+              DEFAULT: "0.25rem",
+              lg: "0.5rem",
+              xl: "0.75rem",
+              full: "9999px",
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      body {
+        font-family: "Lexend", sans-serif;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      .hero-gradient {
+        background: linear-gradient(135deg, #f42559 0%, #ff85a1 100%);
+      }
+      .material-symbols-outlined {
+        font-variation-settings:
+          "FILL" 0,
+          "wght" 400,
+          "GRAD" 0,
+          "opsz" 24;
+      }
+      .fill-heart {
+        font-variation-settings: "FILL" 1;
+      }
+      .nav-link.nav-link-active {
+        color: #f42559 !important;
+        font-weight: 700 !important;
+        border-color: #f42559 !important;
+      }
+
+      /* ====================== LUXURY DARK MODE ====================== */
+
+      /* Global smooth transition */
+      *,
+      *::before,
+      *::after {
+        transition:
+          background-color var(--transition-speed) ease,
+          border-color var(--transition-speed) ease,
+          color var(--transition-speed) ease,
+          box-shadow var(--transition-speed) ease;
+      }
+    </style>
+  </head>
+  <body class="bg-background-light text-[#1c0d11] min-h-screen">
+    <!-- Top Navigation Bar -->
+    <header
+      class="w-full border-b border-solid border-[#f4e7ea] bg-white/80 backdrop-blur-md sticky top-0 z-50"
+    >
+      <div
+        class="max-w-[1200px] mx-auto px-4 sm:px-10 py-3 flex items-center justify-between"
+      >
+        <div class="flex items-center gap-2">
+          <div class="size-8 text-primary">
+            <span
+              class="material-symbols-outlined text-3xl font-bold fill-heart"
+              >favorite</span
+            >
+          </div>
+          <h2
+            class="text-[#1c0d11] text-xl font-bold leading-tight tracking-tight"
+          >
+            GymHeart
+          </h2>
+        </div>
+        <nav class="hidden md:flex items-center gap-8">
+          <a
+            class="nav-link text-[#1c0d11] text-sm font-medium hover:text-primary transition-colors border-b-2 border-transparent pb-1"
+            href="#home"
+            >Trang chủ</a
+          >
+          <a
+            class="nav-link text-[#1c0d11] text-sm font-medium hover:text-primary transition-colors border-b-2 border-transparent pb-1"
+            href="facilities.html"
+            >Cơ sở vật chất</a
+          >
+          <a
+            class="nav-link text-[#1c0d11] text-sm font-medium hover:text-primary transition-colors border-b-2 border-transparent pb-1"
+            href="coaches.html"
+            >HLV</a
+          >
+          <a
+            class="nav-link text-[#1c0d11] text-sm font-medium hover:text-primary transition-colors border-b-2 border-transparent pb-1"
+            href="services.html"
+            >Dịch vụ</a
+          >
+          <a
+            class="nav-link text-[#1c0d11] text-sm font-medium hover:text-primary transition-colors border-b-2 border-transparent pb-1"
+            href="#community"
+            >Cộng đồng</a
+          >
+          <a
+            class="nav-link text-[#1c0d11] text-sm font-medium hover:text-primary transition-colors border-b-2 border-transparent pb-1"
+            href="#contact"
+            >Liên hệ</a
+          >
+        </nav>
+        <div class="flex gap-3 items-center">
+          <!-- Luxury Dark Mode Toggle -->
+
+          <button
+            onclick="window.location.href = 'auth.html'"
+            class="flex min-w-[100px] cursor-pointer items-center justify-center rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold tracking-wide hover:bg-opacity-90 transition-all"
+          >
+            Đăng Nhập
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section
+      id="home"
+      class="relative h-screen min-h-screen flex items-center justify-start overflow-hidden"
+    >
+      <!-- Background Image -->
+      <div class="absolute inset-0">
+        <img
+          src="img/csvc/Thiet-ke-phong-gym-chuyen-nghiep-mang-lai-su-uy-tin-cho-co-so-kinh-doanh.jpg"
+          alt="Hero Background"
+          class="w-full h-full object-cover"
+        />
+        <div
+          class="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/40"
+        ></div>
+      </div>
+
+      <!-- Floating Hearts Animation -->
+      <div class="absolute inset-0 opacity-10">
+        <div class="absolute top-10 left-10 text-white text-6xl animate-pulse">
+          <span class="material-symbols-outlined text-6xl fill-heart"
+            >favorite</span
+          >
+        </div>
+        <div
+          class="absolute bottom-20 right-20 text-white text-8xl animate-pulse"
+          style="animation-delay: 1s"
+        >
+          <span class="material-symbols-outlined text-8xl fill-heart"
+            >favorite</span
+          >
+        </div>
+        <div
+          class="absolute top-1/2 left-1/3 text-white text-5xl animate-pulse"
+          style="animation-delay: 0.5s"
+        >
+          <span class="material-symbols-outlined text-5xl fill-heart"
+            >favorite</span
+          >
+        </div>
+      </div>
+
+      <div class="w-full max-w-[1200px] px-4 sm:px-10 py-20 relative z-10">
+        <div class="max-w-none text-left ml-2 sm:ml-4 md:ml-6">
+          <div
+            class="inline-block px-4 py-2 bg-primary/20 backdrop-blur-sm rounded-full mb-8 border border-primary/40"
+          >
+            <span class="text-white text-sm font-semibold">
+              Chào mừng bạn đến với GymHeart</span
+            >
+          </div>
+
+          <h1 class="mb-8">
+            <span
+              class="block whitespace-nowrap text-[3rem] md:text-[4.95rem] font-black text-white mb-4 leading-tight"
+            >
+              Thay Đổi Bản Thân
+            </span>
+            <span
+              class="block whitespace-nowrap text-[3rem] md:text-[4.95rem] font-black text-primary leading-tight"
+            >
+              Mỗi Ngày Một Chút
+            </span>
+          </h1>
+
+          <p
+            class="text-lg md:text-xl text-white/90 mb-10 max-w-2xl leading-relaxed"
+          >
+            Chúng tôi cung cấp lộ trình tập luyện cá nhân hóa, huấn luyện viên
+            chuyên nghiệp và cơ sở vật chất hiện đại nhất.
+          </p>
+          <div class="flex gap-4 flex-wrap">
+            <button
+              onclick="window.location.href = 'auth.html'"
+              class="px-8 py-4 bg-primary text-white rounded-lg font-bold text-lg shadow-2xl hover:shadow-pink-500/50 hover:scale-105 transition-all"
+            >
+              Bắt Đầu Ngay
+            </button>
+            <button
+              onclick="window.location.href = 'services.html'"
+              class="px-8 py-4 bg-white/10 backdrop-blur-md text-white rounded-lg font-bold text-lg border-2 border-white/50 hover:bg-white/20 transition-all"
+            >
+              Xem Khóa Học
+            </button>
+          </div>
+
+          <!-- Quick Stats -->
+          <div
+            class="inline-grid grid-cols-3 gap-x-8 md:gap-x-10 gap-y-2 mt-12 pt-8 border-t border-white/20"
+          >
+            <div>
+              <div class="text-xl md:text-2xl font-black text-white mb-1">
+                500+
+              </div>
+              <div class="text-white/70 text-[11px] md:text-xs">Học viên</div>
+            </div>
+            <div>
+              <div class="text-xl md:text-2xl font-black text-white mb-1">
+                20+
+              </div>
+              <div class="text-white/70 text-[11px] md:text-xs">HLV Pro</div>
+            </div>
+            <div>
+              <div class="text-xl md:text-2xl font-black text-white mb-1">
+                15+
+              </div>
+              <div class="text-white/70 text-[11px] md:text-xs">Khóa học</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Gallery Showcase -->
+    <section class="bg-white py-20">
+      <div class="max-w-[1400px] mx-auto px-4 sm:px-10">
+        <div class="text-center mb-12">
+          <h2 class="text-4xl font-black text-[#1c0d11] mb-4">
+            Không Gian Tập Luyện Đẳng Cấp
+          </h2>
+          <p class="text-[#9c495e] text-lg">
+            Cơ sở vật chất hiện đại - Thiết bị cao cấp - Môi trường chuyên
+            nghiệp
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <!-- Large Featured Image -->
+          <div
+            class="md:col-span-2 md:row-span-2 relative h-[400px] rounded-2xl overflow-hidden group shadow-2xl"
+          >
+            <img
+              src="img/csvc/thietbi1.jpg"
+              alt="Main Gym"
+              class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+            />
+            <div
+              class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end p-6"
+            >
+              <div class="text-white">
+                <h3 class="text-2xl font-black mb-2">Phòng Tập Chính</h3>
+                <p class="text-white/80">Diện tích 500m² với đầy đủ thiết bị</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Small Images -->
+          <div
+            class="relative h-[195px] rounded-2xl overflow-hidden group shadow-xl"
+          >
+            <img
+              src="img/csvc/thietbi1.jpg"
+              alt="Thiết bị hiện đại"
+              class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+            />
+            <div
+              class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4"
+            >
+              <p class="text-white font-bold">Thiết Bị Hiện Đại</p>
+            </div>
+          </div>
+
+          <div
+            class="relative h-[195px] rounded-2xl overflow-hidden group shadow-xl"
+          >
+            <img
+              src="img/csvc/thietbi2.webp"
+              alt="Tập luyện"
+              class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+            />
+            <div
+              class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4"
+            >
+              <p class="text-white font-bold">Khu Tập Luyện</p>
+            </div>
+          </div>
+
+          <div
+            class="relative h-[195px] rounded-2xl overflow-hidden group shadow-xl"
+          >
+            <img
+              src="img/csvc/huanluyenvien.webp"
+              alt="Huấn luyện viên"
+              class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+            />
+            <div
+              class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4"
+            >
+              <p class="text-white font-bold">Huấn Luyện Viên</p>
+            </div>
+          </div>
+
+          <div
+            class="relative h-[195px] rounded-2xl overflow-hidden group shadow-xl"
+          >
+            <img
+              src="img/csvc/lophoc.jpg"
+              alt="Lớp học"
+              class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+            />
+            <div
+              class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4"
+            >
+              <p class="text-white font-bold">Lớp Học Chuyên Biệt</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-center mt-12">
+          <button
+            onclick="window.location.href = 'facilities.html'"
+            class="px-8 py-4 bg-primary text-white rounded-lg font-bold text-lg hover:shadow-xl hover:scale-105 transition-all"
+          >
+            Khám Phá Cơ Sở Vật Chất →
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-20 bg-background-light">
+      <div class="max-w-[1200px] mx-auto px-4 sm:px-10">
+        <div class="text-center mb-16">
+          <h2 class="text-4xl font-black text-[#1c0d11] mb-4">
+            Tại Sao Chọn GymHeart?
+          </h2>
+          <p class="text-[#9c495e] text-lg">
+            Những lợi ích vượt trội khi tập luyện cùng chúng tôi
+          </p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div
+            class="bg-white rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all group"
+          >
+            <div class="h-48 overflow-hidden">
+              <img
+                src="img/csvc/huanluyenvien.webp"
+                alt="Huấn luyện viên"
+                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+              />
+            </div>
+            <div class="p-8">
+              <div
+                class="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center mb-4"
+              >
+                <span class="material-symbols-outlined text-3xl text-primary"
+                  >psychology</span
+                >
+              </div>
+              <h3 class="text-xl font-bold mb-3 text-[#1c0d11]">
+                Lộ Trình Cá Nhân Hóa
+              </h3>
+              <p class="text-[#9c495e] mb-4">
+                Chương trình tập luyện được thiết kế riêng cho mục tiêu và thể
+                trạng của bạn.
+              </p>
+              <ul class="space-y-2 text-sm text-[#9c495e]">
+                <li class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-sm text-primary"
+                    >check_circle</span
+                  >
+                  <span>Đánh giá thể trạng miễn phí</span>
+                </li>
+                <li class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-sm text-primary"
+                    >check_circle</span
+                  >
+                  <span>Lộ trình tập riêng biệt</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div
+            class="bg-white rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all group"
+          >
+            <div class="h-48 overflow-hidden">
+              <img
+                src="img/csvc/thietbi1.jpg"
+                alt="Thiết bị hiện đại"
+                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+              />
+            </div>
+            <div class="p-8">
+              <div
+                class="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center mb-4"
+              >
+                <span class="material-symbols-outlined text-3xl text-primary"
+                  >fitness_center</span
+                >
+              </div>
+              <h3 class="text-xl font-bold mb-3 text-[#1c0d11]">
+                Thiết Bị Hiện Đại
+              </h3>
+              <p class="text-[#9c495e] mb-4">
+                Trang thiết bị cao cấp từ các thương hiệu hàng đầu thế giới.
+              </p>
+              <ul class="space-y-2 text-sm text-[#9c495e]">
+                <li class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-sm text-primary"
+                    >check_circle</span
+                  >
+                  <span>Technogym & Life Fitness</span>
+                </li>
+                <li class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-sm text-primary"
+                    >check_circle</span
+                  >
+                  <span>Máy tập trị giá hàng tỷ</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div
+            class="bg-white rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all group"
+          >
+            <div class="h-48 overflow-hidden">
+              <img
+                src="img/csvc/lophoc.jpg"
+                alt="Lớp học chuyên biệt"
+                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+              />
+            </div>
+            <div class="p-8">
+              <div
+                class="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center mb-4"
+              >
+                <span class="material-symbols-outlined text-3xl text-primary"
+                  >groups</span
+                >
+              </div>
+              <h3 class="text-xl font-bold mb-3 text-[#1c0d11]">
+                Huấn Luyện Viên Pro
+              </h3>
+              <p class="text-[#9c495e] mb-4">
+                Đội ngũ HLV giàu kinh nghiệm, nhiệt tình và tận tâm với học
+                viên.
+              </p>
+              <ul class="space-y-2 text-sm text-[#9c495e]">
+                <li class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-sm text-primary"
+                    >check_circle</span
+                  >
+                  <span>Chứng chỉ quốc tế</span>
+                </li>
+                <li class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-sm text-primary"
+                    >check_circle</span
+                  >
+                  <span>Hỗ trợ 24/7</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Courses Section -->
+    <section id="courses" class="py-20 bg-white">
+      <div class="max-w-[1200px] mx-auto px-4 sm:px-10">
+        <div class="text-center mb-16">
+          <h2 class="text-4xl font-black text-[#1c0d11] mb-4">
+            Khóa Học Phổ Biến
+          </h2>
+          <p class="text-[#9c495e] text-lg">
+            Lựa chọn khóa học phù hợp với mục tiêu của bạn
+          </p>
+        </div>
+
+        <!-- Loading state -->
+        <div id="courses-loading" class="text-center py-12">
+          <div
+            class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"
+          ></div>
+          <p class="mt-4 text-[#9c495e]">Đang tải khóa học...</p>
+        </div>
+
+        <!-- Courses grid -->
+        <div
+          id="courses-grid"
+          class="hidden grid grid-cols-1 md:grid-cols-3 gap-8"
+        >
+          <!-- Courses will be loaded here dynamically by JavaScript -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Course Roadmap Modal -->
+    <div
+      id="roadmap-modal"
+      class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+    >
+      <div
+        class="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-hidden"
+      >
+        <div
+          class="p-6 border-b border-[#f4e7ea] flex items-center justify-between"
+        >
+          <h3 id="modal-course-title" class="text-2xl font-bold text-[#1c0d11]">
+            Lộ trình học tập
+          </h3>
+          <button
+            onclick="closeRoadmapModal()"
+            class="text-[#9c495e] hover:text-primary transition-colors"
+          >
+            <span class="material-symbols-outlined text-3xl">close</span>
+          </button>
+        </div>
+        <div class="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+          <div id="roadmap-loading" class="text-center py-8">
+            <div
+              class="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-primary"
+            ></div>
+            <p class="mt-4 text-[#9c495e]">Đang tải lộ trình học tập...</p>
+          </div>
+          <div id="roadmap-content" class="hidden space-y-4">
+            <!-- Lessons will be loaded here -->
+          </div>
+          <div id="roadmap-empty" class="hidden text-center py-8">
+            <span class="material-symbols-outlined text-6xl text-[#9c495e] mb-4"
+              >book</span
+            >
+            <p class="text-[#9c495e]">
+              Chưa có lộ trình học tập cho khóa học này.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Community Section - Cộng đồng -->
+    <section id="community" class="py-20 bg-background-light">
+      <div class="max-w-[1200px] mx-auto px-4 sm:px-10">
+        <div class="text-center mb-12">
+          <h2 class="text-4xl font-black text-[#1c0d11] mb-4">
+            Cộng Đồng GymHeart
+          </h2>
+          <p class="text-[#9c495e] text-lg">
+            Kết nối với hàng nghìn thành viên nhiệt huyết
+          </p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+          <!-- Testimonial 1 -->
+          <div class="bg-white rounded-xl p-8 shadow-lg">
+            <div class="flex items-center gap-4 mb-4">
+              <img
+                src="https://ui-avatars.com/api/?name=Lan+Anh&background=f42559&color=fff&size=100"
+                class="w-16 h-16 rounded-full"
+              />
+              <div>
+                <h4 class="font-bold">Phạm Thị Lan Anh</h4>
+                <p class="text-sm text-[#9c495e]">Học viên 6 tháng</p>
+              </div>
+            </div>
+            <p class="text-[#9c495e]">
+              "Tôi đã giảm được 12kg trong 4 tháng nhờ lộ trình tập của coach
+              Nam. Cảm ơn GymHeart đã thay đổi cuộc sống của tôi!"
+            </p>
+            <div class="flex gap-1 mt-4 text-primary">
+              <span class="material-symbols-outlined fill-heart">star</span>
+              <span class="material-symbols-outlined fill-heart">star</span>
+              <span class="material-symbols-outlined fill-heart">star</span>
+              <span class="material-symbols-outlined fill-heart">star</span>
+              <span class="material-symbols-outlined fill-heart">star</span>
+            </div>
+          </div>
+          <!-- Testimonial 2 -->
+          <div class="bg-white rounded-xl p-8 shadow-lg">
+            <div class="flex items-center gap-4 mb-4">
+              <img
+                src="https://ui-avatars.com/api/?name=Minh+Tuan&background=f42559&color=fff&size=100"
+                class="w-16 h-16 rounded-full"
+              />
+              <div>
+                <h4 class="font-bold">Nguyễn Minh Tuấn</h4>
+                <p class="text-sm text-[#9c495e]">Học viên 1 năm</p>
+              </div>
+            </div>
+            <p class="text-[#9c495e]">
+              "Môi trường tập luyện chuyên nghiệp, cộng đồng thân thiện. Cơ sở
+              vật chất hiện đại bậc nhất Hà Nội!"
+            </p>
+            <div class="flex gap-1 mt-4 text-primary">
+              <span class="material-symbols-outlined fill-heart">star</span>
+              <span class="material-symbols-outlined fill-heart">star</span>
+              <span class="material-symbols-outlined fill-heart">star</span>
+              <span class="material-symbols-outlined fill-heart">star</span>
+              <span class="material-symbols-outlined fill-heart">star</span>
+            </div>
+          </div>
+        </div>
+        <!-- Social Proof -->
+        <div class="text-center">
+          <p class="text-[#9c495e] mb-4">Theo dõi chúng tôi trên mạng xã hội</p>
+          <div class="flex gap-4 justify-center">
+            <button
+              class="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center hover:scale-110 transition-all"
+            >
+              <span class="material-symbols-outlined">thumb_up</span>
+            </button>
+            <button
+              class="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center hover:scale-110 transition-all"
+            >
+              <span class="material-symbols-outlined">photo_camera</span>
+            </button>
+            <button
+              class="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center hover:scale-110 transition-all"
+            >
+              <span class="material-symbols-outlined">play_circle</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact Section - Liên hệ -->
+    <section id="contact" class="py-20 bg-white">
+      <div class="max-w-[1200px] mx-auto px-4 sm:px-10">
+        <div class="text-center mb-12">
+          <h2 class="text-4xl font-black text-[#1c0d11] mb-4">
+            Liên Hệ Với Chúng Tôi
+          </h2>
+          <p class="text-[#9c495e] text-lg">
+            Chúng tôi luôn sẵn sàng hỗ trợ bạn
+          </p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+          <!-- Contact Info -->
+          <div class="space-y-6">
+            <div class="flex items-start gap-4">
+              <div class="text-primary text-3xl">
+                <span class="material-symbols-outlined text-3xl"
+                  >location_on</span
+                >
+              </div>
+              <div>
+                <h3 class="font-bold text-lg mb-1">Địa chỉ</h3>
+                <p class="text-[#9c495e]">
+                  123 Đường ABC, Quận Cầu Giấy, Hà Nội
+                </p>
+              </div>
+            </div>
+            <div class="flex items-start gap-4">
+              <div class="text-primary text-3xl">
+                <span class="material-symbols-outlined text-3xl">call</span>
+              </div>
+              <div>
+                <h3 class="font-bold text-lg mb-1">Điện thoại</h3>
+                <p class="text-[#9c495e]">
+                  Hotline: 0901 234 567<br />
+                  Zalo: 0907 654 321
+                </p>
+              </div>
+            </div>
+            <div class="flex items-start gap-4">
+              <div class="text-primary text-3xl">
+                <span class="material-symbols-outlined text-3xl">mail</span>
+              </div>
+              <div>
+                <h3 class="font-bold text-lg mb-1">Email</h3>
+                <p class="text-[#9c495e]">
+                  info@gymheart.com<br />
+                  support@gymheart.com
+                </p>
+              </div>
+            </div>
+            <div class="flex items-start gap-4">
+              <div class="text-primary text-3xl">
+                <span class="material-symbols-outlined text-3xl">schedule</span>
+              </div>
+              <div>
+                <h3 class="font-bold text-lg mb-1">Giờ mở cửa</h3>
+                <p class="text-[#9c495e]">
+                  Thứ 2 - Thứ 6: 5:30 AM - 10:00 PM<br />
+                  Thứ 7 - Chủ Nhật: 6:00 AM - 9:00 PM
+                </p>
+              </div>
+            </div>
+          </div>
+          <!-- Contact Form -->
+          <div class="bg-background-light rounded-xl p-8">
+            <form class="space-y-4">
+              <div>
+                <label class="block text-sm font-semibold mb-2"
+                  >Họ và tên</label
+                >
+                <input
+                  type="text"
+                  class="w-full px-4 py-3 rounded-lg border border-[#f4e7ea] bg-white focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="Nhập họ và tên"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-semibold mb-2">Email</label>
+                <input
+                  type="email"
+                  class="w-full px-4 py-3 rounded-lg border border-[#f4e7ea] bg-white focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="Nhập email"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-semibold mb-2"
+                  >Số điện thoại</label
+                >
+                <input
+                  type="tel"
+                  class="w-full px-4 py-3 rounded-lg border border-[#f4e7ea] bg-white focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="Nhập số điện thoại"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-semibold mb-2">Nội dung</label>
+                <textarea
+                  rows="4"
+                  class="w-full px-4 py-3 rounded-lg border border-[#f4e7ea] bg-white focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="Nhập nội dung cần tư vấn"
+                ></textarea>
+              </div>
+              <button
+                type="submit"
+                class="w-full py-4 bg-primary text-white rounded-lg font-bold hover:bg-opacity-90 transition-all"
+              >
+                Gửi Yêu Cầu
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-20 bg-primary">
+      <div class="max-w-[1200px] mx-auto px-4 sm:px-10 text-center">
+        <h2 class="text-4xl md:text-5xl font-black text-white mb-6">
+          Sẵn Sàng Thay Đổi?
+        </h2>
+        <p class="text-xl text-white/90 mb-8">
+          Đăng ký ngay hôm nay để nhận ưu đãi đặc biệt cho học viên mới!
+        </p>
+        <button
+          onclick="window.location.href = 'auth.html'"
+          class="px-10 py-5 bg-white text-primary rounded-lg font-black text-xl shadow-2xl hover:scale-105 transition-all"
+        >
+          Đăng Ký Ngay
+        </button>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="w-full py-8 border-t border-[#f4e7ea] bg-white">
+      <div
+        class="max-w-[1200px] mx-auto px-10 flex flex-col md:flex-row justify-between items-center gap-4"
+      >
+        <div class="flex items-center gap-2 opacity-70">
+          <span class="material-symbols-outlined text-primary fill-heart"
+            >favorite</span
+          >
+          <span class="text-sm font-medium"
+            >© 2026 GymHeart Fitness. All rights reserved.</span
+          >
+        </div>
+        <div class="flex gap-6 text-sm text-[#9c495e] font-medium">
+          <a class="hover:text-primary transition-colors" href="#"
+            >Điều khoản</a
+          >
+          <a class="hover:text-primary transition-colors" href="#">Bảo mật</a>
+          <a class="hover:text-primary transition-colors" href="#">Liên hệ</a>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Supabase Integration -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script>
+      // Format currency
+      function formatCurrency(amount) {
+        return new Intl.NumberFormat("vi-VN", {
+          style: "currency",
+          currency: "VND",
+        }).format(amount);
+      }
+
+      // Get level badge
+      function getLevelBadge(level) {
+        const badges = {
+          beginner:
+            '<span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-semibold">Mới bắt đầu</span>',
+          intermediate:
+            '<span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full font-semibold">Trung cấp</span>',
+          advanced:
+            '<span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full font-semibold">Nâng cao</span>',
+          all_levels:
+            '<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-semibold">Mọi cấp độ</span>',
+        };
+        return badges[level] || badges.all_levels;
+      }
+
+      // Load courses from database
+      async function loadCourses() {
+        const coursesLoading = document.getElementById("courses-loading");
+        const coursesGrid = document.getElementById("courses-grid");
+
+        try {
+          const { data: courses, error } = await supabaseClient
+            .from("courses")
+            .select("*")
+            .eq("is_active", true)
+            .order("course_name")
+            .limit(6);
+
+          if (error) throw error;
+
+          if (courses && courses.length > 0) {
+            coursesGrid.innerHTML = courses
+              .map(
+                (course) => `
+              <div class="bg-background-light rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all flex flex-col h-full">
+                <div class="h-48 overflow-hidden flex-shrink-0">
+                  <img src="${course.image_url || "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800"}" 
+                       alt="${course.course_name}" 
+                       class="w-full h-full object-cover hover:scale-110 transition-transform duration-500">
+                </div>
+                <div class="p-6 flex flex-col flex-grow">
+                  <div class="flex items-start justify-between mb-3">
+                    <h3 class="text-xl font-bold flex-1 text-[#1c0d11]">${course.course_name}</h3>
+                  </div>
+                  <div class="flex items-center gap-2 mb-3">
+                    ${getLevelBadge(course.level)}
+                  </div>
+                  <p class="text-[#9c495e] text-sm mb-4 line-clamp-2">
+                    ${course.description || ""}
+                  </p>
+                  <div class="space-y-2 mb-4">
+                    <div class="flex items-center gap-2 text-sm text-[#9c495e]">
+                      <span class="material-symbols-outlined text-sm">schedule</span>
+                      <span>${course.duration_weeks} tuần</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-sm text-[#9c495e]">
+                      <span class="material-symbols-outlined text-sm">people</span>
+                      <span>${course.current_students}/${course.max_students} học viên</span>
+                    </div>
+                  </div>
+                  <div class="pt-4 border-t border-[#f4e7ea] space-y-3 mt-auto">
+                    <div class="text-primary text-2xl font-black mb-3">
+                      ${formatCurrency(course.price)}
+                    </div>
+                    <button
+                      onclick="showRoadmap('${course.id}', '${course.course_name}')"
+                      class="w-full px-4 py-2 bg-pink-50 text-primary border border-primary rounded-lg text-sm font-bold hover:bg-primary hover:text-white transition-all flex items-center justify-center gap-2"
+                    >
+                      <span class="material-symbols-outlined text-sm">map</span>
+                      Xem lộ trình học
+                    </button>
+                    <button
+                      onclick="window.location.href = 'auth.html'"
+                      class="w-full px-4 py-3 bg-primary text-white rounded-lg font-bold hover:bg-opacity-90 transition-all"
+                    >
+                      Đăng ký
+                    </button>
+                  </div>
+                </div>
+              </div>
+            `,
+              )
+              .join("");
+
+            coursesLoading.classList.add("hidden");
+            coursesGrid.classList.remove("hidden");
+          } else {
+            coursesLoading.innerHTML =
+              '<p class="text-[#9c495e]">Chưa có khóa học nào</p>';
+          }
+        } catch (error) {
+          console.error("Error loading courses:", error);
+          document.getElementById("courses-loading").innerHTML =
+            '<p class="text-red-500">Lỗi tải khóa học. Vui lòng thử lại sau.</p>';
+        }
+      }
+
+      // Show course roadmap modal
+      async function showRoadmap(courseId, courseName) {
+        const modal = document.getElementById("roadmap-modal");
+        const modalTitle = document.getElementById("modal-course-title");
+        const loading = document.getElementById("roadmap-loading");
+        const content = document.getElementById("roadmap-content");
+        const empty = document.getElementById("roadmap-empty");
+
+        // Show modal
+        modal.classList.remove("hidden");
+        modalTitle.textContent = `Lộ trình: ${courseName}`;
+
+        // Reset states
+        loading.classList.remove("hidden");
+        content.classList.add("hidden");
+        empty.classList.add("hidden");
+
+        try {
+          const { data: lessons, error } = await supabaseClient
+            .from("course_lessons")
+            .select("*")
+            .eq("course_id", courseId)
+            .order("lesson_order");
+
+          if (error) throw error;
+
+          loading.classList.add("hidden");
+
+          if (lessons && lessons.length > 0) {
+            content.innerHTML = lessons
+              .map(
+                (lesson, index) => `
+              <div class="bg-background-light p-5 rounded-lg border border-[#f4e7ea] hover:border-primary transition-colors">
+                <div class="flex gap-4">
+                  <div class="flex-shrink-0">
+                    <div class="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center font-bold text-lg">
+                      ${lesson.lesson_order}
+                    </div>
+                  </div>
+                  <div class="flex-1">
+                    <h4 class="text-lg font-bold text-[#1c0d11] mb-2">${lesson.title}</h4>
+                    <p class="text-[#9c495e] text-sm mb-3">${lesson.content}</p>
+                    ${
+                      lesson.objectives
+                        ? `
+                      <div class="flex items-start gap-2 text-sm">
+                        <span class="material-symbols-outlined text-primary text-sm">check_circle</span>
+                        <span class="text-[#9c495e]"><strong>Mục tiêu:</strong> ${lesson.objectives}</span>
+                      </div>
+                    `
+                        : ""
+                    }
+                  </div>
+                </div>
+              </div>
+            `,
+              )
+              .join("");
+            content.classList.remove("hidden");
+          } else {
+            empty.classList.remove("hidden");
+          }
+        } catch (error) {
+          console.error("Error loading roadmap:", error);
+          loading.classList.add("hidden");
+          content.innerHTML = `
+            <div class="text-center py-8">
+              <p class="text-red-500">Không thể tải lộ trình học tập. Vui lòng thử lại sau.</p>
+            </div>
+          `;
+          content.classList.remove("hidden");
+        }
+      }
+
+      // Close roadmap modal
+      function closeRoadmapModal() {
+        document.getElementById("roadmap-modal").classList.add("hidden");
+      }
+
+      // Close modal when clicking outside
+      document.addEventListener("click", (e) => {
+        const modal = document.getElementById("roadmap-modal");
+        if (e.target === modal) {
+          closeRoadmapModal();
+        }
+      });
+
+      function setActiveNavItem() {
+        const navLinks = document.querySelectorAll("header nav a.nav-link");
+        const hash = (window.location.hash || "#home").toLowerCase();
+        const allowedHashLinks = ["#home", "#community", "#contact"];
+        const activeHash = allowedHashLinks.includes(hash) ? hash : "#home";
+
+        navLinks.forEach((link) => {
+          link.classList.remove("nav-link-active");
+          const href = (link.getAttribute("href") || "").toLowerCase();
+          if (href === activeHash) {
+            link.classList.add("nav-link-active");
+          }
+        });
+      }
+
+      window.addEventListener("hashchange", setActiveNavItem);
+
+      // Initialize when page loads
+      document.addEventListener("DOMContentLoaded", () => {
+        setActiveNavItem();
+        loadCourses();
+        initDarkMode();
+      });
+    </script>
+
+    <!-- ===================== LUXURY DARK MODE JS ===================== -->
+  </body>
+</html>

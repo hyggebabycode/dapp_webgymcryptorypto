@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Huấn Luyện Viên - GymHeart Fitness</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <!-- Material Symbols -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <!-- Google Fonts: Lexend -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800;900&amp;display=swap"
+      rel="stylesheet"
+    />
+    <script id="tailwind-config">
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: "#f42559",
+              "background-light": "#fcf8f9",
+            },
+            fontFamily: {
+              display: ["Lexend", "sans-serif"],
+            },
+            borderRadius: {
+              DEFAULT: "0.25rem",
+              lg: "0.5rem",
+              xl: "0.75rem",
+              full: "9999px",
+            },
+          },
+        },
+      };
+    </script>
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+      body {
+        font-family: "Lexend", sans-serif;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      .material-symbols-outlined {
+        font-variation-settings:
+          "FILL" 0,
+          "wght" 400,
+          "GRAD" 0,
+          "opsz" 24;
+      }
+      .fill-heart {
+        font-variation-settings: "FILL" 1;
+      }
+      .nav-link.nav-link-active {
+        color: #f42559 !important;
+        font-weight: 700 !important;
+        border-color: #f42559 !important;
+      }
+
+      /* ====================== LUXURY DARK MODE ====================== */
+
+      *,
+      *::before,
+      *::after {
+        transition:
+          background-color var(--transition-speed) ease,
+          border-color var(--transition-speed) ease,
+          color var(--transition-speed) ease,
+          box-shadow var(--transition-speed) ease;
+      }
+
+      /* Toggle button */
+    </style>
+  </head>
+  <body class="bg-background-light text-[#1c0d11] min-h-screen">
+    <!-- Top Navigation Bar -->
+    <header
+      class="w-full border-b border-solid border-[#f4e7ea] bg-white/80 backdrop-blur-md sticky top-0 z-50"
+    >
+      <div
+        class="max-w-[1200px] mx-auto px-4 sm:px-10 py-3 flex items-center justify-between"
+      >
+        <div class="flex items-center gap-2">
+          <div class="size-8 text-primary">
+            <span
+              class="material-symbols-outlined text-3xl font-bold fill-heart"
+              >favorite</span
+            >
+          </div>
+          <h2
+            class="text-[#1c0d11] text-xl font-bold leading-tight tracking-tight"
+          >
+            GymHeart
+          </h2>
+        </div>
+        <nav class="hidden md:flex items-center gap-8">
+          <a
+            class="nav-link text-[#1c0d11] text-sm font-medium hover:text-primary transition-colors border-b-2 border-transparent pb-1"
+            href="index.html"
+            >Trang chủ</a
+          >
+          <a
+            class="nav-link text-[#1c0d11] text-sm font-medium hover:text-primary transition-colors border-b-2 border-transparent pb-1"
+            href="facilities.html"
+            >Cơ sở vật chất</a
+          >
+          <a
+            class="nav-link text-[#1c0d11] text-sm font-medium hover:text-primary transition-colors border-b-2 border-transparent pb-1"
+            href="coaches.html"
+            >HLV</a
+          >
+          <a
+            class="nav-link text-[#1c0d11] text-sm font-medium hover:text-primary transition-colors border-b-2 border-transparent pb-1"
+            href="services.html"
+            >Dịch vụ</a
+          >
+          <a
+            class="nav-link text-[#1c0d11] text-sm font-medium hover:text-primary transition-colors border-b-2 border-transparent pb-1"
+            href="index.html#community"
+            >Cộng đồng</a
+          >
+          <a
+            class="nav-link text-[#1c0d11] text-sm font-medium hover:text-primary transition-colors border-b-2 border-transparent pb-1"
+            href="index.html#contact"
+            >Liên hệ</a
+          >
+        </nav>
+        <div class="flex gap-3 items-center">
+          <button
+            onclick="window.location.href = 'auth.html'"
+            class="flex min-w-[100px] cursor-pointer items-center justify-center rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold tracking-wide hover:bg-opacity-90 transition-all"
+          >
+            Đăng Nhập
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Coaches Content -->
+    <section class="py-20 bg-background-light min-h-screen">
+      <div class="max-w-[1200px] mx-auto px-4 sm:px-10">
+        <div class="text-center mb-12">
+          <h2 class="text-4xl font-black text-[#1c0d11] mb-4">
+            Huấn Luyện Viên Chuyên Nghiệp
+          </h2>
+          <p class="text-[#9c495e] text-lg">
+            Đội ngũ HLV giàu kinh nghiệm, tận tâm với học viên
+          </p>
+        </div>
+
+        <!-- Hero Banner -->
+        <div
+          class="relative h-[400px] rounded-2xl overflow-hidden mb-16 shadow-2xl"
+        >
+          <img
+            src="img/khoahoc/download.webp"
+            alt="Training Session"
+            class="w-full h-full object-cover"
+          />
+          <div
+            class="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent flex items-center"
+          >
+            <div class="p-12 text-white max-w-2xl">
+              <h3 class="text-4xl font-black mb-4">
+                Đội Ngũ HLV Chuyên Nghiệp
+              </h3>
+              <p class="text-lg text-white/90 mb-6">
+                Với kinh nghiệm và chứng chỉ quốc tế, HLV của chúng tôi sẵn sàng
+                hỗ trợ bạn đạt mục tiêu
+              </p>
+              <div class="flex gap-4 text-sm flex-wrap">
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-primary"
+                    >workspace_premium</span
+                  >
+                  <span>Chứng chỉ quốc tế</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-primary"
+                    >groups</span
+                  >
+                  <span>1000+ học viên</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-primary"
+                    >star</span
+                  >
+                  <span>4.9/5 đánh giá</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Coaches Grid -->
+        <div
+          id="coaches-grid"
+          class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16"
+        >
+          <!-- Loading -->
+          <div class="col-span-3 text-center py-12">
+            <div
+              class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"
+            ></div>
+            <p class="mt-4 text-[#9c495e]">
+              Đang tải thông tin huấn luyện viên...
+            </p>
+          </div>
+        </div>
+
+        <!-- Why Choose Our Coaches -->
+        <div class="border-t border-[#f4e7ea] pt-16 mb-16">
+          <div class="text-center mb-12">
+            <h3 class="text-3xl font-black text-[#1c0d11] mb-4">
+              Tại Sao Chọn HLV Của Chúng Tôi?
+            </h3>
+            <p class="text-[#9c495e]">
+              Đội ngũ HLV chuyên nghiệp với chứng chỉ quốc tế
+            </p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="text-center p-6 bg-white rounded-xl shadow-lg">
+              <span class="material-symbols-outlined text-5xl text-primary mb-4"
+                >workspace_premium</span
+              >
+              <h4 class="font-bold text-lg mb-2">Chứng Chỉ Quốc Tế</h4>
+              <p class="text-sm text-[#9c495e]">
+                ISSA, ACE, NASM, RYT và nhiều chứng chỉ uy tín khác
+              </p>
+            </div>
+
+            <div class="text-center p-6 bg-white rounded-xl shadow-lg">
+              <span class="material-symbols-outlined text-5xl text-primary mb-4"
+                >psychology</span
+              >
+              <h4 class="font-bold text-lg mb-2">Chế Độ Cá Nhân Hóa</h4>
+              <p class="text-sm text-[#9c495e]">
+                Lộ trình tập luyện được thiết kế riêng cho từng học viên
+              </p>
+            </div>
+
+            <div class="text-center p-6 bg-white rounded-xl shadow-lg">
+              <span class="material-symbols-outlined text-5xl text-primary mb-4"
+                >support_agent</span
+              >
+              <h4 class="font-bold text-lg mb-2">Hỗ Trợ 24/7</h4>
+              <p class="text-sm text-[#9c495e]">
+                Luôn sẵn sàng tư vấn và giải đáp mọi thắc mắc của học viên
+              </p>
+            </div>
+
+            <div class="text-center p-6 bg-white rounded-xl shadow-lg">
+              <span class="material-symbols-outlined text-5xl text-primary mb-4"
+                >trending_up</span
+              >
+              <h4 class="font-bold text-lg mb-2">Theo Dõi Tiến Độ</h4>
+              <p class="text-sm text-[#9c495e]">
+                Đo lường và đánh giá kết quả thường xuyên để tối ưu hiệu quả
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Booking Section -->
+        <div
+          class="bg-gradient-to-r from-primary/10 to-pink-100 rounded-2xl p-12"
+        >
+          <div class="text-center">
+            <h3 class="text-3xl font-black mb-4">Đặt Lịch Với HLV Ngay</h3>
+            <p class="text-[#9c495e] mb-6 max-w-2xl mx-auto">
+              Đăng ký để được tư vấn miễn phí và lựa chọn HLV phù hợp với mục
+              tiêu của bạn
+            </p>
+            <div class="flex gap-4 justify-center flex-wrap">
+              <button
+                onclick="window.location.href = 'auth.html'"
+                class="px-8 py-4 bg-primary text-white rounded-lg font-bold text-lg hover:bg-opacity-90 transition-all shadow-lg"
+              >
+                Đăng Ký Ngay
+              </button>
+              <button
+                onclick="window.location.href = 'services.html'"
+                class="px-8 py-4 bg-white text-primary border-2 border-primary rounded-lg font-bold text-lg hover:bg-primary hover:text-white transition-all"
+              >
+                Xem Khóa Học
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Testimonials -->
+        <div class="mt-16">
+          <div class="text-center mb-12">
+            <h3 class="text-3xl font-black text-[#1c0d11] mb-4">
+              Học Viên Nói Gì Về HLV
+            </h3>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white rounded-xl p-6 shadow-lg">
+              <div class="flex gap-1 mb-4 text-primary">
+                <span class="material-symbols-outlined fill-heart">star</span>
+                <span class="material-symbols-outlined fill-heart">star</span>
+                <span class="material-symbols-outlined fill-heart">star</span>
+                <span class="material-symbols-outlined fill-heart">star</span>
+                <span class="material-symbols-outlined fill-heart">star</span>
+              </div>
+              <p class="text-[#9c495e] mb-4">
+                "Coach Nam rất nhiệt tình và chuyên nghiệp. Nhờ coach mà tôi đã
+                giảm được 15kg trong 4 tháng!"
+              </p>
+              <div class="flex items-center gap-3">
+                <img
+                  src="https://ui-avatars.com/api/?name=Mai+Anh&background=f42559&color=fff&size=80"
+                  class="w-10 h-10 rounded-full"
+                />
+                <div>
+                  <p class="font-bold text-sm">Nguyễn Mai Anh</p>
+                  <p class="text-xs text-[#9c495e]">Học viên khóa Giảm Cân</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-xl p-6 shadow-lg">
+              <div class="flex gap-1 mb-4 text-primary">
+                <span class="material-symbols-outlined fill-heart">star</span>
+                <span class="material-symbols-outlined fill-heart">star</span>
+                <span class="material-symbols-outlined fill-heart">star</span>
+                <span class="material-symbols-outlined fill-heart">star</span>
+                <span class="material-symbols-outlined fill-heart">star</span>
+              </div>
+              <p class="text-[#9c495e] mb-4">
+                "Lớp HIIT của Coach Minh vừa thử thách vừa vui. Cảm thấy năng
+                lượng tràn đầy sau mỗi buổi tập!"
+              </p>
+              <div class="flex items-center gap-3">
+                <img
+                  src="https://ui-avatars.com/api/?name=Tuan+Hung&background=f42559&color=fff&size=80"
+                  class="w-10 h-10 rounded-full"
+                />
+                <div>
+                  <p class="font-bold text-sm">Trần Tuấn Hùng</p>
+                  <p class="text-xs text-[#9c495e]">Học viên khóa HIIT</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-xl p-6 shadow-lg">
+              <div class="flex gap-1 mb-4 text-primary">
+                <span class="material-symbols-outlined fill-heart">star</span>
+                <span class="material-symbols-outlined fill-heart">star</span>
+                <span class="material-symbols-outlined fill-heart">star</span>
+                <span class="material-symbols-outlined fill-heart">star</span>
+                <span class="material-symbols-outlined fill-heart">star</span>
+              </div>
+              <p class="text-[#9c495e] mb-4">
+                "Coach Linh dạy Yoga rất tâm huyết. Tôi cảm thấy thư giãn và cân
+                bằng hơn trong cuộc sống."
+              </p>
+              <div class="flex items-center gap-3">
+                <img
+                  src="https://ui-avatars.com/api/?name=Huong+Ly&background=f42559&color=fff&size=80"
+                  class="w-10 h-10 rounded-full"
+                />
+                <div>
+                  <p class="font-bold text-sm">Lê Hương Ly</p>
+                  <p class="text-xs text-[#9c495e]">Học viên khóa Yoga</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-[#2d161b] text-white py-8">
+      <div class="max-w-[1200px] mx-auto px-4 sm:px-10 text-center">
+        <p class="text-pink-300">
+          © 2024 GymHeart Fitness. All rights reserved.
+        </p>
+      </div>
+    </footer>
+
+    <!-- Supabase Config -->
+    <script src="js/supabase-config.js"></script>
+
+    <!-- Load Coaches Script -->
+    <script>
+      async function loadCoaches() {
+        try {
+          const supabase = window.supabaseClient;
+          const USER_SAFE_SELECT =
+            "id, email, full_name, phone, avatar_url, role, is_active, bio, specialization, years_of_experience, certification, created_at";
+          if (!supabase) {
+            console.error("Supabase client not initialized");
+            return;
+          }
+
+          // Fetch coaches from database
+          const { data: coaches, error } = await supabase
+            .from("users")
+            .select(USER_SAFE_SELECT)
+            .eq("role", "coach")
+            .eq("is_active", true)
+            .order("full_name");
+
+          if (error) {
+            console.error("Error loading coaches:", error);
+            document.getElementById("coaches-grid").innerHTML = `
+              <div class="col-span-3 text-center py-12">
+                <p class="text-red-500">Không thể tải thông tin huấn luyện viên. Vui lòng thử lại sau.</p>
+              </div>
+            `;
+            return;
+          }
+
+          if (!coaches || coaches.length === 0) {
+            document.getElementById("coaches-grid").innerHTML = `
+              <div class="col-span-3 text-center py-12">
+                <p class="text-[#9c495e]">Chưa có huấn luyện viên nào.</p>
+              </div>
+            `;
+            return;
+          }
+
+          // Render coaches
+          const coachesHTML = coaches
+            .map((coach) => {
+              // Parse specialties from bio (fallback to default)
+              const specialties = getSpecialties(coach.bio);
+              const rating = getRating(coach.full_name);
+              const reviews = getReviews(coach.full_name);
+
+              return `
+              <div class="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all">
+                <div class="h-80 overflow-hidden">
+                  <img
+                    src="${coach.avatar_url || "https://ui-avatars.com/api/?name=" + encodeURIComponent(coach.full_name) + "&background=f42559&color=fff&size=400"}"
+                    alt="${coach.full_name}"
+                    class="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
+                  />
+                </div>
+                <div class="p-6">
+                  <h3 class="text-xl font-bold mb-2">${coach.full_name}</h3>
+                  <p class="text-primary font-semibold mb-2">
+                    ${specialties.title}
+                  </p>
+                  <p class="text-[#9c495e] text-sm mb-3">
+                    ${specialties.experience}
+                  </p>
+                  <div class="flex gap-2 flex-wrap mb-4">
+                    ${specialties.tags
+                      .map(
+                        (tag) => `
+                      <span class="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-semibold">${tag}</span>
+                    `,
+                      )
+                      .join("")}
+                  </div>
+                  <div class="border-t border-[#f4e7ea] pt-4">
+                    <p class="text-sm text-[#9c495e] mb-3">
+                      ${coach.bio || "Huấn luyện viên chuyên nghiệp tại GymHeart Fitness."}
+                    </p>
+                    <div class="flex items-center gap-2 text-sm">
+                      <span class="material-symbols-outlined text-sm text-primary">star</span>
+                      <span class="font-bold">${rating}/5</span>
+                      <span class="text-[#9c495e]">(${reviews} đánh giá)</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `;
+            })
+            .join("");
+
+          document.getElementById("coaches-grid").innerHTML = coachesHTML;
+        } catch (error) {
+          console.error("Error:", error);
+          document.getElementById("coaches-grid").innerHTML = `
+            <div class="col-span-3 text-center py-12">
+              <p class="text-red-500">Đã xảy ra lỗi. Vui lòng thử lại sau.</p>
+            </div>
+          `;
+        }
+      }
+
+      // Helper function to extract specialties from bio
+      function getSpecialties(bio) {
+        // Default values
+        const defaults = {
+          title: "Huấn luyện viên chuyên nghiệp",
+          experience: "Nhiều năm kinh nghiệm",
+          tags: ["Fitness", "Training"],
+        };
+
+        // Check bio for keywords and assign specialties
+        if (!bio) return defaults;
+
+        const bioLower = bio.toLowerCase();
+
+        if (bioLower.includes("fitness") || bioLower.includes("bodybuilding")) {
+          return {
+            title: "Chuyên gia Fitness & Bodybuilding",
+            experience: "8 năm kinh nghiệm | ISSA Certified",
+            tags: ["Giảm cân", "Tăng cơ"],
+          };
+        } else if (bioLower.includes("hiit") || bioLower.includes("boxing")) {
+          return {
+            title: "Chuyên gia HIIT & Boxing",
+            experience: "6 năm kinh nghiệm | ACE Certified",
+            tags: ["HIIT", "Boxing"],
+          };
+        } else if (bioLower.includes("yoga") || bioLower.includes("pilates")) {
+          return {
+            title: "Chuyên gia Yoga & Pilates",
+            experience: "10 năm kinh nghiệm | RYT 500 Certified",
+            tags: ["Yoga", "Pilates"],
+          };
+        }
+
+        return defaults;
+      }
+
+      // Helper function for ratings (mock data - can be replaced with real data)
+      function getRating(name) {
+        const ratings = {
+          "Trần Thị Nam": "4.9",
+          "Nguyễn Văn Minh": "4.8",
+          "Phạm Thị Linh": "5.0",
+        };
+        return ratings[name] || "4.7";
+      }
+
+      // Helper function for review counts (mock data - can be replaced with real data)
+      function getReviews(name) {
+        const reviews = {
+          "Trần Thị Nam": "240",
+          "Nguyễn Văn Minh": "185",
+          "Phạm Thị Linh": "320",
+        };
+        return reviews[name] || "150";
+      }
+
+      function setActiveNavItem() {
+        const navLinks = document.querySelectorAll("header nav a.nav-link");
+        const currentPage = (
+          window.location.pathname.split("/").pop() || "coaches.html"
+        ).toLowerCase();
+
+        navLinks.forEach((link) => {
+          link.classList.remove("nav-link-active");
+          const href = (link.getAttribute("href") || "").toLowerCase();
+          if (href === currentPage) {
+            link.classList.add("nav-link-active");
+          }
+        });
+      }
+
+      // Load coaches when page loads
+      window.addEventListener("DOMContentLoaded", () => {
+        setActiveNavItem();
+        loadCoaches();
+      });
+    </script>
+  </body>
+</html>

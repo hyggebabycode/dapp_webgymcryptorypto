@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+:root {
+  --background: #faf7f8;
+  --foreground: #1c0d11;
+  --primary: #f42559;
+  --primary-soft: #fff0f4;
+  --muted: #9c495e;
+  --border: #f4e7ea;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-soft: var(--primary-soft);
+  --color-muted: var(--muted);
+  --color-border-soft: var(--border);
+  --font-sans: "Lexend", "Segoe UI", Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: "Lexend", "Segoe UI", Arial, sans-serif;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+a {
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+:focus-visible {
+  outline: 3px solid rgba(244, 37, 89, 0.28);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: rgba(244, 37, 89, 0.18);
+}
