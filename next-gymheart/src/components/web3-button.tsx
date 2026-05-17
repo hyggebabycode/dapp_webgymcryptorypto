@@ -7,8 +7,10 @@ import { formatBaseAsTest } from "@/lib/currency";
 
 export function Web3Button({
   course,
+  hasLinkedWallet,
 }: {
   course: { id: string; price: number; course_name: string };
+  hasLinkedWallet: boolean;
 }) {
   const router = useRouter();
   const { contractAddress, isPaying, payCourse, status } = useWeb3Payment();
@@ -37,9 +39,15 @@ export function Web3Button({
         </div>
       ) : null}
 
+      {!hasLinkedWallet ? (
+        <div className="mb-4 rounded-lg bg-yellow-50 px-4 py-3 text-sm font-bold text-yellow-700">
+          Bạn cần liên kết ví MetaMask trong menu avatar trước khi thanh toán.
+        </div>
+      ) : null}
+
       <button
         className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-primary font-black text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
-        disabled={isPaying}
+        disabled={isPaying || !hasLinkedWallet}
         onClick={async () => {
           await payCourse(course);
           router.refresh();

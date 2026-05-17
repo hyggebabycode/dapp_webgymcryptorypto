@@ -153,23 +153,42 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section id="contact" className="py-20">
-        <div className="mx-auto grid max-w-[1200px] gap-6 px-4 sm:px-10 md:grid-cols-2">
-          <div>
+      <section id="contact" className="border-y border-pink-100 bg-[#fff7f9] py-24">
+        <div className="mx-auto max-w-[1200px] px-4 sm:px-10">
+          <div className="mb-10 max-w-2xl">
+            <span className="mb-4 inline-flex rounded-full bg-white px-4 py-2 text-sm font-black text-primary shadow-sm">
+              Ghé thăm GymHeart
+            </span>
             <h2 className="text-4xl font-black">Liên Hệ</h2>
             <p className="mt-4 text-lg leading-8 text-muted">
               GymHeart luôn sẵn sàng tư vấn lộ trình phù hợp nhất cho bạn.
             </p>
           </div>
-          <div className="rounded-xl border border-border-soft bg-white p-6 shadow-sm">
-            <div className="mb-4 flex items-center gap-3">
-              <MapPin className="text-primary" />
-              <p className="font-bold">123 Fitness Street, TP. Hồ Chí Minh</p>
+
+          <div className="grid overflow-hidden rounded-2xl border border-pink-100 bg-white shadow-xl lg:grid-cols-[420px_1fr]">
+            <div className="flex flex-col justify-center p-6 sm:p-8">
+              <div className="mb-6 flex items-start gap-3">
+                <MapPin className="mt-1 shrink-0 text-primary" size={28} />
+                <div>
+                  <p className="text-xl font-black">Đại học Giao thông Vận tải</p>
+                  <p className="mt-2 text-sm font-bold leading-6 text-muted">
+                    Số 3 Cầu Giấy, phường Láng Thượng, quận Đống Đa, Hà Nội
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 rounded-xl bg-primary-soft p-4">
+                <Phone className="text-primary" />
+                <p className="font-black">0901 234 567</p>
+              </div>
             </div>
-            <div className="flex items-center gap-3">
-              <Phone className="text-primary" />
-              <p className="font-bold">0901 234 567</p>
-            </div>
+
+            <iframe
+              className="h-[360px] w-full border-0 lg:h-[420px]"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              src="https://www.google.com/maps?q=Tr%C6%B0%E1%BB%9Dng%20%C4%90%E1%BA%A1i%20h%E1%BB%8Dc%20Giao%20th%C3%B4ng%20V%E1%BA%ADn%20t%E1%BA%A3i%2C%20S%E1%BB%91%203%20C%E1%BA%A7u%20Gi%E1%BA%A5y%2C%20H%C3%A0%20N%E1%BB%99i&output=embed"
+              title="Bản đồ Đại học Giao thông Vận tải, số 3 Cầu Giấy"
+            />
           </div>
         </div>
       </section>

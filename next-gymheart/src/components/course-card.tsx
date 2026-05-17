@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { Clock, Users } from "lucide-react";
+import { Clock, UserRound, Users } from "lucide-react";
 import { AddToCartButton, type CartItem } from "@/components/cart/add-to-cart-button";
+import { CourseDetailDialog } from "@/components/course-detail-dialog";
 import { CourseRoadmapDialog } from "@/components/course-roadmap-dialog";
 import { formatBaseAsTest } from "@/lib/currency";
 import type { Course } from "@/lib/data/courses";
@@ -31,14 +32,15 @@ export function CourseCard({
     current_students: Number(course.current_students || 0),
     image_url: course.image_url,
   };
+  const coachName = course.coach?.full_name || "Chưa gán HLV";
 
   return (
     <article className="overflow-hidden rounded-xl border border-border-soft bg-white shadow-sm">
-      <div
-        className="h-44 bg-cover bg-center"
-        style={{
-          backgroundImage: `url(${course.image_url || "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800"})`,
-        }}
+      <CourseDetailDialog
+        cartItem={cartItem}
+        course={course}
+        isAuthenticated={isAuthenticated}
+        isEnrolled={isEnrolled}
       />
       <div className="p-5">
         <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -67,6 +69,10 @@ export function CourseCard({
             <span>
               {course.current_students}/{course.max_students} học viên
             </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <UserRound size={16} />
+            <span>HLV: {coachName}</span>
           </div>
         </div>
 

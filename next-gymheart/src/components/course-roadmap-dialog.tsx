@@ -19,6 +19,10 @@ const dayNames: Record<number, string> = {
   6: "Thứ bảy",
 };
 
+function scheduleDayLabel(schedule: CourseSchedule) {
+  return schedule.occurrence_label || dayNames[schedule.day_of_week] || "Lịch học";
+}
+
 export function CourseRoadmapDialog({
   courseId,
   courseName,
@@ -154,8 +158,8 @@ export function CourseRoadmapDialog({
                   {schedules.map((schedule) => (
                     <article className="rounded-[1.5rem] border border-pink-100 bg-background p-5" key={schedule.id}>
                       <div className="flex gap-5">
-                        <div className="flex size-16 shrink-0 items-center justify-center rounded-xl border-2 border-primary bg-primary-soft text-center text-xs font-black text-primary">
-                          {dayNames[schedule.day_of_week]}
+                        <div className="flex min-h-16 w-24 shrink-0 items-center justify-center rounded-xl border-2 border-primary bg-primary-soft px-2 text-center text-xs font-black leading-5 text-primary">
+                          {scheduleDayLabel(schedule)}
                         </div>
                         <div>
                           <h3 className="text-lg font-black">{schedule.title}</h3>
@@ -163,6 +167,12 @@ export function CourseRoadmapDialog({
                             <Clock size={16} className="text-primary" />
                             {schedule.start_time} - {schedule.end_time}
                           </p>
+                          {schedule.occurrence_date ? (
+                            <p className="mt-2 flex items-center gap-2 text-sm font-bold text-muted">
+                              <CalendarDays size={16} className="text-primary" />
+                              {schedule.occurrence_label}
+                            </p>
+                          ) : null}
                           <p className="mt-2 flex items-center gap-2 text-sm text-muted">
                             <MapPin size={16} className="text-primary" />
                             {schedule.location || "Phòng tập"}

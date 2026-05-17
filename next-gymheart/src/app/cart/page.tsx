@@ -46,7 +46,7 @@ export default async function CartPage() {
           </div>
           <h1 className="text-4xl font-black tracking-tight">Giỏ hàng</h1>
           <p className="mt-3 max-w-2xl text-muted">
-            Kiểm tra khóa học trước khi thanh toán. Khóa đã đăng ký sẽ được giữ lại để đối chiếu nhưng không tính vào tổng tiền.
+            Kiểm tra khóa học trước khi thanh toán. Khóa đã thanh toán sẽ được tự động xóa khỏi giỏ hàng.
           </p>
         </div>
         <Link className="inline-flex h-11 items-center justify-center rounded-lg border border-primary px-5 text-sm font-black text-primary hover:bg-primary hover:text-white" href="/courses">

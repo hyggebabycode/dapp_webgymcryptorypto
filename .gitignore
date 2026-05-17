@@ -25,6 +25,8 @@ pids
 node_modules/
 artifacts/
 cache/
+.report_work/
+next-gymheart/public/uploads/
 
 # Temporary files
 .tmp

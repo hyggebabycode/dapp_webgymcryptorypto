@@ -18,6 +18,8 @@ export type CourseSchedule = {
   title: string;
   description: string | null;
   day_of_week: number;
+  occurrence_date: string | null;
+  occurrence_label: string | null;
   start_time: string;
   end_time: string;
   location: string | null;
@@ -81,20 +83,80 @@ export async function getCourseRoadmapAction(courseId: string) {
 
 export async function getCourseScheduleAction(courseId: string) {
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("schedules")
-    .select("id, title, description, day_of_week, start_time, end_time, location, room_number")
-    .eq("course_id", courseId)
-    .eq("is_cancelled", false)
-    .order("day_of_week")
-    .order("start_time");
+  const [courseResult, scheduleResult] = await Promise.all([
+    supabase
+      .from("courses")
+      .select("start_date, end_date")
+      .eq("id", courseId)
+      .maybeSingle(),
+    supabase
+      .from("schedules")
+      .select("id, title, description, day_of_week, start_time, end_time, location, room_number")
+      .eq("course_id", courseId)
+      .eq("is_cancelled", false)
+      .order("day_of_week")
+      .order("start_time"),
+  ]);
 
-  if (error) {
-    console.error("Failed to load course schedule", error);
+  if (scheduleResult.error) {
+    console.error("Failed to load course schedule", scheduleResult.error);
     return [];
   }
 
-  return (data || []) as CourseSchedule[];
+  const schedules = (scheduleResult.data || []) as Omit<CourseSchedule, "occurrence_date" | "occurrence_label">[];
+  const startDate = parseDateOnly(courseResult.data?.start_date ?? null);
+  const endDate = parseDateOnly(courseResult.data?.end_date ?? null);
+
+  if (!startDate || !endDate || startDate.getTime() > endDate.getTime()) {
+    return schedules.map((schedule) => ({
+      ...schedule,
+      occurrence_date: null,
+      occurrence_label: null,
+    }));
+  }
+
+  const occurrences: CourseSchedule[] = [];
+  for (const date = new Date(startDate); date.getTime() <= endDate.getTime(); date.setDate(date.getDate() + 1)) {
+    const daySchedules = schedules.filter((schedule) => Number(schedule.day_of_week) === date.getDay());
+    for (const schedule of daySchedules) {
+      const occurrenceDate = formatDateOnly(date);
+      occurrences.push({
+        ...schedule,
+        id: `${schedule.id}-${occurrenceDate}`,
+        occurrence_date: occurrenceDate,
+        occurrence_label: formatScheduleDate(date),
+      });
+    }
+  }
+
+  return occurrences.sort((left, right) => {
+    const dateCompare = String(left.occurrence_date).localeCompare(String(right.occurrence_date));
+    if (dateCompare !== 0) return dateCompare;
+    return left.start_time.localeCompare(right.start_time);
+  });
+}
+
+function parseDateOnly(value: string | null) {
+  if (!value) return null;
+  const [year, month, day] = value.split("-").map(Number);
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return null;
+  return new Date(year, month - 1, day);
+}
+
+function formatDateOnly(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function formatScheduleDate(date: Date) {
+  return new Intl.DateTimeFormat("vi-VN", {
+    weekday: "long",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(date);
 }
 
 export async function getCartCoursesAction(courseIds: string[]) {

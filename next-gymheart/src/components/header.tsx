@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { Heart, LogOut, Search } from "lucide-react";
 import { CartButton } from "@/components/cart/cart-button";
-import { NotificationButton } from "@/components/notification-button";
+import { MemberAccountMenu } from "@/components/member-account-menu";
+import { NotificationButton, type NotificationItem } from "@/components/notification-button";
 import { logoutAction } from "@/lib/auth/actions";
 import type { SessionPayload } from "@/lib/auth/session";
+import { compactAddress, paymentAmountToTest } from "@/lib/currency";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const dashboardHrefByRole = {
   admin: "/dashboard/admin",
@@ -40,19 +43,95 @@ const navItemsByRole = {
   user: userNavItems,
 } as const;
 
-function getInitials(name: string) {
-  return (
-    name
-      .split(" ")
-      .filter(Boolean)
-      .slice(-2)
-      .map((part) => part[0])
-      .join("")
-      .toUpperCase() || "U"
-  );
+type MemberInfo = {
+  fullName: string;
+  role: string;
+  walletAddress: string | null;
+  requestedRole: string | null;
+  ptRequestStatus: string | null;
+};
+
+type PaidEnrollment = {
+  id: string;
+  payment_amount: number | null;
+  payment_token_amount?: number | null;
+  payment_date?: string | null;
+  courses: { course_name: string } | { course_name: string }[] | null;
+};
+
+function one<T>(value: T | T[] | null) {
+  return Array.isArray(value) ? value[0] : value;
 }
 
-export function Header({ session }: { session: SessionPayload | null }) {
+async function getMemberHeaderData(session: SessionPayload | null) {
+  if (!session) return { member: null, notifications: [] as NotificationItem[] };
+
+  const supabase = await createSupabaseServerClient();
+  const [userResult, paidResult] = await Promise.all([
+    supabase
+      .from("users")
+      .select("full_name, role, wallet_address, requested_role, pt_request_status")
+      .eq("id", session.userId)
+      .maybeSingle(),
+    supabase
+      .from("class_enrollments")
+      .select("id, payment_amount, payment_token_amount, payment_date, courses(course_name)")
+      .eq("user_id", session.userId)
+      .eq("payment_status", "paid")
+      .order("payment_date", { ascending: false })
+      .limit(3),
+  ]);
+
+  const user = userResult.data;
+  const member: MemberInfo = {
+    fullName: user?.full_name || session.fullName,
+    role: user?.role || session.role,
+    walletAddress: (user?.wallet_address as string | null) || null,
+    requestedRole: (user?.requested_role as string | null) || null,
+    ptRequestStatus: (user?.pt_request_status as string | null) || null,
+  };
+
+  const notifications: NotificationItem[] = [];
+  if (member.walletAddress) {
+    notifications.push({
+      id: "wallet-linked",
+      title: "Đã liên kết ví",
+      message: `Ví MetaMask ${compactAddress(member.walletAddress)} đang được dùng cho thanh toán.`,
+    });
+  }
+
+  if (member.role === "coach" || member.ptRequestStatus === "approved") {
+    notifications.push({
+      id: "pt-approved",
+      title: "Đã được duyệt HLV",
+      message: "Tài khoản của bạn đã có quyền huấn luyện viên.",
+    });
+  } else if (member.requestedRole === "coach" || member.ptRequestStatus === "pending") {
+    notifications.push({
+      id: "pt-pending",
+      title: "Đã xác nhận đăng ký HLV",
+      message: "Hồ sơ đăng ký HLV của bạn đã được gửi và đang chờ admin duyệt.",
+    });
+  }
+
+  const paidEnrollments = (paidResult.data || []) as PaidEnrollment[];
+  for (const enrollment of paidEnrollments) {
+    const course = one(enrollment.courses);
+    notifications.push({
+      id: `payment-${enrollment.id}`,
+      title: "Thanh toán thành công",
+      message: `${course?.course_name || "Khóa học"} đã được mở khóa với ${paymentAmountToTest({
+        baseAmount: enrollment.payment_amount,
+        tokenAmount: enrollment.payment_token_amount,
+      })}.`,
+    });
+  }
+
+  return { member, notifications };
+}
+
+export async function Header({ session }: { session: SessionPayload | null }) {
+  const { member, notifications } = await getMemberHeaderData(session);
   const dashboardHref = session ? dashboardHrefByRole[session.role] : "/login";
   const navItems = session ? navItemsByRole[session.role] : publicNavItems;
   const showMemberActions = session?.role === "user";
@@ -97,17 +176,12 @@ export function Header({ session }: { session: SessionPayload | null }) {
                 placeholder="Tìm kiếm khóa học..."
               />
             </form>
-            <NotificationButton />
+            <NotificationButton notifications={notifications} />
                 <CartButton isAuthenticated />
               </>
             ) : null}
-            <Link
-              className="inline-flex size-10 items-center justify-center rounded-full bg-primary text-sm font-black text-white ring-2 ring-white"
-              href="/profile"
-              title="Chỉnh sửa hồ sơ"
-            >
-              {getInitials(session.fullName)}
-            </Link>
+            {!showMemberActions ? <NotificationButton notifications={notifications} /> : null}
+            {member ? <MemberAccountMenu member={member} /> : null}
             <form action={logoutAction}>
               <button
                 className="inline-flex h-10 items-center gap-2 rounded-full bg-primary-soft px-4 text-sm font-black text-primary hover:bg-[#ffe1e9]"

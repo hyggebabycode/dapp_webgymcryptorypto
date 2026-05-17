@@ -10,6 +10,7 @@ function messageText(updated?: string, error?: string) {
   if (updated) return "Đã cập nhật huấn luyện viên thành công.";
   if (error === "self_delete") return "Không thể xóa tài khoản đang đăng nhập.";
   if (error === "self_status") return "Không thể tự vô hiệu hóa tài khoản đang đăng nhập.";
+  if (error === "image_invalid") return "Ảnh tải lên phải là file ảnh và dung lượng không quá 3MB.";
   if (error) return "Không thể xử lý yêu cầu. Kiểm tra dữ liệu rồi thử lại.";
   return null;
 }

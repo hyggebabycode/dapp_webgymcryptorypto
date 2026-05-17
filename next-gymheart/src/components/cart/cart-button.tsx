@@ -89,10 +89,9 @@ export function CartButton({
       if (hasLocalOnlyItems) {
         syncCartItemsAction(mergedItems.map((item) => item.id))
           .then((result) => {
-            if (result.ok && result.items.length > 0) {
-              writeCart(result.items);
-              setItems(result.items);
-            }
+            if (!result.ok) return;
+            writeCart(result.items);
+            setItems(result.items);
           })
           .catch(() => {
             // Keep local cart usable even if server sync is temporarily unavailable.
@@ -107,9 +106,8 @@ export function CartButton({
         syncCartItemsAction(localItems.map((item) => item.id))
           .then((result) => {
             if (!result.ok) return;
-            const mergedItems = mergeCartItems(result.items, readCart());
-            writeCart(mergedItems);
-            setItems(mergedItems);
+            writeCart(result.items);
+            setItems(result.items);
           })
           .catch(() => {
             // Keep local cart usable even if server sync is temporarily unavailable.

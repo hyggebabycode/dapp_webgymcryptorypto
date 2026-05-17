@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { writeAuditLog } from "@/lib/audit";
 import { requireRole } from "@/lib/auth/guards";
+import { imageFieldToUrl, ImageUploadError } from "@/lib/image-upload";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const allowedRoles = new Set(["admin", "coach", "user"]);
@@ -174,6 +175,17 @@ function cleanCourseLevel(value: FormDataEntryValue | null) {
   return allowedCourseLevels.has(level) ? level : null;
 }
 
+async function imageOrRedirect(formData: FormData, fileField: string, urlField: string, redirectPath: string) {
+  try {
+    return await imageFieldToUrl(formData, fileField, urlField);
+  } catch (error) {
+    if (error instanceof ImageUploadError) {
+      redirect(redirectPath);
+    }
+    throw error;
+  }
+}
+
 function parseCourseLessons(value: FormDataEntryValue | null) {
   return String(value || "")
     .split(/\r?\n/)
@@ -192,11 +204,59 @@ function parseCourseLessons(value: FormDataEntryValue | null) {
     });
 }
 
-async function replaceCourseLessons(courseId: string, lessons: ReturnType<typeof parseCourseLessons>) {
-  if (lessons.length === 0) return;
+function parseScheduleDay(value: string) {
+  const normalized = value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 
+  if (["0", "cn", "chu nhat", "sunday"].includes(normalized)) return 0;
+  if (["1", "2", "thu 2", "thu hai", "monday"].includes(normalized)) return 1;
+  if (["3", "thu 3", "thu ba", "tuesday"].includes(normalized)) return 2;
+  if (["4", "thu 4", "thu tu", "wednesday"].includes(normalized)) return 3;
+  if (["5", "thu 5", "thu nam", "thursday"].includes(normalized)) return 4;
+  if (["6", "thu 6", "thu sau", "friday"].includes(normalized)) return 5;
+  if (["7", "thu 7", "thu bay", "saturday"].includes(normalized)) return 6;
+  return null;
+}
+
+function parseCourseSchedules(value: FormDataEntryValue | null, courseName: string, coachId: string, maxCapacity: number) {
+  return String(value || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [rawDay, rawStartTime, rawEndTime, rawLocation, rawRoom, rawDescription] = line
+        .split("|")
+        .map((item) => item?.trim());
+      const dayOfWeek = parseScheduleDay(rawDay || "");
+      const startTime = rawStartTime || "";
+      const endTime = rawEndTime || "";
+
+      return {
+        course_id: "",
+        coach_id: coachId,
+        title: courseName,
+        description: rawDescription || null,
+        day_of_week: dayOfWeek,
+        start_time: startTime,
+        end_time: endTime,
+        location: rawLocation || null,
+        room_number: rawRoom || null,
+        max_capacity: maxCapacity > 0 ? maxCapacity : 20,
+        is_recurring: true,
+        is_cancelled: false,
+      };
+    });
+}
+
+async function replaceCourseLessons(courseId: string, lessons: ReturnType<typeof parseCourseLessons>) {
   const supabase = await createSupabaseServerClient();
   await supabase.from("course_lessons").delete().eq("course_id", courseId);
+  if (lessons.length === 0) return;
+
   const { error } = await supabase.from("course_lessons").insert(
     lessons.map((lesson) => ({
       course_id: courseId,
@@ -208,6 +268,66 @@ async function replaceCourseLessons(courseId: string, lessons: ReturnType<typeof
   );
 
   if (error) throw error;
+}
+
+async function replaceCourseSchedules(courseId: string, schedules: ReturnType<typeof parseCourseSchedules>) {
+  const supabase = await createSupabaseServerClient();
+  await supabase.from("schedules").delete().eq("course_id", courseId);
+  if (schedules.length === 0) return;
+
+  const { error } = await supabase.from("schedules").insert(
+    schedules.map((schedule) => ({
+      ...schedule,
+      course_id: courseId,
+    })),
+  );
+
+  if (error) throw error;
+}
+
+function hasInvalidParsedSchedule(schedules: ReturnType<typeof parseCourseSchedules>) {
+  return schedules.some((schedule) => {
+    const start = timeToMinutes(schedule.start_time);
+    const end = timeToMinutes(schedule.end_time);
+    return schedule.day_of_week == null || start == null || end == null || start >= end;
+  });
+}
+
+function hasInternalScheduleOverlap(schedules: ReturnType<typeof parseCourseSchedules>) {
+  return schedules.some((schedule, index) => {
+    const start = timeToMinutes(schedule.start_time);
+    const end = timeToMinutes(schedule.end_time);
+    if (schedule.day_of_week == null || start == null || end == null) return false;
+
+    return schedules.some((other, otherIndex) => {
+      if (index >= otherIndex || other.day_of_week !== schedule.day_of_week) return false;
+      const otherStart = timeToMinutes(other.start_time);
+      const otherEnd = timeToMinutes(other.end_time);
+      if (otherStart == null || otherEnd == null) return false;
+      return start < otherEnd && end > otherStart;
+    });
+  });
+}
+
+function scheduleConflictSignature(
+  schedules: Array<{
+    coach_id?: string | null;
+    day_of_week: number | null;
+    start_time: string;
+    end_time: string;
+  }>,
+  fallbackCoachId?: string,
+) {
+  return schedules
+    .map((schedule) => {
+      const coachId = schedule.coach_id || fallbackCoachId || "";
+      const dayOfWeek = Number(schedule.day_of_week);
+      const start = timeToMinutes(String(schedule.start_time));
+      const end = timeToMinutes(String(schedule.end_time));
+      return `${coachId}|${dayOfWeek}|${start ?? "?"}|${end ?? "?"}`;
+    })
+    .sort()
+    .join("\n");
 }
 
 async function ensureAssignableCoach(coachId: string | null, errorPath: string) {
@@ -232,12 +352,14 @@ async function hasScheduleConflict({
   dayOfWeek,
   startTime,
   endTime,
+  excludeCourseId,
   excludeScheduleId,
 }: {
   coachId: string;
   dayOfWeek: number;
   startTime: string;
   endTime: string;
+  excludeCourseId?: string;
   excludeScheduleId?: string;
 }) {
   const newStart = timeToMinutes(startTime);
@@ -247,13 +369,16 @@ async function hasScheduleConflict({
   const supabase = await createSupabaseServerClient();
   let query = supabase
     .from("schedules")
-    .select("id, start_time, end_time")
+    .select("id, course_id, start_time, end_time")
     .eq("coach_id", coachId)
     .eq("day_of_week", dayOfWeek)
     .eq("is_cancelled", false);
 
   if (excludeScheduleId) {
     query = query.neq("id", excludeScheduleId);
+  }
+  if (excludeCourseId) {
+    query = query.neq("course_id", excludeCourseId);
   }
 
   const { data, error } = await query;
@@ -287,7 +412,33 @@ export async function addCourseAction(formData: FormData) {
 
   const supabase = await createSupabaseServerClient();
   const coachId = await ensureAssignableCoach(clean(formData.get("coach_id")), "/dashboard/admin/courses?error=coach_invalid");
+  if (!coachId) {
+    redirect("/dashboard/admin/courses?error=coach_invalid");
+  }
+
   const lessons = parseCourseLessons(formData.get("lessons"));
+  const schedules = parseCourseSchedules(formData.get("schedules"), courseName, coachId, maxStudents);
+  if (hasInvalidParsedSchedule(schedules)) {
+    redirect("/dashboard/admin/courses?error=time_invalid");
+  }
+  if (hasInternalScheduleOverlap(schedules)) {
+    redirect("/dashboard/admin/courses?error=schedule_conflict");
+  }
+  for (const schedule of schedules) {
+    if (
+      schedule.day_of_week != null &&
+      (await hasScheduleConflict({
+        coachId,
+        dayOfWeek: schedule.day_of_week,
+        startTime: schedule.start_time,
+        endTime: schedule.end_time,
+      }))
+    ) {
+      redirect("/dashboard/admin/courses?error=schedule_conflict");
+    }
+  }
+  const courseImageUrl = await imageOrRedirect(formData, "image_file", "image_url", "/dashboard/admin/courses?error=image_invalid");
+
   const { data: createdCourse, error } = await supabase.from("courses").insert({
     course_name: courseName,
     description: clean(formData.get("description")),
@@ -295,7 +446,7 @@ export async function addCourseAction(formData: FormData) {
     duration_weeks: durationWeeks,
     level,
     max_students: maxStudents > 0 ? maxStudents : 20,
-    image_url: clean(formData.get("image_url")),
+    image_url: courseImageUrl,
     coach_id: coachId,
     start_date: startDate,
     end_date: endDate,
@@ -312,8 +463,9 @@ export async function addCourseAction(formData: FormData) {
 
   try {
     await replaceCourseLessons(createdCourse.id, lessons);
+    await replaceCourseSchedules(createdCourse.id, schedules);
   } catch {
-    redirect("/dashboard/admin/courses?error=lesson_failed");
+    redirect("/dashboard/admin/courses?error=course_detail_failed");
   }
 
   await writeAuditLog({
@@ -351,15 +503,65 @@ export async function updateCourseAction(formData: FormData) {
 
   const supabase = await createSupabaseServerClient();
   const coachId = await ensureAssignableCoach(clean(formData.get("coach_id")), "/dashboard/admin/courses?error=coach_invalid");
-  const { data: currentCourse } = await supabase
-    .from("courses")
-    .select("current_students")
-    .eq("id", courseId)
-    .maybeSingle();
+  if (!coachId) {
+    redirect("/dashboard/admin/courses?error=coach_invalid");
+  }
+
+  const [{ data: currentCourse }, { data: currentSchedules }] = await Promise.all([
+    supabase
+      .from("courses")
+      .select("current_students, coach_id")
+      .eq("id", courseId)
+      .maybeSingle(),
+    supabase
+      .from("schedules")
+      .select("coach_id, day_of_week, start_time, end_time")
+      .eq("course_id", courseId)
+      .eq("is_cancelled", false),
+  ]);
 
   if (Number(currentCourse?.current_students || 0) > maxStudents) {
     redirect("/dashboard/admin/courses?error=capacity_invalid");
   }
+
+  const lessons = parseCourseLessons(formData.get("lessons"));
+  const schedules = parseCourseSchedules(formData.get("schedules"), courseName, coachId, maxStudents);
+  if (hasInvalidParsedSchedule(schedules)) {
+    redirect("/dashboard/admin/courses?error=time_invalid");
+  }
+
+  const scheduleTimesChanged =
+    scheduleConflictSignature(schedules, coachId) !==
+    scheduleConflictSignature(
+      ((currentSchedules || []) as Array<{
+        coach_id: string | null;
+        day_of_week: number | null;
+        start_time: string;
+        end_time: string;
+      }>),
+      (currentCourse?.coach_id as string | null) || undefined,
+    );
+
+  if (scheduleTimesChanged) {
+    if (hasInternalScheduleOverlap(schedules)) {
+      redirect("/dashboard/admin/courses?error=schedule_conflict");
+    }
+    for (const schedule of schedules) {
+      if (
+        schedule.day_of_week != null &&
+        (await hasScheduleConflict({
+          coachId,
+          dayOfWeek: schedule.day_of_week,
+          startTime: schedule.start_time,
+          endTime: schedule.end_time,
+          excludeCourseId: courseId,
+        }))
+      ) {
+        redirect("/dashboard/admin/courses?error=schedule_conflict");
+      }
+    }
+  }
+  const courseImageUrl = await imageOrRedirect(formData, "image_file", "image_url", "/dashboard/admin/courses?error=image_invalid");
 
   const { error } = await supabase
     .from("courses")
@@ -370,7 +572,7 @@ export async function updateCourseAction(formData: FormData) {
       duration_weeks: durationWeeks,
       level,
       max_students: maxStudents > 0 ? maxStudents : 20,
-      image_url: clean(formData.get("image_url")),
+      image_url: courseImageUrl,
       coach_id: coachId,
       start_date: startDate,
       end_date: endDate,
@@ -385,13 +587,11 @@ export async function updateCourseAction(formData: FormData) {
     redirect("/dashboard/admin/courses?error=update_failed");
   }
 
-  const lessonText = String(formData.get("lessons") || "").trim();
-  if (lessonText) {
-    try {
-      await replaceCourseLessons(courseId, parseCourseLessons(lessonText));
-    } catch {
-      redirect("/dashboard/admin/courses?error=lesson_failed");
-    }
+  try {
+    await replaceCourseLessons(courseId, lessons);
+    await replaceCourseSchedules(courseId, schedules);
+  } catch {
+    redirect("/dashboard/admin/courses?error=course_detail_failed");
   }
 
   await writeAuditLog({
@@ -651,11 +851,12 @@ export async function addCoachAction(formData: FormData) {
 
   const supabase = await createSupabaseServerClient();
   const passwordHash = await bcrypt.hash(password, 10);
+  const avatarUrl = await imageOrRedirect(formData, "avatar_file", "avatar_url", "/dashboard/admin/coaches?error=image_invalid");
   const { data: createdCoach, error } = await supabase.from("users").insert({
     full_name: fullName,
     email,
     phone: clean(formData.get("phone")),
-    avatar_url: clean(formData.get("avatar_url")),
+    avatar_url: avatarUrl,
     gender: clean(formData.get("gender")),
     date_of_birth: clean(formData.get("date_of_birth")),
     address: clean(formData.get("address")),
@@ -707,11 +908,12 @@ export async function addPtRequestAction(formData: FormData) {
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
+  const avatarUrl = await imageOrRedirect(formData, "avatar_file", "avatar_url", "/dashboard/admin/enrollments?error=image_invalid#pt-requests");
   const payload = {
     full_name: fullName,
     email,
     phone: clean(formData.get("phone")),
-    avatar_url: clean(formData.get("avatar_url")),
+    avatar_url: avatarUrl,
     gender: clean(formData.get("gender")),
     date_of_birth: clean(formData.get("date_of_birth")),
     address: clean(formData.get("address")),
@@ -788,10 +990,12 @@ export async function addUserAction(formData: FormData) {
 
   const supabase = await createSupabaseServerClient();
   const passwordHash = await bcrypt.hash(password, 10);
+  const avatarUrl = await imageOrRedirect(formData, "avatar_file", "avatar_url", "/dashboard/admin/users?error=image_invalid");
   const { data: createdUser, error } = await supabase.from("users").insert({
     full_name: fullName,
     email,
     phone,
+    avatar_url: avatarUrl,
     role,
     password_hash: passwordHash,
     is_active: true,
@@ -827,11 +1031,12 @@ export async function updateUserAction(formData: FormData) {
   }
 
   const supabase = await createSupabaseServerClient();
+  const avatarUrl = await imageOrRedirect(formData, "avatar_file", "avatar_url", adminMessagePath(redirectTo, "error", "image_invalid"));
   const updatePayload: Record<string, string | number | boolean | null> = {
     full_name: fullName,
     email,
     phone: clean(formData.get("phone")),
-    avatar_url: clean(formData.get("avatar_url")),
+    avatar_url: avatarUrl,
     bio: clean(formData.get("bio")),
     specialization: clean(formData.get("specialization")),
     years_of_experience: cleanNumber(formData.get("years_of_experience")),

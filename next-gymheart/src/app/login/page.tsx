@@ -10,7 +10,7 @@ import {
 import { MetaMaskLoginButton } from "@/components/auth/metamask-login-button";
 import { MetaMaskRegisterButton } from "@/components/auth/metamask-register-button";
 import { PasswordField } from "@/components/auth/password-field";
-import { loginAction, signupAction } from "@/lib/auth/actions";
+import { SignupRoleFields } from "@/components/auth/signup-role-fields";
 import { getSession } from "@/lib/auth/session";
 
 const errorMessages: Record<string, string> = {
@@ -21,6 +21,8 @@ const errorMessages: Record<string, string> = {
   password_short: "Mật khẩu phải có ít nhất 6 ký tự.",
   email_exists: "Email này đã được đăng ký.",
   signup_failed: "Không thể tạo tài khoản. Vui lòng thử lại.",
+  upload_failed: "Không upload được CV/chứng nhận. Vui lòng kiểm tra Supabase Storage hoặc thử file khác.",
+  pt_schema_missing: "Database chưa có cột lưu hồ sơ PT. Hãy chạy migration web_dynamic_hardening.sql rồi đăng ký lại.",
   wallet_invalid: "Không xác thực được ví MetaMask. Hãy chọn đúng ví đã đăng ký và ký lại yêu cầu.",
   wallet_not_registered: "Ví này chưa có tài khoản. Hãy chuyển sang tab Đăng ký và đăng ký nhanh với MetaMask.",
   wallet_signup_failed: "Không thể tạo tài khoản bằng MetaMask. Vui lòng thử lại.",
@@ -128,7 +130,7 @@ export default async function LoginPage({
                   <span className="h-px flex-1 bg-pink-100" />
                 </div>
 
-                <form action={signupAction} className="space-y-5">
+                <form action="/api/auth/signup" className="space-y-5" encType="multipart/form-data" method="post">
                   <div>
                     <label className="mb-2 block text-sm font-black">Họ và tên</label>
                     <div className="relative">
@@ -190,89 +192,7 @@ export default async function LoginPage({
                     <p className="mt-2 text-xs font-bold text-muted">Mật khẩu phải có ít nhất 6 ký tự.</p>
                   </div>
 
-                  <div>
-                    <label className="mb-3 block text-sm font-black">Loại tài khoản</label>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-pink-200 bg-white px-4 py-3 text-sm font-bold">
-                        <input
-                          className="size-5 accent-primary"
-                          defaultChecked
-                          name="role"
-                          type="radio"
-                          value="user"
-                        />
-                        Thành viên
-                      </label>
-                      <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-pink-200 bg-white px-4 py-3 text-sm font-bold">
-                        <input className="size-5 accent-primary" name="role" type="radio" value="coach" />
-                        Huấn luyện viên (PT)
-                      </label>
-                    </div>
-                    <p className="mt-2 text-xs font-bold text-muted">
-                      Nếu đăng ký làm PT, yêu cầu sẽ được gửi đến Admin để xét duyệt.
-                    </p>
-                  </div>
-
-                  <div className="rounded-xl border border-pink-100 bg-white p-4">
-                    <div className="mb-4">
-                      <h3 className="font-black">Hồ sơ ứng tuyển PT</h3>
-                      <p className="mt-1 text-xs font-bold text-muted">
-                        Chỉ cần nhập nếu bạn chọn “Huấn luyện viên (PT)”. Admin sẽ xem các thông tin này trước khi duyệt.
-                      </p>
-                    </div>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <label>
-                        <span className="mb-2 block text-sm font-black">Chuyên môn</span>
-                        <input
-                          className="h-12 w-full rounded-lg border border-pink-200 bg-[#fcf8f9] px-4 outline-none focus:border-primary"
-                          name="specialization"
-                          placeholder="Fitness, Yoga, Boxing..."
-                        />
-                      </label>
-                      <label>
-                        <span className="mb-2 block text-sm font-black">Số năm kinh nghiệm</span>
-                        <input
-                          className="h-12 w-full rounded-lg border border-pink-200 bg-[#fcf8f9] px-4 outline-none focus:border-primary"
-                          min="0"
-                          name="years_of_experience"
-                          type="number"
-                          defaultValue={0}
-                        />
-                      </label>
-                      <label className="sm:col-span-2">
-                        <span className="mb-2 block text-sm font-black">Chứng chỉ</span>
-                        <input
-                          className="h-12 w-full rounded-lg border border-pink-200 bg-[#fcf8f9] px-4 outline-none focus:border-primary"
-                          name="certification"
-                          placeholder="ACE, NASM, ISSA, Yoga Alliance..."
-                        />
-                      </label>
-                      <label className="sm:col-span-2">
-                        <span className="mb-2 block text-sm font-black">Giới thiệu kinh nghiệm</span>
-                        <textarea
-                          className="min-h-24 w-full rounded-lg border border-pink-200 bg-[#fcf8f9] px-4 py-3 outline-none focus:border-primary"
-                          name="bio"
-                          placeholder="Bạn từng huấn luyện nhóm học viên nào, thế mạnh là gì, phong cách giảng dạy ra sao?"
-                        />
-                      </label>
-                      <label>
-                        <span className="mb-2 block text-sm font-black">Thời gian có thể dạy</span>
-                        <textarea
-                          className="min-h-20 w-full rounded-lg border border-pink-200 bg-[#fcf8f9] px-4 py-3 outline-none focus:border-primary"
-                          name="availability"
-                          placeholder="VD: Tối T2-T6, sáng cuối tuần"
-                        />
-                      </label>
-                      <label>
-                        <span className="mb-2 block text-sm font-black">Link hồ sơ</span>
-                        <textarea
-                          className="min-h-20 w-full rounded-lg border border-pink-200 bg-[#fcf8f9] px-4 py-3 outline-none focus:border-primary"
-                          name="portfolio_url"
-                          placeholder="Facebook, website cá nhân, chứng chỉ online..."
-                        />
-                      </label>
-                    </div>
-                  </div>
+                  <SignupRoleFields />
 
                   <button
                     className="inline-flex h-14 w-full items-center justify-center gap-3 rounded-lg bg-primary text-lg font-black text-white shadow-lg shadow-primary/25 hover:opacity-90"
@@ -293,7 +213,7 @@ export default async function LoginPage({
                   <span className="h-px flex-1 bg-pink-100" />
                 </div>
 
-                <form action={loginAction} className="space-y-5">
+                <form action="/api/auth/login" className="space-y-5" method="post">
                   <input type="hidden" name="next" value={params.next || ""} />
                   <div>
                     <label className="mb-2 block text-sm font-black">Địa chỉ Email</label>

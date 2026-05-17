@@ -19,7 +19,7 @@ export function AddPtRequestDialog() {
       </button>
       {open ? (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 p-4">
-          <form action={addPtRequestAction} className="max-h-[92vh] w-full max-w-4xl overflow-hidden rounded-3xl bg-white shadow-2xl">
+          <form action={addPtRequestAction} className="max-h-[92vh] w-full max-w-4xl overflow-hidden rounded-3xl bg-white shadow-2xl" encType="multipart/form-data">
             <div className="flex items-center justify-between border-b border-pink-100 px-6 py-5">
               <div>
                 <h2 className="text-2xl font-black">Yêu cầu đăng ký làm PT</h2>
@@ -87,6 +87,10 @@ export function AddPtRequestDialog() {
                 <label className="md:col-span-2">
                   <span className="mb-2 block text-sm font-black">Ảnh đại diện / hồ sơ ảnh</span>
                   <input className="h-11 w-full rounded-lg border border-pink-100 px-4 outline-none focus:border-primary" name="avatar_url" placeholder="https://..." />
+                </label>
+                <label className="md:col-span-2">
+                  <span className="mb-2 block text-sm font-black">Chọn ảnh từ máy</span>
+                  <input className="w-full rounded-lg border border-pink-100 bg-white px-4 py-2 text-sm outline-none focus:border-primary" name="avatar_file" accept="image/*" type="file" />
                 </label>
                 <label className="md:col-span-2">
                   <span className="mb-2 block text-sm font-black">Giới thiệu bản thân</span>

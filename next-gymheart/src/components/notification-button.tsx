@@ -3,8 +3,20 @@
 import { useState } from "react";
 import { Bell, CheckCircle2, X } from "lucide-react";
 
-export function NotificationButton() {
+export type NotificationItem = {
+  id: string;
+  title: string;
+  message: string;
+  tone?: "success" | "info" | "warning";
+};
+
+export function NotificationButton({
+  notifications = [],
+}: {
+  notifications?: NotificationItem[];
+}) {
   const [open, setOpen] = useState(false);
+  const unreadCount = notifications.length;
 
   return (
     <div className="relative">
@@ -15,7 +27,11 @@ export function NotificationButton() {
         type="button"
       >
         <Bell size={18} />
-        <span className="absolute right-2 top-2 size-2 rounded-full bg-primary ring-2 ring-white" />
+        {unreadCount > 0 ? (
+          <span className="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-black text-white ring-2 ring-white">
+            {unreadCount > 9 ? "9+" : unreadCount}
+          </span>
+        ) : null}
       </button>
 
       {open ? (
@@ -31,16 +47,28 @@ export function NotificationButton() {
               <X size={18} />
             </button>
           </div>
-          <div className="space-y-3">
-            <div className="rounded-xl bg-primary-soft p-3">
-              <p className="flex items-center gap-2 text-sm font-black text-primary">
-                <CheckCircle2 size={16} />
-                GymHeart đã sẵn sàng
-              </p>
-              <p className="mt-1 text-xs leading-5 text-muted">
-                Bạn có thể tìm khóa học, thêm vào giỏ hàng và thanh toán bằng MetaMask.
-              </p>
-            </div>
+          <div className="max-h-96 space-y-3 overflow-y-auto">
+            {notifications.length > 0 ? (
+              notifications.map((item) => (
+                <div className="rounded-xl bg-primary-soft p-3" key={item.id}>
+                  <p className="flex items-center gap-2 text-sm font-black text-primary">
+                    <CheckCircle2 size={16} />
+                    {item.title}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-muted">{item.message}</p>
+                </div>
+              ))
+            ) : (
+              <div className="rounded-xl bg-primary-soft p-3">
+                <p className="flex items-center gap-2 text-sm font-black text-primary">
+                  <CheckCircle2 size={16} />
+                  Chưa có thông báo mới
+                </p>
+                <p className="mt-1 text-xs leading-5 text-muted">
+                  Thanh toán, liên kết ví và trạng thái đăng ký HLV sẽ hiển thị tại đây.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       ) : null}

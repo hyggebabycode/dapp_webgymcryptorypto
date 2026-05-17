@@ -14,6 +14,8 @@ const PAYMENT_ABI = [
   "function payForCourse(uint256 courseId) payable",
   "event CoursePaid(address indexed student, uint256 indexed courseId, uint256 amount)",
 ] as const;
+const CART_KEY = "gymheart_cart";
+const CART_EVENT = "gymheart-cart-changed";
 
 type EthereumProvider = {
   request(args: { method: string; params?: unknown[] }): Promise<unknown>;
@@ -27,6 +29,23 @@ declare global {
 
 function courseUuidToUint256(courseId: string) {
   return BigInt(`0x${courseId.replace(/-/g, "")}`).toString();
+}
+
+function removePaidCourseFromLocalCart(courseId: string) {
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(CART_KEY) || "[]");
+    if (!Array.isArray(parsed)) return;
+
+    const nextCart = parsed.filter((item) => {
+      if (!item || typeof item !== "object") return false;
+      return String((item as { id?: unknown }).id || "") !== courseId;
+    });
+
+    window.localStorage.setItem(CART_KEY, JSON.stringify(nextCart));
+    window.dispatchEvent(new Event(CART_EVENT));
+  } catch {
+    // Local cart cleanup is best-effort; server state remains authoritative.
+  }
 }
 
 async function ensureSapphireNetwork() {
@@ -112,6 +131,7 @@ export function useWeb3Payment() {
         txHash: tx.hash,
         walletAddress: await signer.getAddress(),
       });
+      removePaidCourseFromLocalCart(course.id);
 
       setStatus("Thanh toán thành công.");
       return tx.hash as string;

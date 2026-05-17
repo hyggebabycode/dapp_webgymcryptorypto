@@ -121,7 +121,7 @@ export function UserRowActions({ user, mode = "users" }: Props) {
 
       {editOpen ? (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 p-4">
-          <form action={updateUserAction} className="max-h-[92vh] w-full max-w-3xl overflow-hidden rounded-3xl bg-white shadow-2xl">
+          <form action={updateUserAction} className="max-h-[92vh] w-full max-w-3xl overflow-hidden rounded-3xl bg-white shadow-2xl" encType="multipart/form-data">
             <div className="flex items-center justify-between border-b border-pink-100 px-6 py-5">
               <div>
                 <h2 className="text-2xl font-black">Sửa tài khoản</h2>
@@ -155,6 +155,10 @@ export function UserRowActions({ user, mode = "users" }: Props) {
                   required={false}
                 />
                 <Field label="Ảnh đại diện" name="avatar_url" defaultValue={user.avatar_url || ""} placeholder="https://..." />
+                <label>
+                  <span className="mb-2 block text-sm font-black">Chọn ảnh mới từ máy</span>
+                  <input className="w-full rounded-lg border border-pink-100 bg-white px-4 py-2 text-sm outline-none focus:border-primary" name="avatar_file" accept="image/*" type="file" />
+                </label>
                 <Field label="Chuyên môn" name="specialization" defaultValue={user.specialization || ""} />
                 <Field label="Số năm kinh nghiệm" name="years_of_experience" defaultValue={String(user.years_of_experience ?? 0)} type="number" />
                 <Field className="md:col-span-2" label="Chứng chỉ" name="certification" defaultValue={user.certification || ""} />

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { Camera, Mail, Save, ShieldCheck, UserRound } from "lucide-react";
+import { ChangePasswordDialog } from "@/components/profile/change-password-dialog";
 import { getSession } from "@/lib/auth/session";
 import { updateProfileAction } from "@/lib/profile/actions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -27,6 +28,7 @@ const errorMessages: Record<string, string> = {
   current_password: "Mật khẩu hiện tại không đúng.",
   missing_name: "Vui lòng nhập họ tên.",
   password_short: "Mật khẩu mới phải có ít nhất 6 ký tự.",
+  image_invalid: "Ảnh tải lên phải là file ảnh và dung lượng không quá 3MB.",
   save_failed: "Chưa lưu được thông tin. Bạn thử lại nhé.",
 };
 
@@ -97,6 +99,7 @@ export default async function ProfilePage({
         <form
           action={updateProfileAction}
           className="rounded-xl border border-pink-100 bg-white p-6 shadow-sm"
+          encType="multipart/form-data"
         >
           <div className="grid gap-5 md:grid-cols-2">
             <label className="block">
@@ -143,13 +146,21 @@ export default async function ProfilePage({
 
             <label className="block">
               <span className="mb-2 block text-sm font-black">Ảnh đại diện</span>
-              <div className="relative">
-                <Camera className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={18} />
+              <div className="space-y-2">
+                <div className="relative">
+                  <Camera className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={18} />
+                  <input
+                    className="h-12 w-full rounded-lg border border-pink-200 bg-white pl-11 pr-4 outline-none focus:border-primary"
+                    name="avatar_file"
+                    accept="image/*"
+                    type="file"
+                  />
+                </div>
                 <input
-                  className="h-12 w-full rounded-lg border border-pink-200 bg-white pl-11 pr-4 outline-none focus:border-primary"
+                  className="h-12 w-full rounded-lg border border-pink-200 bg-white px-4 outline-none focus:border-primary"
                   defaultValue={profile.avatar_url || ""}
                   name="avatar_url"
-                  placeholder="https://..."
+                  placeholder="Hoặc dán URL ảnh"
                 />
               </div>
             </label>
@@ -165,15 +176,14 @@ export default async function ProfilePage({
             />
           </label>
 
-          <div className="mt-6 rounded-xl border border-pink-100 bg-primary-soft p-5">
-            <h3 className="text-lg font-black">Đổi mật khẩu</h3>
-            <p className="mt-1 text-sm text-muted">
-              Để trống phần này nếu bạn không muốn đổi mật khẩu.
-            </p>
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <Field autoComplete="current-password" label="Mật khẩu hiện tại" name="current_password" type="password" />
-              <Field autoComplete="new-password" label="Mật khẩu mới" minLength={6} name="new_password" type="password" />
+          <div className="mt-6 flex flex-col justify-between gap-3 rounded-xl border border-pink-100 bg-primary-soft p-5 md:flex-row md:items-center">
+            <div>
+              <h3 className="text-lg font-black">Bảo mật tài khoản</h3>
+              <p className="mt-1 text-sm text-muted">
+                Đổi mật khẩu trong popup riêng để kiểm tra mật khẩu cũ trước khi nhập mật khẩu mới.
+              </p>
             </div>
+            <ChangePasswordDialog />
           </div>
 
           <button

@@ -10,6 +10,8 @@ export type ServerCartItem = CartItem & {
   added_at: string | null;
 };
 
+type SupabaseServerClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
+
 function isMissingCartTable(error: unknown) {
   const maybeError = error as { message?: string; details?: string; hint?: string };
   return [maybeError.message, maybeError.details, maybeError.hint]
@@ -19,12 +21,56 @@ function isMissingCartTable(error: unknown) {
     .includes("cart_items");
 }
 
+async function getPaidCourseIds(supabase: SupabaseServerClient, userId: string) {
+  const { data, error } = await supabase
+    .from("class_enrollments")
+    .select("course_id")
+    .eq("user_id", userId)
+    .eq("payment_status", "paid")
+    .in("status", ["active", "completed"]);
+
+  if (error) throw error;
+
+  return new Set((data || []).map((row) => String(row.course_id)));
+}
+
+async function prunePaidCartItems(
+  supabase: SupabaseServerClient,
+  userId: string,
+  courseIds?: string[],
+) {
+  const paidCourseIds = await getPaidCourseIds(supabase, userId);
+  const idsToDelete = courseIds
+    ? courseIds.filter((courseId) => paidCourseIds.has(courseId))
+    : [...paidCourseIds];
+
+  if (idsToDelete.length > 0) {
+    const { error } = await supabase
+      .from("cart_items")
+      .delete()
+      .eq("user_id", userId)
+      .in("course_id", idsToDelete);
+
+    if (error && !isMissingCartTable(error)) {
+      throw error;
+    }
+  }
+
+  return paidCourseIds;
+}
+
 export async function addCartItemAction(courseId: string) {
   const currentSession = await getSession();
   if (!currentSession || !courseId) return { ok: false };
   const session = await requireActiveSession("/cart");
 
   const supabase = await createSupabaseServerClient();
+  const paidCourseIds = await prunePaidCartItems(supabase, session.userId, [courseId]);
+  if (paidCourseIds.has(courseId)) {
+    revalidatePath("/cart");
+    return { ok: false, alreadyEnrolled: true };
+  }
+
   const { error } = await supabase.from("cart_items").upsert(
     {
       user_id: session.userId,
@@ -101,10 +147,13 @@ export async function syncCartItemsAction(courseIds: string[]) {
   if (courseError) throw courseError;
 
   const validIds = (validCourses || []).map((course) => String(course.id));
-  if (validIds.length > 0) {
+  const paidCourseIds = await prunePaidCartItems(supabase, session.userId, validIds);
+  const payableIds = validIds.filter((courseId) => !paidCourseIds.has(courseId));
+
+  if (payableIds.length > 0) {
     const now = new Date().toISOString();
     const { error } = await supabase.from("cart_items").upsert(
-      validIds.map((courseId) => ({
+      payableIds.map((courseId) => ({
         user_id: session.userId,
         course_id: courseId,
         updated_at: now,
@@ -125,6 +174,7 @@ export async function getCartItems(userId?: string) {
   if (!userId) return [];
 
   const supabase = await createSupabaseServerClient();
+  const paidCourseIds = await prunePaidCartItems(supabase, userId);
   const { data, error } = await supabase
     .from("cart_items")
     .select(
@@ -151,7 +201,7 @@ export async function getCartItems(userId?: string) {
     throw error;
   }
 
-  return (data || [])
+  const items = (data || [])
     .map((row) => {
       const course = Array.isArray(row.courses) ? row.courses[0] : row.courses;
       if (!course) return null;
@@ -169,4 +219,6 @@ export async function getCartItems(userId?: string) {
       } satisfies ServerCartItem;
     })
     .filter(Boolean) as ServerCartItem[];
+
+  return items.filter((item) => !paidCourseIds.has(item.id));
 }

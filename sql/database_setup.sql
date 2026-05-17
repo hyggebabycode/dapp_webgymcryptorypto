@@ -1,13 +1,13 @@
 ﻿-- =====================================================
 -- GYMHEART FITNESS - SUPABASE DATABASE SCHEMA
 -- =====================================================
--- Há»‡ thá»‘ng quáº£n lÃ½ phÃ²ng gym vá»›i 3 loáº¡i ngÆ°á»i dÃ¹ng:
--- 1. ADMIN: Quáº£n lÃ½ toÃ n bá»™ há»‡ thá»‘ng, khÃ³a há»c, ngÆ°á»i dÃ¹ng
--- 2. USER: ÄÄƒng kÃ½ khÃ³a há»c, xem lá»‹ch táº­p
--- 3. COACH: Quáº£n lÃ½ há»c viÃªn, giÃ¡o Ã¡n, lá»‹ch dáº¡y
+-- Hệ thống quản lý phòng gym với 3 loại người dùng:
+-- 1. ADMIN: Quản lý toàn bộ hệ thống, khóa học, người dùng
+-- 2. USER: Đăng ký khóa học, xem lịch tập
+-- 3. COACH: Quản lý học viên, giáo án, lịch dạy
 -- =====================================================
 
--- Drop existing tables (náº¿u cÃ³)
+-- Drop existing tables (nếu có)
 DROP TABLE IF EXISTS class_enrollments CASCADE;
 DROP TABLE IF EXISTS lesson_plans CASCADE;
 DROP TABLE IF EXISTS schedules CASCADE;
@@ -21,17 +21,17 @@ DROP TYPE IF EXISTS course_level CASCADE;
 -- 1. ENUM TYPES
 -- =====================================================
 
--- Loáº¡i ngÆ°á»i dÃ¹ng
+-- Loại người dùng
 CREATE TYPE user_role AS ENUM ('admin', 'user', 'coach');
 
--- Tráº¡ng thÃ¡i Ä‘Äƒng kÃ½ khÃ³a há»c
+-- Trạng thái đăng ký khóa học
 CREATE TYPE enrollment_status AS ENUM ('pending', 'active', 'completed', 'cancelled');
 
--- Cáº¥p Ä‘á»™ khÃ³a há»c
+-- Cấp độ khóa học
 CREATE TYPE course_level AS ENUM ('beginner', 'intermediate', 'advanced', 'all_levels');
 
 -- =====================================================
--- 2. USERS TABLE - Báº£ng ngÆ°á»i dÃ¹ng
+-- 2. USERS TABLE - Bảng người dùng
 -- =====================================================
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -46,30 +46,30 @@ CREATE TABLE users (
     role user_role NOT NULL DEFAULT 'user',
     is_active BOOLEAN DEFAULT true,
     bio TEXT,
-    specialization TEXT, -- Cho coach: chuyÃªn mÃ´n
-    years_of_experience INTEGER, -- Cho coach: sá»‘ nÄƒm kinh nghiá»‡m
-    certification TEXT, -- Cho coach: chá»©ng chá»‰
-    requested_role VARCHAR(20), -- Role xin cáº¥p khi Ä‘Äƒng kÃ½ (vd: 'coach'). Admin xÃ©t duyá»‡t.
+    specialization TEXT, -- Cho coach: chuyên môn
+    years_of_experience INTEGER, -- Cho coach: số năm kinh nghiệm
+    certification TEXT, -- Cho coach: chứng chỉ
+    requested_role VARCHAR(20), -- Role xin cấp khi đăng ký (vd: 'coach'). Admin xét duyệt.
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT chk_users_password_hash_bcrypt
-            CHECK (password_hash ~ '^\\$2[aby]\\$[0-9]{2}\\$.{53}$')
+            CHECK (password_hash ~ '^\$2[aby]\$[0-9]{2}\$.{53}$')
 );
 
--- Index cho tÃ¬m kiáº¿m nhanh
+-- Index cho tìm kiếm nhanh
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active);
 
 -- =====================================================
--- 3. COURSES TABLE - Báº£ng khÃ³a há»c
+-- 3. COURSES TABLE - Bảng khóa học
 -- =====================================================
 CREATE TABLE courses (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     course_name VARCHAR(255) NOT NULL,
     description TEXT,
     price DECIMAL(10, 2) NOT NULL,
-    duration_weeks INTEGER NOT NULL, -- Thá»i lÆ°á»£ng khÃ³a há»c (tuáº§n)
+    duration_weeks INTEGER NOT NULL, -- Thời lượng khóa học (tuần)
     level course_level NOT NULL DEFAULT 'all_levels',
     max_students INTEGER DEFAULT 20,
     current_students INTEGER DEFAULT 0,
@@ -78,9 +78,9 @@ CREATE TABLE courses (
     is_active BOOLEAN DEFAULT true,
     start_date DATE,
     end_date DATE,
-    schedule_description TEXT, -- MÃ´ táº£ lá»‹ch há»c
-    benefits TEXT[], -- Lá»£i Ã­ch cá»§a khÃ³a há»c (array)
-    requirements TEXT[], -- YÃªu cáº§u (array)
+    schedule_description TEXT, -- Mô tả lịch học
+    benefits TEXT[], -- Lợi ích của khóa học (array)
+    requirements TEXT[], -- Yêu cầu (array)
     created_by UUID REFERENCES users(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -92,7 +92,7 @@ CREATE INDEX IF NOT EXISTS idx_courses_is_active ON courses(is_active);
 CREATE INDEX IF NOT EXISTS idx_courses_level ON courses(level);
 
 -- =====================================================
--- 4. CLASS_ENROLLMENTS TABLE - Báº£ng Ä‘Äƒng kÃ½ khÃ³a há»c
+-- 4. CLASS_ENROLLMENTS TABLE - Bảng đăng ký khóa học
 -- =====================================================
 CREATE TABLE class_enrollments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -105,7 +105,7 @@ CREATE TABLE class_enrollments (
     payment_amount DECIMAL(10, 2),
     payment_date TIMESTAMP WITH TIME ZONE,
     tx_hash TEXT,
-    progress_percentage INTEGER DEFAULT 0, -- Tiáº¿n Ä‘á»™ hoÃ n thÃ nh (0-100%)
+    progress_percentage INTEGER DEFAULT 0, -- Tiến độ hoàn thành (0-100%)
     notes TEXT,
     completed_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -120,7 +120,7 @@ CREATE INDEX IF NOT EXISTS idx_enrollments_status ON class_enrollments(status);
 CREATE INDEX IF NOT EXISTS idx_enrollments_tx_hash ON class_enrollments(tx_hash);
 
 -- =====================================================
--- 5. SCHEDULES TABLE - Báº£ng lá»‹ch táº­p/dáº¡y
+-- 5. SCHEDULES TABLE - Bảng lịch tập/dạy
 -- =====================================================
 CREATE TABLE schedules (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -135,8 +135,8 @@ CREATE TABLE schedules (
     room_number VARCHAR(50),
     max_capacity INTEGER DEFAULT 20,
     current_capacity INTEGER DEFAULT 0,
-    is_recurring BOOLEAN DEFAULT true, -- Láº·p láº¡i hÃ ng tuáº§n
-    specific_date DATE, -- Cho buá»•i há»c Ä‘áº·c biá»‡t khÃ´ng láº·p láº¡i
+    is_recurring BOOLEAN DEFAULT true, -- Lặp lại hàng tuần
+    specific_date DATE, -- Cho buổi học đặc biệt không lặp lại
     is_cancelled BOOLEAN DEFAULT false,
     cancellation_reason TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -149,7 +149,7 @@ CREATE INDEX IF NOT EXISTS idx_schedules_coach_id ON schedules(coach_id);
 CREATE INDEX IF NOT EXISTS idx_schedules_day_of_week ON schedules(day_of_week);
 
 -- =====================================================
--- 6. LESSON_PLANS TABLE - Báº£ng giÃ¡o Ã¡n
+-- 6. LESSON_PLANS TABLE - Bảng giáo án
 -- =====================================================
 CREATE TABLE lesson_plans (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -157,11 +157,11 @@ CREATE TABLE lesson_plans (
     coach_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     week_number INTEGER NOT NULL,
     lesson_title VARCHAR(255) NOT NULL,
-    objectives TEXT, -- Má»¥c tiÃªu bÃ i há»c
-    warm_up TEXT, -- Khá»Ÿi Ä‘á»™ng
-    main_exercises TEXT, -- BÃ i táº­p chÃ­nh
-    cool_down TEXT, -- ThÆ° giÃ£n
-    equipment_needed TEXT[], -- Thiáº¿t bá»‹ cáº§n thiáº¿t
+    objectives TEXT, -- Mục tiêu bài học
+    warm_up TEXT, -- Khởi động
+    main_exercises TEXT, -- Bài tập chính
+    cool_down TEXT, -- Thư giãn
+    equipment_needed TEXT[], -- Thiết bị cần thiết
     duration_minutes INTEGER,
     difficulty_level INTEGER, -- 1-5
     notes TEXT,
@@ -176,7 +176,7 @@ CREATE INDEX IF NOT EXISTS idx_lesson_plans_course_id ON lesson_plans(course_id)
 CREATE INDEX IF NOT EXISTS idx_lesson_plans_coach_id ON lesson_plans(coach_id);
 
 -- =====================================================
--- 7. COURSE_LESSONS TABLE - Lá»™ trÃ¬nh há»c tá»«ng khÃ³a
+-- 7. COURSE_LESSONS TABLE - Lộ trình học từng khóa
 -- =====================================================
 CREATE TABLE IF NOT EXISTS course_lessons (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -193,11 +193,11 @@ CREATE TABLE IF NOT EXISTS course_lessons (
 CREATE INDEX IF NOT EXISTS idx_course_lessons_course_id ON course_lessons(course_id);
 CREATE INDEX IF NOT EXISTS idx_course_lessons_order ON course_lessons(course_id, lesson_order);
 
--- Disable RLS (nháº¥t quÃ¡n vá»›i cÃ¡c báº£ng khÃ¡c)
+-- Disable RLS (nhất quán với các bảng khác)
 ALTER TABLE course_lessons DISABLE ROW LEVEL SECURITY;
 
 -- =====================================================
--- 8. TRIGGER: Tá»± Ä‘á»™ng cáº­p nháº­t updated_at
+-- 8. TRIGGER: Tự động cập nhật updated_at
 -- =====================================================
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -207,7 +207,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Ãp dá»¥ng trigger cho táº¥t cáº£ cÃ¡c báº£ng
+-- Áp dụng trigger cho tất cả các bảng
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -227,7 +227,7 @@ CREATE TRIGGER update_course_lessons_updated_at BEFORE UPDATE ON course_lessons
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- =====================================================
--- 8. TRIGGER: Tá»± Ä‘á»™ng cáº­p nháº­t sá»‘ lÆ°á»£ng há»c viÃªn
+-- 8. TRIGGER: Tự động cập nhật số lượng học viên
 -- =====================================================
 CREATE OR REPLACE FUNCTION update_course_student_count()
 RETURNS TRIGGER AS $$
@@ -260,12 +260,12 @@ AFTER INSERT OR UPDATE OR DELETE ON class_enrollments
 FOR EACH ROW EXECUTE FUNCTION update_course_student_count();
 
 -- =====================================================
--- 9. ROW LEVEL SECURITY (RLS) - Báº£o máº­t cáº¥p hÃ ng
+-- 9. ROW LEVEL SECURITY (RLS) - Bảo mật cấp hàng
 -- =====================================================
--- LÆ¯U Ã: Äang dÃ¹ng CUSTOM AUTHENTICATION nÃªn táº¡m DISABLE RLS
--- Náº¿u muá»‘n báº­t RLS, cáº§n chuyá»ƒn sang dÃ¹ng Supabase Auth
+-- LƯU Ý: Đang dùng CUSTOM AUTHENTICATION nên tạm DISABLE RLS
+-- Nếu muốn bật RLS, cần chuyển sang dùng Supabase Auth
 
--- DISABLE RLS cho táº¥t cáº£ cÃ¡c báº£ng (cho phÃ©p truy cáº­p tá»± do)
+-- DISABLE RLS cho tất cả các bảng (cho phép truy cập tự do)
 ALTER TABLE users DISABLE ROW LEVEL SECURITY;
 ALTER TABLE courses DISABLE ROW LEVEL SECURITY;
 ALTER TABLE class_enrollments DISABLE ROW LEVEL SECURITY;
@@ -273,39 +273,39 @@ ALTER TABLE schedules DISABLE ROW LEVEL SECURITY;
 ALTER TABLE lesson_plans DISABLE ROW LEVEL SECURITY;
 
 -- =====================================================
--- 10. SAMPLE DATA - Dá»¯ liá»‡u máº«u
+-- 10. SAMPLE DATA - Dữ liệu mẫu
 -- =====================================================
 
--- XÃ³a dá»¯ liá»‡u cÅ© (náº¿u cÃ³)
+-- Xóa dữ liệu cũ (nếu có)
 DELETE FROM lesson_plans;
 DELETE FROM schedules;
 DELETE FROM class_enrollments;
 DELETE FROM courses;
 DELETE FROM users;
 
--- 10.1. Táº¡o 3 tÃ i khoáº£n máº«u
--- Password cho táº¥t cáº£ cÃ¡c tÃ i khoáº£n: "123456"
--- (Trong thá»±c táº¿, nÃªn hash báº±ng bcrypt hoáº·c tÆ°Æ¡ng tá»±)
+-- 10.1. Tạo 3 tài khoản mẫu
+-- Password cho tất cả các tài khoản: "123456"
+-- (Trong thực tế, nên hash bằng bcrypt hoặc tương tự)
 
--- ADMIN - Quáº£n trá»‹ viÃªn
+-- ADMIN - Quản trị viên
 INSERT INTO users (
     id, email, password_hash, full_name, phone, role, 
     is_active, bio, avatar_url, gender, date_of_birth
 ) VALUES (
     '11111111-1111-1111-1111-111111111111',
     'admin@gymheart.com',
-    '$2a$10$rXqBzqE3LqJLVR0GyqBh5.vJKJLxPmXPxB5mWxYqJ6Zp5VcJ2ZxSq', -- 123456
+    '$2b$10$zTKpxeWY2oHZDpPqAjEf6eAHOut/ch9t35YXeci/ecnIAqKuny5dm', -- 123456
     'admin',
     '0901234567',
     'admin',
     true,
-    'Quáº£n trá»‹ viÃªn há»‡ thá»‘ng GymHeart Fitness. Chá»‹u trÃ¡ch nhiá»‡m quáº£n lÃ½ toÃ n bá»™ hoáº¡t Ä‘á»™ng cá»§a phÃ²ng gym.',
+    'Quản trị viên hệ thống GymHeart Fitness. Chịu trách nhiệm quản lý toàn bộ hoạt động của phòng gym.',
     'https://ui-avatars.com/api/?name=Admin&background=f42559&color=fff&size=200',
     'Nam',
     '1985-05-15'
 );
 
--- COACH - Huáº¥n luyá»‡n viÃªn
+-- COACH - Huấn luyện viên
 INSERT INTO users (
     id, email, password_hash, full_name, phone, role,
     is_active, bio, specialization, years_of_experience, certification,
@@ -313,39 +313,39 @@ INSERT INTO users (
 ) VALUES (
     '22222222-2222-2222-2222-222222222222',
     'coach@gymheart.com',
-    '$2a$10$rXqBzqE3LqJLVR0GyqBh5.vJKJLxPmXPxB5mWxYqJ6Zp5VcJ2ZxSq', -- 123456
-    'Tráº§n Thá»‹ Nam',
+    '$2b$10$zTKpxeWY2oHZDpPqAjEf6eAHOut/ch9t35YXeci/ecnIAqKuny5dm', -- 123456
+    'Trần Thị Nam',
     '0907654321',
     'coach',
     true,
-    'Huáº¥n luyá»‡n viÃªn chuyÃªn nghiá»‡p vá»›i hÆ¡n 8 nÄƒm kinh nghiá»‡m trong lÄ©nh vá»±c fitness vÃ  bodybuilding.',
-    'Fitness & Bodybuilding, Giáº£m cÃ¢n',
+    'Huấn luyện viên chuyên nghiệp với hơn 8 năm kinh nghiệm trong lĩnh vực fitness và bodybuilding.',
+    'Fitness & Bodybuilding, Giảm cân',
     8,
     'ISSA Certified Personal Trainer, ACE Group Fitness Instructor',
     'https://ui-avatars.com/api/?name=Coach+Nam&background=f42559&color=fff&size=200',
-    'Ná»¯',
+    'Nữ',
     '1990-03-20'
 );
 
--- USER - Há»c viÃªn
+-- USER - Học viên
 INSERT INTO users (
     id, email, password_hash, full_name, phone, role,
     is_active, bio, avatar_url, gender, date_of_birth
 ) VALUES (
     '33333333-3333-3333-3333-333333333333',
     'user@gymheart.com',
-    '$2a$10$rXqBzqE3LqJLVR0GyqBh5.vJKJLxPmXPxB5mWxYqJ6Zp5VcJ2ZxSq', -- 123456
-    'Pháº¡m Thá»‹ Lan Anh',
+    '$2b$10$zTKpxeWY2oHZDpPqAjEf6eAHOut/ch9t35YXeci/ecnIAqKuny5dm', -- 123456
+    'Phạm Thị Lan Anh',
     '0912345678',
     'user',
     true,
-    'Há»c viÃªn nhiá»‡t huyáº¿t cá»§a GymHeart, Ä‘ang theo Ä‘uá»•i má»¥c tiÃªu giáº£m cÃ¢n vÃ  tÄƒng cÆ°á»ng sá»©c khá»e.',
+    'Học viên nhiệt huyết của GymHeart, đang theo đuổi mục tiêu giảm cân và tăng cường sức khỏe.',
     'https://ui-avatars.com/api/?name=Lan+Anh&background=f42559&color=fff&size=200',
-    'Ná»¯',
+    'Nữ',
     '1995-08-10'
 );
 
--- 10.2. Táº¡o khÃ³a há»c máº«u
+-- 10.2. Tạo khóa học mẫu
 
 INSERT INTO courses (
     id, course_name, description, price, duration_weeks, level,
@@ -353,11 +353,11 @@ INSERT INTO courses (
     start_date, end_date, schedule_description,
     benefits, requirements, created_by, image_url
 ) VALUES 
--- KhÃ³a 1: Giáº£m cÃ¢n tháº§n tá»‘c
+-- Khóa 1: Giảm cân thần tốc
 (
     'c0000001-0000-0000-0000-000000000001',
-    'Giáº£m CÃ¢n Tháº§n Tá»‘c 30 NgÃ y',
-    'ChÆ°Æ¡ng trÃ¬nh giáº£m cÃ¢n khoa há»c vÃ  hiá»‡u quáº£, káº¿t há»£p giá»¯a cardio vÃ  strength training. PhÃ¹ há»£p cho ngÆ°á»i muá»‘n giáº£m 5-8kg trong 1 thÃ¡ng.',
+    'Giảm Cân Thần Tốc 30 Ngày',
+    'Chương trình giảm cân khoa học và hiệu quả, kết hợp giữa cardio và strength training. Phù hợp cho người muốn giảm 5-8kg trong 1 tháng.',
     2500000,
     4,
     'beginner',
@@ -367,17 +367,17 @@ INSERT INTO courses (
     true,
     '2026-02-10',
     '2026-03-10',
-    'Thá»© 2, 4, 6 - 6:00 AM - 7:30 AM',
-    ARRAY['Giáº£m 5-8kg trong 30 ngÃ y', 'Cáº£i thiá»‡n sá»©c khá»e tim máº¡ch', 'TÄƒng cÆ°á»ng thá»ƒ lá»±c', 'TÆ° váº¥n dinh dÆ°á»¡ng miá»…n phÃ­'],
-    ARRAY['KhÃ´ng cÃ³ bá»‡nh lÃ½ náº·ng', 'Cam káº¿t táº­p luyá»‡n Ä‘áº§y Ä‘á»§', 'TuÃ¢n thá»§ cháº¿ Ä‘á»™ Äƒn'],
+    'Thứ 2, 4, 6 - 6:00 AM - 7:30 AM',
+    ARRAY['Giảm 5-8kg trong 30 ngày', 'Cải thiện sức khỏe tim mạch', 'Tăng cường thể lực', 'Tư vấn dinh dưỡng miễn phí'],
+    ARRAY['Không có bệnh lý nặng', 'Cam kết tập luyện đầy đủ', 'Tuân thủ chế độ ăn'],
     '11111111-1111-1111-1111-111111111111',
     'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800'
 ),
--- KhÃ³a 2: TÄƒng cÆ¡ báº¯p
+-- Khóa 2: Tăng cơ bắp
 (
     'c0000002-0000-0000-0000-000000000002',
-    'TÄƒng CÆ¡ Báº¯p ChuyÃªn Nghiá»‡p',
-    'Lá»™ trÃ¬nh táº­p luyá»‡n tÄƒng cÆ¡ chuyÃªn nghiá»‡p vá»›i cÃ¡c bÃ i táº­p compound vÃ  isolation. PhÃ¹ há»£p cho ngÆ°á»i muá»‘n phÃ¡t triá»ƒn cÆ¡ báº¯p toÃ n diá»‡n.',
+    'Tăng Cơ Bắp Chuyên Nghiệp',
+    'Lộ trình tập luyện tăng cơ chuyên nghiệp với các bài tập compound và isolation. Phù hợp cho người muốn phát triển cơ bắp toàn diện.',
     3500000,
     8,
     'intermediate',
@@ -387,17 +387,17 @@ INSERT INTO courses (
     true,
     '2026-02-15',
     '2026-04-15',
-    'Thá»© 3, 5, 7 - 5:30 PM - 7:00 PM',
-    ARRAY['TÄƒng 3-5kg cÆ¡ náº¡c', 'Cáº£i thiá»‡n sá»©c máº¡nh tá»•ng thá»ƒ', 'ÄiÃªu kháº¯c cÆ¡ thá»ƒ', 'HÆ°á»›ng dáº«n dinh dÆ°á»¡ng tÄƒng cÆ¡'],
-    ARRAY['CÃ³ kinh nghiá»‡m táº­p gym cÆ¡ báº£n', 'KhÃ´ng cÃ³ cháº¥n thÆ°Æ¡ng', 'TuÃ¢n thá»§ cháº¿ Ä‘á»™ Äƒn tÄƒng cÆ¡'],
+    'Thứ 3, 5, 7 - 5:30 PM - 7:00 PM',
+    ARRAY['Tăng 3-5kg cơ nạc', 'Cải thiện sức mạnh tổng thể', 'Điêu khắc cơ thể', 'Hướng dẫn dinh dưỡng tăng cơ'],
+    ARRAY['Có kinh nghiệm tập gym cơ bản', 'Không có chấn thương', 'Tuân thủ chế độ ăn tăng cơ'],
     '11111111-1111-1111-1111-111111111111',
     'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800'
 ),
--- KhÃ³a 3: Yoga & Flexibility
+-- Khóa 3: Yoga & Flexibility
 (
     'c0000003-0000-0000-0000-000000000003',
-    'Yoga VÃ  Flexibility',
-    'KhÃ³a há»c Yoga káº¿t há»£p stretching giÃºp tÄƒng cÆ°á»ng sá»± linh hoáº¡t, giáº£m stress vÃ  cáº£i thiá»‡n tÆ° tháº¿. PhÃ¹ há»£p cho má»i lá»©a tuá»•i.',
+    'Yoga Và Flexibility',
+    'Khóa học Yoga kết hợp stretching giúp tăng cường sự linh hoạt, giảm stress và cải thiện tư thế. Phù hợp cho mọi lứa tuổi.',
     1800000,
     6,
     'all_levels',
@@ -407,17 +407,17 @@ INSERT INTO courses (
     true,
     '2026-02-12',
     '2026-03-26',
-    'Thá»© 2, 4, 6 - 7:00 PM - 8:00 PM',
-    ARRAY['TÄƒng Ä‘á»™ linh hoáº¡t', 'Giáº£m cÄƒng tháº³ng', 'Cáº£i thiá»‡n tÆ° tháº¿', 'TÄƒng cÆ°á»ng thÄƒng báº±ng'],
-    ARRAY['KhÃ´ng cáº§n kinh nghiá»‡m', 'Mang theo tháº£m táº­p yoga'],
+    'Thứ 2, 4, 6 - 7:00 PM - 8:00 PM',
+    ARRAY['Tăng độ linh hoạt', 'Giảm căng thẳng', 'Cải thiện tư thế', 'Tăng cường thăng bằng'],
+    ARRAY['Không cần kinh nghiệm', 'Mang theo thảm tập yoga'],
     '11111111-1111-1111-1111-111111111111',
     'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800'
 ),
--- KhÃ³a 4: HIIT Training
+-- Khóa 4: HIIT Training
 (
     'c0000004-0000-0000-0000-000000000004',
-    'HIIT Training - Äá»‘t Má»¡ Cá»±c Máº¡nh',
-    'High Intensity Interval Training - PhÆ°Æ¡ng phÃ¡p táº­p luyá»‡n cÆ°á»ng Ä‘á»™ cao, Ä‘á»‘t chÃ¡y má»¡ thá»«a hiá»‡u quáº£ trong thá»i gian ngáº¯n.',
+    'HIIT Training - Đốt Mỡ Cực Mạnh',
+    'High Intensity Interval Training - Phương pháp tập luyện cường độ cao, đốt cháy mỡ thừa hiệu quả trong thời gian ngắn.',
     2800000,
     6,
     'intermediate',
@@ -427,17 +427,17 @@ INSERT INTO courses (
     true,
     '2026-02-17',
     '2026-03-31',
-    'Thá»© 3, 5 - 6:00 AM - 7:00 AM',
-    ARRAY['Äá»‘t chÃ¡y má»¡ nhanh chÃ³ng', 'TÄƒng sá»©c bá»n', 'Tiáº¿t kiá»‡m thá»i gian', 'TÄƒng tá»‘c Ä‘á»™ trao Ä‘á»•i cháº¥t'],
-    ARRAY['Sá»©c khá»e tá»‘t', 'CÃ³ thá»ƒ lá»±c cÆ¡ báº£n', 'KhÃ´ng cÃ³ váº¥n Ä‘á» vá» tim máº¡ch'],
+    'Thứ 3, 5 - 6:00 AM - 7:00 AM',
+    ARRAY['Đốt cháy mỡ nhanh chóng', 'Tăng sức bền', 'Tiết kiệm thời gian', 'Tăng tốc độ trao đổi chất'],
+    ARRAY['Sức khỏe tốt', 'Có thể lực cơ bản', 'Không có vấn đề về tim mạch'],
     '11111111-1111-1111-1111-111111111111',
     'https://images.unsplash.com/photo-1549060279-7e168fcee0c2?w=800'
 ),
--- KhÃ³a 5: Boxing Fitness
+-- Khóa 5: Boxing Fitness
 (
     'c0000005-0000-0000-0000-000000000005',
-    'Boxing Fitness - VÃµ Thuáº­t & Thá»ƒ HÃ¬nh',
-    'Káº¿t há»£p boxing vÃ  fitness training, giÃºp Ä‘á»‘t chÃ¡y calories, tÄƒng pháº£n xáº¡ vÃ  sá»©c máº¡nh.',
+    'Boxing Fitness - Võ Thuật & Thể Hình',
+    'Kết hợp boxing và fitness training, giúp đốt cháy calories, tăng phản xạ và sức mạnh.',
     3000000,
     8,
     'beginner',
@@ -447,20 +447,20 @@ INSERT INTO courses (
     true,
     '2026-02-20',
     '2026-04-20',
-    'Thá»© 2, 4, 6 - 5:00 PM - 6:30 PM',
-    ARRAY['Há»c ká»¹ thuáº­t boxing cÆ¡ báº£n', 'TÄƒng cÆ°á»ng thá»ƒ lá»±c', 'Äá»‘t chÃ¡y 500-700 calories/buá»•i', 'Giáº£i tá»a stress hiá»‡u quáº£'],
-    ARRAY['KhÃ´ng cáº§n kinh nghiá»‡m', 'Chuáº©n bá»‹ gÄƒng tay boxing', 'Sá»©c khá»e tá»‘t'],
+    'Thứ 2, 4, 6 - 5:00 PM - 6:30 PM',
+    ARRAY['Học kỹ thuật boxing cơ bản', 'Tăng cường thể lực', 'Đốt cháy 500-700 calories/buổi', 'Giải tỏa stress hiệu quả'],
+    ARRAY['Không cần kinh nghiệm', 'Chuẩn bị găng tay boxing', 'Sức khỏe tốt'],
     '11111111-1111-1111-1111-111111111111',
     'https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=800'
 );
 
--- 10.3. Táº¡o Ä‘Äƒng kÃ½ khÃ³a há»c cho user
+-- 10.3. Tạo đăng ký khóa học cho user
 
 INSERT INTO class_enrollments (
     id, user_id, course_id, status, payment_status,
     payment_amount, payment_date, progress_percentage
 ) VALUES
--- User Ä‘Äƒng kÃ½ khÃ³a Giáº£m CÃ¢n
+-- User đăng ký khóa Giảm Cân
 (
     '10000001-0000-0000-0000-000000000001',
     '33333333-3333-3333-3333-333333333333',
@@ -471,7 +471,7 @@ INSERT INTO class_enrollments (
     '2026-02-01 10:30:00',
     35
 ),
--- User Ä‘Äƒng kÃ½ khÃ³a Yoga
+-- User đăng ký khóa Yoga
 (
     '10000002-0000-0000-0000-000000000002',
     '33333333-3333-3333-3333-333333333333',
@@ -482,7 +482,7 @@ INSERT INTO class_enrollments (
     '2026-02-02 14:20:00',
     50
 ),
--- User Ä‘Äƒng kÃ½ khÃ³a HIIT (Ä‘ang chá»)
+-- User đăng ký khóa HIIT (đang chờ)
 (
     '10000003-0000-0000-0000-000000000003',
     '33333333-3333-3333-3333-333333333333',
@@ -494,23 +494,23 @@ INSERT INTO class_enrollments (
     0
 );
 
--- 10.4. Táº¡o lá»‹ch dáº¡y
+-- 10.4. Tạo lịch dạy
 
 INSERT INTO schedules (
     id, course_id, coach_id, title, description,
     day_of_week, start_time, end_time, location, room_number, max_capacity
 ) VALUES
--- Lá»‹ch cho khÃ³a Giáº£m CÃ¢n
+-- Lịch cho khóa Giảm Cân
 (
     'a0000001-0000-0000-0000-000000000001',
     'c0000001-0000-0000-0000-000000000001',
     '22222222-2222-2222-2222-222222222222',
-    'Giáº£m CÃ¢n - Thá»© 2',
+    'Giảm Cân - Thứ 2',
     'Cardio & HIIT Training',
     1, -- Monday
     '06:00:00',
     '07:30:00',
-    'PhÃ²ng Cardio',
+    'Phòng Cardio',
     'C101',
     15
 ),
@@ -518,94 +518,94 @@ INSERT INTO schedules (
     'a0000002-0000-0000-0000-000000000002',
     'c0000001-0000-0000-0000-000000000001',
     '22222222-2222-2222-2222-222222222222',
-    'Giáº£m CÃ¢n - Thá»© 4',
+    'Giảm Cân - Thứ 4',
     'Strength Training',
     3, -- Wednesday
     '06:00:00',
     '07:30:00',
-    'PhÃ²ng Cardio',
+    'Phòng Cardio',
     'C101',
     15
 ),
--- Lá»‹ch cho khÃ³a TÄƒng CÆ¡
+-- Lịch cho khóa Tăng Cơ
 (
     'a0000003-0000-0000-0000-000000000003',
     'c0000002-0000-0000-0000-000000000002',
     '22222222-2222-2222-2222-222222222222',
-    'TÄƒng CÆ¡ - Thá»© 3',
+    'Tăng Cơ - Thứ 3',
     'Upper Body Workout',
     2, -- Tuesday
     '17:30:00',
     '19:00:00',
-    'PhÃ²ng Táº¡',
+    'Phòng Tạ',
     'W201',
     12
 ),
--- Lá»‹ch cho khÃ³a Yoga
+-- Lịch cho khóa Yoga
 (
     'a0000004-0000-0000-0000-000000000004',
     'c0000003-0000-0000-0000-000000000003',
     '22222222-2222-2222-2222-222222222222',
-    'Yoga - Thá»© 2',
+    'Yoga - Thứ 2',
     'Hatha Yoga & Stretching',
     1, -- Monday
     '19:00:00',
     '20:00:00',
-    'PhÃ²ng Yoga',
+    'Phòng Yoga',
     'Y301',
     20
 );
 
--- 10.5. Táº¡o giÃ¡o Ã¡n máº«u
+-- 10.5. Tạo giáo án mẫu
 
 INSERT INTO lesson_plans (
     id, course_id, coach_id, week_number, lesson_title,
     objectives, warm_up, main_exercises, cool_down,
     equipment_needed, duration_minutes, difficulty_level, is_published
 ) VALUES
--- GiÃ¡o Ã¡n tuáº§n 1 - KhÃ³a Giáº£m CÃ¢n
+-- Giáo án tuần 1 - Khóa Giảm Cân
 (
     'b0000001-0000-0000-0000-000000000001',
     'c0000001-0000-0000-0000-000000000001',
     '22222222-2222-2222-2222-222222222222',
     1,
-    'Tuáº§n 1: LÃ m Quen VÃ  ÄÃ¡nh GiÃ¡',
-    'ÄÃ¡nh giÃ¡ thá»ƒ tráº¡ng ban Ä‘áº§u, lÃ m quen vá»›i cÃ¡c bÃ i táº­p cÆ¡ báº£n',
-    '5 phÃºt cháº¡y bá»™ nháº¹ + 5 phÃºt stretching Ä‘á»™ng',
+    'Tuần 1: Làm Quen Và Đánh Giá',
+    'Đánh giá thể trạng ban đầu, làm quen với các bài tập cơ bản',
+    '5 phút chạy bộ nhẹ + 5 phút stretching động',
     'Circuit Training: Squats 3x15, Push-ups 3x10, Jumping Jacks 3x20, Plank 3x30s',
-    '10 phÃºt stretching tÄ©nh + thá»Ÿ sÃ¢u',
-    ARRAY['Tháº£m táº­p', 'NÆ°á»›c uá»‘ng', 'KhÄƒn'],
+    '10 phút stretching tĩnh + thở sâu',
+    ARRAY['Thảm tập', 'Nước uống', 'Khăn'],
     75,
     2,
     true
 ),
--- GiÃ¡o Ã¡n tuáº§n 2 - KhÃ³a Giáº£m CÃ¢n
+-- Giáo án tuần 2 - Khóa Giảm Cân
 (
     'b0000002-0000-0000-0000-000000000002',
     'c0000001-0000-0000-0000-000000000001',
     '22222222-2222-2222-2222-222222222222',
     2,
-    'Tuáº§n 2: TÄƒng CÆ°á»ng Cardio',
-    'TÄƒng cÆ°á»ng kháº£ nÄƒng Ä‘á»‘t chÃ¡y má»¡ thÃ´ng qua cardio',
-    '5 phÃºt cháº¡y bá»™ + dynamic stretching',
+    'Tuần 2: Tăng Cường Cardio',
+    'Tăng cường khả năng đốt cháy mỡ thông qua cardio',
+    '5 phút chạy bộ + dynamic stretching',
     'HIIT: Sprint 30s/Rest 30s x 10 rounds, Burpees 3x12, Mountain Climbers 3x20',
-    '10 phÃºt cardio nháº¹ + stretching',
-    ARRAY['GiÃ y cháº¡y bá»™', 'Tháº£m táº­p', 'NÆ°á»›c uá»‘ng'],
+    '10 phút cardio nhẹ + stretching',
+    ARRAY['Giày chạy bộ', 'Thảm tập', 'Nước uống'],
     80,
     3,
     true
 ),
--- GiÃ¡o Ã¡n tuáº§n 1 - KhÃ³a TÄƒng CÆ¡
+-- Giáo án tuần 1 - Khóa Tăng Cơ
 (
     'b0000003-0000-0000-0000-000000000003',
     'c0000002-0000-0000-0000-000000000002',
     '22222222-2222-2222-2222-222222222222',
     1,
-    'Tuáº§n 1: Foundation - Upper Body',
-    'XÃ¢y dá»±ng ná»n táº£ng sá»©c máº¡nh pháº§n thÃ¢n trÃªn',
-    '10 phÃºt cardio nháº¹ + shoulder mobility',
+    'Tuần 1: Foundation - Upper Body',
+    'Xây dựng nền tảng sức mạnh phần thân trên',
+    '10 phút cardio nhẹ + shoulder mobility',
     'Bench Press 4x8, Barbell Row 4x8, Overhead Press 3x10, Chin-ups 3xMax',
-    'Stretching thÃ¢n trÃªn + foam rolling',
+    'Stretching thân trên + foam rolling',
     ARRAY['Barbell', 'Bench', 'Pull-up bar', 'Foam roller'],
     90,
     4,
@@ -613,10 +613,10 @@ INSERT INTO lesson_plans (
 );
 
 -- =====================================================
--- 11. VIEWS - Táº¡o views há»¯u Ã­ch
+-- 11. VIEWS - Tạo views hữu ích
 -- =====================================================
 
--- View: ThÃ´ng tin chi tiáº¿t khÃ³a há»c vá»›i coach
+-- View: Thông tin chi tiết khóa học với coach
 CREATE OR REPLACE VIEW v_course_details AS
 SELECT 
     c.*,
@@ -628,7 +628,7 @@ SELECT
 FROM courses c
 LEFT JOIN users u ON c.coach_id = u.id;
 
--- View: ThÃ´ng tin chi tiáº¿t Ä‘Äƒng kÃ½ khÃ³a há»c
+-- View: Thông tin chi tiết đăng ký khóa học
 CREATE OR REPLACE VIEW v_enrollment_details AS
 SELECT 
     e.*,
@@ -644,7 +644,7 @@ JOIN users u ON e.user_id = u.id
 JOIN courses c ON e.course_id = c.id
 LEFT JOIN users coach ON c.coach_id = coach.id;
 
--- View: Lá»‹ch dáº¡y chi tiáº¿t
+-- View: Lịch dạy chi tiết
 CREATE OR REPLACE VIEW v_schedule_details AS
 SELECT 
     s.*,
@@ -653,23 +653,23 @@ SELECT
     u.full_name as coach_name,
     u.avatar_url as coach_avatar,
     CASE s.day_of_week
-        WHEN 0 THEN 'Chá»§ Nháº­t'
-        WHEN 1 THEN 'Thá»© Hai'
-        WHEN 2 THEN 'Thá»© Ba'
-        WHEN 3 THEN 'Thá»© TÆ°'
-        WHEN 4 THEN 'Thá»© NÄƒm'
-        WHEN 5 THEN 'Thá»© SÃ¡u'
-        WHEN 6 THEN 'Thá»© Báº£y'
+        WHEN 0 THEN 'Chủ Nhật'
+        WHEN 1 THEN 'Thứ Hai'
+        WHEN 2 THEN 'Thứ Ba'
+        WHEN 3 THEN 'Thứ Tư'
+        WHEN 4 THEN 'Thứ Năm'
+        WHEN 5 THEN 'Thứ Sáu'
+        WHEN 6 THEN 'Thứ Bảy'
     END as day_name
 FROM schedules s
 JOIN courses c ON s.course_id = c.id
 JOIN users u ON s.coach_id = u.id;
 
 -- =====================================================
--- 12. FUNCTIONS - CÃ¡c hÃ m há»¯u Ã­ch
+-- 12. FUNCTIONS - Các hàm hữu ích
 -- =====================================================
 
--- HÃ m: Láº¥y danh sÃ¡ch há»c viÃªn trong má»™t khÃ³a há»c
+-- Hàm: Lấy danh sách học viên trong một khóa học
 CREATE OR REPLACE FUNCTION get_course_students(course_uuid UUID)
 RETURNS TABLE (
     student_id UUID,
@@ -694,7 +694,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- HÃ m: Láº¥y lá»‹ch dáº¡y cá»§a coach trong tuáº§n
+-- Hàm: Lấy lịch dạy của coach trong tuần
 CREATE OR REPLACE FUNCTION get_coach_weekly_schedule(coach_uuid UUID)
 RETURNS TABLE (
     schedule_id UUID,
@@ -714,13 +714,13 @@ BEGIN
         c.course_name::VARCHAR,
         s.day_of_week,
         CASE s.day_of_week
-            WHEN 0 THEN 'Chá»§ Nháº­t'::VARCHAR
-            WHEN 1 THEN 'Thá»© Hai'::VARCHAR
-            WHEN 2 THEN 'Thá»© Ba'::VARCHAR
-            WHEN 3 THEN 'Thá»© TÆ°'::VARCHAR
-            WHEN 4 THEN 'Thá»© NÄƒm'::VARCHAR
-            WHEN 5 THEN 'Thá»© SÃ¡u'::VARCHAR
-            WHEN 6 THEN 'Thá»© Báº£y'::VARCHAR
+            WHEN 0 THEN 'Chủ Nhật'::VARCHAR
+            WHEN 1 THEN 'Thứ Hai'::VARCHAR
+            WHEN 2 THEN 'Thứ Ba'::VARCHAR
+            WHEN 3 THEN 'Thứ Tư'::VARCHAR
+            WHEN 4 THEN 'Thứ Năm'::VARCHAR
+            WHEN 5 THEN 'Thứ Sáu'::VARCHAR
+            WHEN 6 THEN 'Thứ Bảy'::VARCHAR
         END,
         s.start_time,
         s.end_time,
@@ -736,10 +736,10 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- =====================================================
--- 13. FUNCTIONS: Admin quáº£n trá»‹
+-- 13. FUNCTIONS: Admin quản trị
 -- =====================================================
 
--- HÃ m: Admin reset password cá»§a user báº¥t ká»³
+-- Hàm: Admin reset password của user bất kỳ
 CREATE OR REPLACE FUNCTION admin_reset_user_password(
   target_user_id UUID,
   new_password TEXT
@@ -751,21 +751,21 @@ AS $$
 DECLARE
   result JSON;
 BEGIN
-  -- Kiá»ƒm tra user hiá»‡n táº¡i cÃ³ pháº£i admin khÃ´ng
+  -- Kiểm tra user hiện tại có phải admin không
   IF NOT EXISTS (
     SELECT 1 FROM public.users 
     WHERE id = auth.uid() AND role = 'admin'
   ) THEN
-    RAISE EXCEPTION 'Chá»‰ admin má»›i cÃ³ quyá»n reset password';
+    RAISE EXCEPTION 'Chỉ admin mới có quyền reset password';
   END IF;
 
-  -- Cáº­p nháº­t password
+  -- Cập nhật password
   UPDATE public.users
   SET password_hash = new_password, updated_at = NOW()
   WHERE id = target_user_id;
 
   IF NOT FOUND THEN
-    RAISE EXCEPTION 'KhÃ´ng tÃ¬m tháº¥y user';
+    RAISE EXCEPTION 'Không tìm thấy user';
   END IF;
 
   RETURN json_build_object('success', true, 'message', 'Password updated');
@@ -773,10 +773,10 @@ END;
 $$;
 
 -- =====================================================
--- HOÃ€N THÃ€NH DATABASE SETUP
+-- HOÀN THÀNH DATABASE SETUP
 -- =====================================================
 
--- Hiá»ƒn thá»‹ thá»‘ng kÃª
+-- Hiển thị thống kê
 SELECT 'Database setup completed successfully!' as status;
 SELECT COUNT(*) as total_users FROM users;
 SELECT COUNT(*) as total_courses FROM courses;
@@ -784,44 +784,45 @@ SELECT COUNT(*) as total_enrollments FROM class_enrollments;
 SELECT COUNT(*) as total_schedules FROM schedules;
 SELECT COUNT(*) as total_lesson_plans FROM lesson_plans;
 
--- 10.6. Táº¡o lá»™ trÃ¬nh há»c máº«u (course_lessons)
+-- 10.6. Tạo lộ trình học mẫu (course_lessons)
 INSERT INTO course_lessons (course_id, lesson_order, title, content, objectives) VALUES
--- KhÃ³a 1: Giáº£m CÃ¢n Tháº§n Tá»‘c
-('c0000001-0000-0000-0000-000000000001', 1, 'Buá»•i 1: Khá»Ÿi Ä‘á»™ng vÃ  ÄÃ¡nh giÃ¡ thá»ƒ tráº¡ng', 'LÃ m quen vá»›i chÆ°Æ¡ng trÃ¬nh, Ä‘o chá»‰ sá»‘ cÆ¡ thá»ƒ (BMI, vÃ²ng eo), há»c khá»Ÿi Ä‘á»™ng an toÃ n.', 'Hiá»ƒu cÆ¡ cháº¿ giáº£m cÃ¢n, náº¯m ká»¹ thuáº­t khá»Ÿi Ä‘á»™ng Ä‘Ãºng cÃ¡ch'),
-('c0000001-0000-0000-0000-000000000001', 2, 'Buá»•i 2: Cardio cÆ¡ báº£n', 'Äi bá»™ nhanh, cháº¡y nháº¹, Ä‘áº¡p xe. Táº­p 30-40 phÃºt vá»›i cÆ°á»ng Ä‘á»™ vá»«a pháº£i.', 'XÃ¢y dá»±ng ná»n táº£ng cardio, Ä‘á»‘t 300-400 kcal'),
-('c0000001-0000-0000-0000-000000000001', 3, 'Buá»•i 3: Circuit Training', 'Jumping jacks, burpees, mountain climbers. Má»—i Ä‘á»™ng tÃ¡c 30s, nghá»‰ 15s, 4-5 vÃ²ng.', 'Äá»‘t calo tá»‘i Ä‘a 500-600 kcal, tÄƒng trao Ä‘á»•i cháº¥t'),
-('c0000001-0000-0000-0000-000000000001', 4, 'Buá»•i 4: Strength Training', 'Squat, lunge, push-up, plank vá»›i táº¡ nhá». 3 sets x 12-15 reps.', 'TÄƒng cÆ¡ náº¡c, nÃ¢ng cao Ä‘á»‘t calo khi nghá»‰'),
-('c0000001-0000-0000-0000-000000000001', 5, 'Buá»•i 5: HIIT nÃ¢ng cao + Tá»•ng káº¿t', 'Sprint 30s + Ä‘i bá»™ 60s x 10 láº§n. Äo láº¡i chá»‰ sá»‘, lÃªn káº¿ hoáº¡ch tiáº¿p theo.', 'Äá»‘t má»¡ tá»‘i Ä‘a, Ä‘Ã¡nh giÃ¡ káº¿t quáº£ sau 30 ngÃ y'),
--- KhÃ³a 2: TÄƒng CÆ¡ Báº¯p
-('c0000002-0000-0000-0000-000000000002', 1, 'Buá»•i 1: Ná»n táº£ng - Upper Body', 'Bench Press, Barbell Row, Overhead Press, Chin-ups. Táº­p vá»›i táº¡ vá»«a sá»©c.', 'XÃ¢y dá»±ng sá»©c máº¡nh thÃ¢n trÃªn'),
-('c0000002-0000-0000-0000-000000000002', 2, 'Buá»•i 2: Ná»n táº£ng - Lower Body', 'Squat, Deadlift, Leg Press, Calf Raises. ÄÃºng tÆ° tháº¿ lÃ  Æ°u tiÃªn.', 'XÃ¢y dá»±ng sá»©c máº¡nh thÃ¢n dÆ°á»›i'),
-('c0000002-0000-0000-0000-000000000002', 3, 'Buá»•i 3: ToÃ n thÃ¢n + Dinh dÆ°á»¡ng', 'Compound exercises toÃ n thÃ¢n, hÆ°á»›ng dáº«n cháº¿ Ä‘á»™ Äƒn tÄƒng cÆ¡ (protein, carb).', 'Phá»‘i há»£p táº­p vÃ  Äƒn Ä‘Ãºng cÃ¡ch Ä‘á»ƒ tÄƒng cÆ¡ hiá»‡u quáº£'),
--- KhÃ³a 3: Yoga & Flexibility
-('c0000003-0000-0000-0000-000000000003', 1, 'Buá»•i 1: Yoga cÆ¡ báº£n & Thá»Ÿ', 'TÆ° tháº¿ Mountain, Downward Dog, Child Pose. HÆ°á»›ng dáº«n ká»¹ thuáº­t thá»Ÿ.', 'Náº¯m tÆ° tháº¿ ná»n táº£ng, xÃ¢y dá»±ng thÃ³i quen thá»Ÿ Ä‘Ãºng'),
-('c0000003-0000-0000-0000-000000000003', 2, 'Buá»•i 2: TÄƒng linh hoáº¡t', 'Sun Salutation, Warrior series, hip opening poses. 60 phÃºt liÃªn tá»¥c.', 'TÄƒng Ä‘á»™ linh hoáº¡t toÃ n thÃ¢n, giáº£m cÄƒng cÆ¡');
+-- Khóa 1: Giảm Cân Thần Tốc
+('c0000001-0000-0000-0000-000000000001', 1, 'Buổi 1: Khởi động và Đánh giá thể trạng', 'Làm quen với chương trình, đo chỉ số cơ thể (BMI, vòng eo), học khởi động an toàn.', 'Hiểu cơ chế giảm cân, nắm kỹ thuật khởi động đúng cách'),
+('c0000001-0000-0000-0000-000000000001', 2, 'Buổi 2: Cardio cơ bản', 'Đi bộ nhanh, chạy nhẹ, đạp xe. Tập 30-40 phút với cường độ vừa phải.', 'Xây dựng nền tảng cardio, đốt 300-400 kcal'),
+('c0000001-0000-0000-0000-000000000001', 3, 'Buổi 3: Circuit Training', 'Jumping jacks, burpees, mountain climbers. Mỗi động tác 30s, nghỉ 15s, 4-5 vòng.', 'Đốt calo tối đa 500-600 kcal, tăng trao đổi chất'),
+('c0000001-0000-0000-0000-000000000001', 4, 'Buổi 4: Strength Training', 'Squat, lunge, push-up, plank với tạ nhỏ. 3 sets x 12-15 reps.', 'Tăng cơ nạc, nâng cao đốt calo khi nghỉ'),
+('c0000001-0000-0000-0000-000000000001', 5, 'Buổi 5: HIIT nâng cao + Tổng kết', 'Sprint 30s + đi bộ 60s x 10 lần. Đo lại chỉ số, lên kế hoạch tiếp theo.', 'Đốt mỡ tối đa, đánh giá kết quả sau 30 ngày'),
+-- Khóa 2: Tăng Cơ Bắp
+('c0000002-0000-0000-0000-000000000002', 1, 'Buổi 1: Nền tảng - Upper Body', 'Bench Press, Barbell Row, Overhead Press, Chin-ups. Tập với tạ vừa sức.', 'Xây dựng sức mạnh thân trên'),
+('c0000002-0000-0000-0000-000000000002', 2, 'Buổi 2: Nền tảng - Lower Body', 'Squat, Deadlift, Leg Press, Calf Raises. Đúng tư thế là ưu tiên.', 'Xây dựng sức mạnh thân dưới'),
+('c0000002-0000-0000-0000-000000000002', 3, 'Buổi 3: Toàn thân + Dinh dưỡng', 'Compound exercises toàn thân, hướng dẫn chế độ ăn tăng cơ (protein, carb).', 'Phối hợp tập và ăn đúng cách để tăng cơ hiệu quả'),
+-- Khóa 3: Yoga & Flexibility
+('c0000003-0000-0000-0000-000000000003', 1, 'Buổi 1: Yoga cơ bản & Thở', 'Tư thế Mountain, Downward Dog, Child Pose. Hướng dẫn kỹ thuật thở.', 'Nắm tư thế nền tảng, xây dựng thói quen thở đúng'),
+('c0000003-0000-0000-0000-000000000003', 2, 'Buổi 2: Tăng linh hoạt', 'Sun Salutation, Warrior series, hip opening poses. 60 phút liên tục.', 'Tăng độ linh hoạt toàn thân, giảm căng cơ');
 
 SELECT COUNT(*) as total_course_lessons FROM course_lessons;
 
 -- =====================================================
--- HÆ¯á»šNG DáºªN Sá»¬ Dá»¤NG
+-- HƯỚNG DẪN SỬ DỤNG
 -- =====================================================
 /*
-TÃ€I KHOáº¢N MáºªU:
+TÀI KHOẢN MẪU:
 1. Admin: admin@gymheart.com / 123456
 2. Coach: coach@gymheart.com / 123456
 3. User: user@gymheart.com / 123456
 
-CÃC BÆ¯á»šC CÃ€I Äáº¶T TRÃŠN SUPABASE:
-1. ÄÄƒng nháº­p vÃ o Supabase Dashboard
-2. Táº¡o project má»›i hoáº·c sá»­ dá»¥ng project cÃ³ sáºµn
-3. VÃ o SQL Editor
-4. Copy toÃ n bá»™ ná»™i dung file nÃ y vÃ  paste vÃ o
-5. Cháº¡y query
-6. Kiá»ƒm tra cÃ¡c báº£ng Ä‘Ã£ Ä‘Æ°á»£c táº¡o trong Table Editor
+CÁC BƯỚC CÀI ĐẶT TRÊN SUPABASE:
+1. Đăng nhập vào Supabase Dashboard
+2. Tạo project mới hoặc sử dụng project có sẵn
+3. Vào SQL Editor
+4. Copy toàn bộ nội dung file này và paste vào
+5. Chạy query
+6. Kiểm tra các bảng đã được tạo trong Table Editor
 
-LÆ¯U Ã:
-- Password hash trong vÃ­ dá»¥ nÃ y lÃ  giáº£ Ä‘á»‹nh
-- Trong production, sá»­ dá»¥ng Supabase Auth Ä‘á»ƒ xá»­ lÃ½ authentication
-- Enable RLS policies theo nhu cáº§u báº£o máº­t cá»§a báº¡n
-- Cáº­p nháº­t avatar_url vá»›i URL thá»±c táº¿ cá»§a áº£nh
+LƯU Ý:
+- Password hash trong ví dụ này là giả định
+- Trong production, sử dụng Supabase Auth để xử lý authentication
+- Enable RLS policies theo nhu cầu bảo mật của bạn
+- Cập nhật avatar_url với URL thực tế của ảnh
 */
+

@@ -19,7 +19,7 @@ export function AddUserDialog() {
       </button>
       {open ? (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 p-4">
-          <form action={addUserAction} className="w-full max-w-xl rounded-3xl bg-white shadow-2xl">
+          <form action={addUserAction} className="w-full max-w-xl rounded-3xl bg-white shadow-2xl" encType="multipart/form-data">
             <div className="flex items-center justify-between border-b border-pink-100 px-6 py-5">
               <div>
                 <h2 className="text-2xl font-black">Thêm người dùng</h2>
@@ -46,6 +46,14 @@ export function AddUserDialog() {
               <label className="block">
                 <span className="mb-2 block text-sm font-black">Số điện thoại</span>
                 <input className="h-11 w-full rounded-lg border border-pink-100 px-4 outline-none focus:border-primary" name="phone" />
+              </label>
+              <label className="block">
+                <span className="mb-2 block text-sm font-black">Ảnh đại diện</span>
+                <input className="h-11 w-full rounded-lg border border-pink-100 px-4 outline-none focus:border-primary" name="avatar_url" placeholder="https://..." />
+              </label>
+              <label className="block">
+                <span className="mb-2 block text-sm font-black">Chọn ảnh từ máy</span>
+                <input className="w-full rounded-lg border border-pink-100 bg-white px-4 py-2 text-sm outline-none focus:border-primary" name="avatar_file" accept="image/*" type="file" />
               </label>
               <PasswordField
                 inputClassName="bg-white"

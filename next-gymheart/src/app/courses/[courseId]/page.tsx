@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CheckCircle2, Clock, Users } from "lucide-react";
+import { CheckCircle2, Clock, UserRound, Users } from "lucide-react";
 import { Web3Button } from "@/components/web3-button";
 import { getSession } from "@/lib/auth/session";
 import { formatBaseAsTest } from "@/lib/currency";
 import { getCourseById, getEnrolledCourseIds } from "@/lib/data/courses";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -15,14 +16,20 @@ export default async function CourseDetailPage({
 }) {
   const { courseId } = await params;
   const session = await getSession();
-  const [course, enrolledCourseIds] = await Promise.all([
+  const supabase = await createSupabaseServerClient();
+  const [course, enrolledCourseIds, userResult] = await Promise.all([
     getCourseById(courseId),
     getEnrolledCourseIds(session?.userId),
+    session
+      ? supabase.from("users").select("wallet_address").eq("id", session.userId).maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
 
   if (!course) notFound();
 
   const isEnrolled = enrolledCourseIds.has(course.id);
+  const hasLinkedWallet = Boolean(userResult.data?.wallet_address);
+  const coachName = course.coach?.full_name || "Chưa gán HLV";
   if (!course.is_active && session?.role !== "admin" && !isEnrolled) {
     notFound();
   }
@@ -46,7 +53,9 @@ export default async function CourseDetailPage({
               </span>
             ) : null}
           </div>
-          <p className="mt-4 leading-8 text-muted">{course.description}</p>
+          <p className="mt-4 whitespace-pre-line leading-8 text-muted">
+            {course.description || "Khóa học đang được cập nhật mô tả chi tiết."}
+          </p>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-3">
             <div className="rounded-lg bg-primary-soft p-4">
@@ -65,6 +74,15 @@ export default async function CourseDetailPage({
                 {formatBaseAsTest(course.price)}
               </p>
             </div>
+          </div>
+
+          <div className="mt-4 rounded-lg bg-primary-soft p-4">
+            <UserRound className="mb-2 text-primary" size={20} />
+            <p className="text-sm font-bold text-muted">HLV đứng lớp</p>
+            <p className="mt-2 text-xl font-black">{coachName}</p>
+            {course.coach?.specialization ? (
+              <p className="mt-1 text-sm font-bold text-muted">{course.coach.specialization}</p>
+            ) : null}
           </div>
         </div>
       </article>
@@ -90,6 +108,7 @@ export default async function CourseDetailPage({
               price: Number(course.price),
               course_name: course.course_name,
             }}
+            hasLinkedWallet={hasLinkedWallet}
           />
         ) : (
           <div className="rounded-xl border border-border-soft bg-white p-5 shadow-sm">

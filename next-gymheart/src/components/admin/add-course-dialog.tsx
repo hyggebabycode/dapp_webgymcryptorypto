@@ -24,7 +24,7 @@ export function AddCourseDialog({ coaches = [] }: { coaches?: CoachOption[] }) {
       </button>
       {open ? (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 p-4">
-          <form action={addCourseAction} className="max-h-[92vh] w-full max-w-4xl overflow-hidden rounded-3xl bg-white shadow-2xl">
+          <form action={addCourseAction} className="max-h-[92vh] w-full max-w-4xl overflow-hidden rounded-3xl bg-white shadow-2xl" encType="multipart/form-data">
             <div className="flex items-center justify-between border-b border-pink-100 px-6 py-5">
               <div>
                 <h2 className="text-2xl font-black">Thêm khóa học</h2>
@@ -71,8 +71,8 @@ export function AddCourseDialog({ coaches = [] }: { coaches?: CoachOption[] }) {
                 </label>
                 <label>
                   <span className="mb-2 block text-sm font-black">Huấn luyện viên</span>
-                  <select className="h-11 w-full rounded-lg border border-pink-100 px-4 outline-none focus:border-primary" name="coach_id" defaultValue="">
-                    <option value="">Chưa gán HLV</option>
+                  <select className="h-11 w-full rounded-lg border border-pink-100 px-4 outline-none focus:border-primary" name="coach_id" defaultValue="" required>
+                    <option value="" disabled>Chọn HLV đứng lớp</option>
                     {coaches.map((coach) => (
                       <option key={coach.id} value={coach.id}>
                         {coach.full_name}
@@ -93,8 +93,21 @@ export function AddCourseDialog({ coaches = [] }: { coaches?: CoachOption[] }) {
                   <input className="h-11 w-full rounded-lg border border-pink-100 px-4 outline-none focus:border-primary" name="image_url" placeholder="https://images.unsplash.com/..." />
                 </label>
                 <label className="md:col-span-2">
+                  <span className="mb-2 block text-sm font-black">Chọn ảnh từ máy</span>
+                  <input className="w-full rounded-lg border border-pink-100 bg-white px-4 py-2 text-sm outline-none focus:border-primary" name="image_file" accept="image/*" type="file" />
+                </label>
+                <label className="md:col-span-2">
                   <span className="mb-2 block text-sm font-black">Lịch học hiển thị</span>
                   <input className="h-11 w-full rounded-lg border border-pink-100 px-4 outline-none focus:border-primary" name="schedule_description" placeholder="Thứ 2, 4, 6 - 06:00 - 07:30" />
+                </label>
+                <label className="md:col-span-2">
+                  <span className="mb-2 block text-sm font-black">Khung giờ học</span>
+                  <textarea
+                    className="min-h-32 w-full rounded-lg border border-pink-100 px-4 py-3 outline-none focus:border-primary"
+                    name="schedules"
+                    placeholder={"Mỗi dòng: Thứ | Giờ bắt đầu | Giờ kết thúc | Địa điểm | Phòng | Ghi chú\nThứ hai | 17:00 | 18:30 | Khu B | Phòng CrossFit | Training chuyên sâu\nThứ tư | 17:00 | 18:30 | Khu B | Phòng CrossFit | Training chuyên sâu"}
+                  />
+                  <p className="mt-2 text-xs font-bold text-muted">Lịch tập sẽ tự bung thành các ngày học cụ thể theo ngày bắt đầu và kết thúc.</p>
                 </label>
                 <label className="md:col-span-2">
                   <span className="mb-2 block text-sm font-black">Mô tả</span>

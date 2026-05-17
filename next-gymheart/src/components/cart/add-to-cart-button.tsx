@@ -89,6 +89,12 @@ export function AddToCartButton({
 
           try {
             const result = await addCartItemAction(course.id);
+            if ("alreadyEnrolled" in result && result.alreadyEnrolled) {
+              writeCart(cart.filter((item) => item.id !== course.id));
+              showToast("Khóa học này bạn đã đăng ký.", "info");
+              return;
+            }
+
             writeCart([...cart, course]);
             showToast(
               result.ok

@@ -7,13 +7,21 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-type CourseRow = CourseAdminRecord & {
+type CourseRow = Omit<CourseAdminRecord, "course_lessons" | "schedules"> & {
   users: { full_name: string } | { full_name: string }[] | null;
 };
 
 type CoachOption = {
   id: string;
   full_name: string;
+};
+
+type CourseLessonRow = NonNullable<CourseAdminRecord["course_lessons"]>[number] & {
+  course_id: string;
+};
+
+type ScheduleRow = NonNullable<CourseAdminRecord["schedules"]>[number] & {
+  course_id: string;
 };
 
 const levelLabel: Record<string, string> = {
@@ -32,7 +40,11 @@ function messageText(updated?: string, error?: string) {
   if (error === "date_invalid") return "Ngày kết thúc phải sau ngày bắt đầu.";
   if (error === "coach_invalid") return "Huấn luyện viên được gán phải đang hoạt động.";
   if (error === "capacity_invalid") return "Sức chứa không được nhỏ hơn số học viên hiện tại.";
+  if (error === "time_invalid") return "Lịch học có dòng chưa đúng thứ hoặc giờ kết thúc không sau giờ bắt đầu.";
+  if (error === "schedule_conflict") return "Lịch học bị trùng giờ với lịch khác của huấn luyện viên.";
+  if (error === "image_invalid") return "Ảnh tải lên phải là file ảnh và dung lượng không quá 3MB.";
   if (error === "lesson_failed") return "Khóa học đã lưu nhưng lộ trình học chưa được cập nhật. Vui lòng thử sửa lại lộ trình.";
+  if (error === "course_detail_failed") return "Khóa học đã lưu nhưng lịch học hoặc lộ trình chưa được cập nhật. Vui lòng kiểm tra lại định dạng.";
   if (error) return "Không thể xử lý khóa học. Vui lòng kiểm tra dữ liệu.";
   return null;
 }
@@ -60,7 +72,30 @@ export default async function AdminCoursesPage({
   ]);
 
   const coaches = (coachesResult.data || []) as CoachOption[];
-  const courses = (coursesResult.data || []) as CourseRow[];
+  const baseCourses = (coursesResult.data || []) as CourseRow[];
+  const courseIds = baseCourses.map((course) => course.id);
+  const [lessonsResult, schedulesResult] = courseIds.length > 0
+    ? await Promise.all([
+        supabase
+          .from("course_lessons")
+          .select("id, course_id, lesson_order, title, content, objectives")
+          .in("course_id", courseIds)
+          .order("lesson_order"),
+        supabase
+          .from("schedules")
+          .select("id, course_id, title, description, day_of_week, start_time, end_time, location, room_number, max_capacity, is_cancelled")
+          .in("course_id", courseIds)
+          .order("day_of_week")
+          .order("start_time"),
+      ])
+    : [{ data: [] }, { data: [] }];
+  const lessons = (lessonsResult.data || []) as CourseLessonRow[];
+  const schedules = (schedulesResult.data || []) as ScheduleRow[];
+  const courses = baseCourses.map((course) => ({
+    ...course,
+    course_lessons: lessons.filter((lesson) => lesson.course_id === course.id),
+    schedules: schedules.filter((schedule) => schedule.course_id === course.id),
+  }));
   const message = messageText(params.updated, params.error);
 
   return (
@@ -155,6 +190,8 @@ export default async function AdminCoursesPage({
                       benefits: course.benefits,
                       requirements: course.requirements,
                       coach_id: course.coach_id,
+                      course_lessons: course.course_lessons,
+                      schedules: course.schedules,
                     }}
                   />
                 </div>

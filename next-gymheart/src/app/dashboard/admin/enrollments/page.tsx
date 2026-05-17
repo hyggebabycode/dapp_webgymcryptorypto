@@ -1,10 +1,9 @@
 import { AddPtRequestDialog } from "@/components/admin/add-pt-request-dialog";
+import { PtRequestActions, type PtRequestRecord } from "@/components/admin/pt-request-actions";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { RealtimeFilter } from "@/components/realtime-filter";
 import {
-  approvePtRequestAction,
   deleteEnrollmentAction,
-  rejectPtRequestAction,
   updateEnrollmentStatusAction,
 } from "@/lib/admin/actions";
 import { compactAddress, formatDateTime, paymentAmountToTest } from "@/lib/currency";
@@ -41,12 +40,92 @@ type PtRequestRow = {
   pt_request_note?: string | null;
 };
 
+function parseCvStoragePath(note?: string | null) {
+  const match = (note || "").match(/Đường dẫn storage:\s*([^\s]+)/i);
+  return match?.[1] || null;
+}
+
+function parseCvPublicPath(note?: string | null) {
+  const match = (note || "").match(/Đường dẫn file:\s*([^\s]+)/i);
+  const publicPath = match?.[1] || null;
+  return publicPath?.startsWith("/uploads/") ? publicPath : null;
+}
+
+function parseCvLabel(note?: string | null) {
+  const match = (note || "").match(/File chứng nhận\/CV:\s*([^\n]+)/i);
+  return match?.[1] || null;
+}
+
+function parseTeachingAvailability(note?: string | null) {
+  const match = (note || "").match(/Thời gian có thể dạy:\s*([^\n]+)/i);
+  return match?.[1]?.trim() || null;
+}
+
+function safeStorageName(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 80);
+}
+
+function labelFromStoredName(value: string) {
+  return value.replace(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}-/i, "");
+}
+
+async function getSignedCvUrl(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  note?: string | null,
+) {
+  const storagePath = parseCvStoragePath(note);
+  if (!storagePath) return null;
+
+  const [bucket, ...pathParts] = storagePath.split("/");
+  const path = pathParts.join("/");
+  if (!bucket || !path) return null;
+
+  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 60 * 30);
+  if (error) return null;
+  return data.signedUrl;
+}
+
+async function getStoredCvInfo(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  email: string,
+) {
+  const bucket = "pt-application-files";
+  const folder = safeStorageName(email);
+  if (!folder) return null;
+
+  const { data: files, error } = await supabase.storage.from(bucket).list(folder, {
+    limit: 1,
+    sortBy: { column: "created_at", order: "desc" },
+  });
+
+  if (error || !files || files.length === 0) return null;
+
+  const file = files[0];
+  const path = `${folder}/${file.name}`;
+  const { data: signedData, error: signedError } = await supabase.storage
+    .from(bucket)
+    .createSignedUrl(path, 60 * 30);
+
+  if (signedError) return null;
+
+  return {
+    label: labelFromStoredName(file.name),
+    signedUrl: signedData.signedUrl,
+  };
+}
+
 function one<T>(value: T | T[] | null) {
   return Array.isArray(value) ? value[0] : value;
 }
 
 function messageText(updated?: string, error?: string) {
   if (updated) return "Đã cập nhật đăng ký thành công.";
+  if (error === "image_invalid") return "Ảnh tải lên phải là file ảnh và dung lượng không quá 3MB.";
   if (error) return "Không thể xử lý yêu cầu. Vui lòng kiểm tra dữ liệu và thử lại.";
   return null;
 }
@@ -101,7 +180,20 @@ export default async function AdminEnrollmentsPage({
   }
 
   const enrollments = enrollmentsData || [];
-  const ptRequests = ptRequestsData;
+  const ptRequests: PtRequestRecord[] = await Promise.all(
+    ptRequestsData.map(async (request) => {
+      const noteSignedUrl = await getSignedCvUrl(supabase, request.pt_request_note);
+      const publicFileUrl = parseCvPublicPath(request.pt_request_note);
+      const storedFile = noteSignedUrl || publicFileUrl ? null : await getStoredCvInfo(supabase, request.email);
+
+      return {
+        ...request,
+        cvSignedUrl: noteSignedUrl || publicFileUrl || storedFile?.signedUrl || null,
+        cvLabel: parseCvLabel(request.pt_request_note) || storedFile?.label || null,
+        teachingAvailability: parseTeachingAvailability(request.pt_request_note),
+      };
+    }),
+  );
   const message = messageText(params.updated, enrollmentsError);
 
   return (
@@ -261,26 +353,13 @@ export default async function AdminEnrollmentsPage({
                       {request.years_of_experience ?? 0} năm kinh nghiệm · {request.certification || "Chưa có chứng chỉ"}
                     </p>
                     {request.bio ? <p className="mt-2 max-w-3xl text-sm text-muted">{request.bio}</p> : null}
-                    {request.pt_request_note ? (
-                      <pre className="mt-2 whitespace-pre-wrap rounded-lg bg-white px-3 py-2 text-xs font-bold text-muted">
-                        {request.pt_request_note}
-                      </pre>
+                    {request.cvLabel ? (
+                      <p className="mt-2 text-xs font-black text-primary">
+                        CV/chứng nhận: {request.cvSignedUrl ? "có thể xem file" : request.cvLabel}
+                      </p>
                     ) : null}
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <form action={approvePtRequestAction}>
-                      <input name="user_id" type="hidden" value={request.id} />
-                      <button className="h-10 w-[104px] rounded-lg bg-primary text-sm font-black text-white" type="submit">
-                        Duyệt
-                      </button>
-                    </form>
-                    <form action={rejectPtRequestAction}>
-                      <input name="user_id" type="hidden" value={request.id} />
-                      <button className="h-10 w-[104px] rounded-lg border border-pink-200 bg-white text-sm font-black text-primary hover:bg-primary-soft" type="submit">
-                        Từ chối
-                      </button>
-                    </form>
-                  </div>
+                  <PtRequestActions request={request} />
                 </div>
               </article>
             ))

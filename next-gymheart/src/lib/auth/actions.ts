@@ -18,6 +18,59 @@ const dashboardHrefByRole: Record<UserRole, string> = {
   user: "/dashboard/user",
 };
 const encoder = new TextEncoder();
+type SupabaseServerClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
+
+function formatFileSize(size: number) {
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function fileFromFormData(value: FormDataEntryValue | null) {
+  if (!value || typeof value === "string") return null;
+
+  const maybeFile = value as File;
+  if (!maybeFile.name || maybeFile.size <= 0) return null;
+
+  return maybeFile;
+}
+
+function safeStorageName(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 80);
+}
+
+async function uploadPtApplicationFile(
+  supabase: SupabaseServerClient,
+  file: File | null,
+  email: string,
+) {
+  if (!file) return null;
+
+  const bucket = "pt-application-files";
+  const filePath = `${safeStorageName(email) || "pt"}/${crypto.randomUUID()}-${safeStorageName(file.name) || "cv"}`;
+
+  let uploadResult = await supabase.storage.from(bucket).upload(filePath, file, {
+    contentType: file.type || "application/octet-stream",
+    upsert: false,
+  });
+
+  if (uploadResult.error) {
+    await supabase.storage.createBucket(bucket, { public: false });
+    uploadResult = await supabase.storage.from(bucket).upload(filePath, file, {
+      contentType: file.type || "application/octet-stream",
+      upsert: false,
+    });
+  }
+
+  if (uploadResult.error) return null;
+
+  return `${bucket}/${uploadResult.data.path}`;
+}
 
 export async function loginAction(formData: FormData) {
   const email = String(formData.get("email") || "").trim().toLowerCase();
@@ -84,7 +137,7 @@ export async function signupAction(formData: FormData) {
   const certification = String(formData.get("certification") || "").trim();
   const bio = String(formData.get("bio") || "").trim();
   const availability = String(formData.get("availability") || "").trim();
-  const portfolioUrl = String(formData.get("portfolio_url") || "").trim();
+  const portfolioFile = fileFromFormData(formData.get("portfolio_file"));
 
   if (!fullName || !email || !phone || !password) {
     redirect("/login?mode=signup&error=signup_missing");
@@ -107,10 +160,15 @@ export async function signupAction(formData: FormData) {
 
   const passwordHash = await bcrypt.hash(password, 10);
   const requestedRole = roleRequest === "coach" ? "coach" : null;
+  const uploadedPortfolioPath = requestedRole
+    ? await uploadPtApplicationFile(supabase, portfolioFile, email)
+    : null;
   const ptRequestNote = requestedRole
     ? [
         availability ? `Thời gian có thể dạy: ${availability}` : "",
-        portfolioUrl ? `Hồ sơ/portfolio: ${portfolioUrl}` : "",
+        portfolioFile
+          ? `File chứng nhận/CV: ${portfolioFile.name} (${formatFileSize(portfolioFile.size)})${uploadedPortfolioPath ? `\nĐường dẫn storage: ${uploadedPortfolioPath}` : ""}`
+          : "",
       ].filter(Boolean).join("\n") || null
     : null;
   const signupPayload = {

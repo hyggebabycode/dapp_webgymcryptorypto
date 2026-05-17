@@ -51,7 +51,7 @@ export default async function CoursesPage({
             <div
               data-filter-item
               data-level={course.level}
-              data-search={`${course.course_name} ${course.description || ""}`}
+              data-search={`${course.course_name} ${course.description || ""} ${course.coach?.full_name || ""}`}
               key={course.id}
             >
               <CourseCard

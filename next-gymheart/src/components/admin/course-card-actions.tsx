@@ -26,12 +26,75 @@ export type CourseAdminRecord = {
   benefits: string[] | null;
   requirements: string[] | null;
   coach_id: string | null;
+  course_lessons:
+    | {
+        id: string;
+        lesson_order: number;
+        title: string;
+        content: string | null;
+        objectives: string | null;
+      }[]
+    | null;
+  schedules:
+    | {
+        id: string;
+        title: string;
+        description: string | null;
+        day_of_week: number;
+        start_time: string;
+        end_time: string;
+        location: string | null;
+        room_number: string | null;
+        max_capacity: number | null;
+        is_cancelled?: boolean | null;
+      }[]
+    | null;
 };
 
 type CoachOption = {
   id: string;
   full_name: string;
 };
+
+const dayLabels: Record<number, string> = {
+  0: "Chủ nhật",
+  1: "Thứ hai",
+  2: "Thứ ba",
+  3: "Thứ tư",
+  4: "Thứ năm",
+  5: "Thứ sáu",
+  6: "Thứ bảy",
+};
+
+function serializeLessons(course: CourseAdminRecord) {
+  return (course.course_lessons || [])
+    .slice()
+    .sort((left, right) => Number(left.lesson_order || 0) - Number(right.lesson_order || 0))
+    .map((lesson) => [lesson.title, lesson.content || "", lesson.objectives || ""].join(" | "))
+    .join("\n");
+}
+
+function serializeSchedules(course: CourseAdminRecord) {
+  return (course.schedules || [])
+    .filter((schedule) => !schedule.is_cancelled)
+    .slice()
+    .sort((left, right) => {
+      const dayCompare = Number(left.day_of_week || 0) - Number(right.day_of_week || 0);
+      if (dayCompare !== 0) return dayCompare;
+      return String(left.start_time).localeCompare(String(right.start_time));
+    })
+    .map((schedule) =>
+      [
+        dayLabels[schedule.day_of_week] || schedule.day_of_week,
+        String(schedule.start_time || "").slice(0, 5),
+        String(schedule.end_time || "").slice(0, 5),
+        schedule.location || "",
+        schedule.room_number || "",
+        schedule.description || "",
+      ].join(" | "),
+    )
+    .join("\n");
+}
 
 export function CourseCardActions({ course, coaches }: { course: CourseAdminRecord; coaches: CoachOption[] }) {
   const [detailOpen, setDetailOpen] = useState(false);
@@ -82,6 +145,12 @@ export function CourseCardActions({ course, coaches }: { course: CourseAdminReco
               <p className="text-muted">{course.description || "Chưa có mô tả."}</p>
               <Info label="Lịch học" value={course.schedule_description || "Chưa cập nhật"} />
               <Info label="Thời gian" value={`${course.start_date || "?"} - ${course.end_date || "?"}`} />
+              <ListInfo
+                label="Khung giờ học"
+                values={(course.schedules || [])
+                  .filter((schedule) => !schedule.is_cancelled)
+                  .map((schedule) => `${dayLabels[schedule.day_of_week] || schedule.day_of_week}: ${String(schedule.start_time).slice(0, 5)} - ${String(schedule.end_time).slice(0, 5)}${schedule.location ? ` · ${schedule.location}` : ""}${schedule.room_number ? ` · ${schedule.room_number}` : ""}`)}
+              />
               <ListInfo label="Lợi ích" values={course.benefits || []} />
               <ListInfo label="Yêu cầu" values={course.requirements || []} />
             </div>
@@ -91,7 +160,7 @@ export function CourseCardActions({ course, coaches }: { course: CourseAdminReco
 
       {editOpen ? (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 p-4">
-          <form action={updateCourseAction} className="max-h-[92vh] w-full max-w-4xl overflow-hidden rounded-3xl bg-white shadow-2xl">
+          <form action={updateCourseAction} className="max-h-[92vh] w-full max-w-4xl overflow-hidden rounded-3xl bg-white shadow-2xl" encType="multipart/form-data">
             <div className="flex items-center justify-between border-b border-pink-100 px-6 py-5">
               <div>
                 <h2 className="text-2xl font-black">Sửa khóa học</h2>
@@ -119,8 +188,8 @@ export function CourseCardActions({ course, coaches }: { course: CourseAdminReco
                 </label>
                 <label>
                   <span className="mb-2 block text-sm font-black">Huấn luyện viên</span>
-                  <select className="h-11 w-full rounded-lg border border-pink-100 px-4 outline-none focus:border-primary" name="coach_id" defaultValue={course.coach_id || ""}>
-                    <option value="">Chưa gán HLV</option>
+                  <select className="h-11 w-full rounded-lg border border-pink-100 px-4 outline-none focus:border-primary" name="coach_id" defaultValue={course.coach_id || ""} required>
+                    <option value="" disabled>Chọn HLV đứng lớp</option>
                     {coaches.map((coach) => (
                       <option key={coach.id} value={coach.id}>{coach.full_name}</option>
                     ))}
@@ -129,7 +198,21 @@ export function CourseCardActions({ course, coaches }: { course: CourseAdminReco
                 <Field label="Ngày bắt đầu" name="start_date" defaultValue={course.start_date || ""} type="date" />
                 <Field label="Ngày kết thúc" name="end_date" defaultValue={course.end_date || ""} type="date" />
                 <Field className="md:col-span-2" label="Ảnh khóa học" name="image_url" defaultValue={course.image_url || ""} />
+                <label className="md:col-span-2">
+                  <span className="mb-2 block text-sm font-black">Chọn ảnh mới từ máy</span>
+                  <input className="w-full rounded-lg border border-pink-100 bg-white px-4 py-2 text-sm outline-none focus:border-primary" name="image_file" accept="image/*" type="file" />
+                </label>
                 <Field className="md:col-span-2" label="Lịch học hiển thị" name="schedule_description" defaultValue={course.schedule_description || ""} />
+                <label className="md:col-span-2">
+                  <span className="mb-2 block text-sm font-black">Khung giờ học</span>
+                  <textarea
+                    className="min-h-32 w-full rounded-lg border border-pink-100 px-4 py-3 outline-none focus:border-primary"
+                    name="schedules"
+                    defaultValue={serializeSchedules(course)}
+                    placeholder={"Mỗi dòng: Thứ | Giờ bắt đầu | Giờ kết thúc | Địa điểm | Phòng | Ghi chú\nThứ hai | 17:00 | 18:30 | Khu B | Phòng CrossFit | Training chuyên sâu"}
+                  />
+                  <p className="mt-2 text-xs font-bold text-muted">Các dòng này sẽ tạo lịch cụ thể theo từng ngày trong khoảng ngày bắt đầu và kết thúc của khóa.</p>
+                </label>
                 <label className="md:col-span-2">
                   <span className="mb-2 block text-sm font-black">Mô tả</span>
                   <textarea className="min-h-24 w-full rounded-lg border border-pink-100 px-4 py-3 outline-none focus:border-primary" name="description" defaultValue={course.description || ""} />
@@ -147,9 +230,10 @@ export function CourseCardActions({ course, coaches }: { course: CourseAdminReco
                   <textarea
                     className="min-h-32 w-full rounded-lg border border-pink-100 px-4 py-3 outline-none focus:border-primary"
                     name="lessons"
-                    placeholder={"Để trống nếu không đổi lộ trình hiện tại.\nMỗi dòng: Tiêu đề | Nội dung | Mục tiêu"}
+                    defaultValue={serializeLessons(course)}
+                    placeholder={"Mỗi dòng: Tiêu đề | Nội dung | Mục tiêu"}
                   />
-                  <p className="mt-2 text-xs font-bold text-muted">Khi nhập nội dung ở đây, lộ trình cũ của khóa sẽ được thay bằng danh sách mới.</p>
+                  <p className="mt-2 text-xs font-bold text-muted">Danh sách này sẽ thay thế lộ trình hiện tại của khóa.</p>
                 </label>
               </div>
             </div>

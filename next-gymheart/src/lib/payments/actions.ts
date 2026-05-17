@@ -114,14 +114,29 @@ export async function recordWeb3PaymentAction(input: RecordWeb3PaymentInput) {
 
   const supabase = await createSupabaseServerClient();
   const now = new Date().toISOString();
-  const { data: course, error: courseError } = await supabase
-    .from("courses")
-    .select("id, price, is_active, current_students, max_students")
-    .eq("id", input.courseId)
-    .single();
+  const [{ data: course, error: courseError }, { data: user, error: userError }] = await Promise.all([
+    supabase
+      .from("courses")
+      .select("id, price, is_active, current_students, max_students")
+      .eq("id", input.courseId)
+      .single(),
+    supabase
+      .from("users")
+      .select("wallet_address")
+      .eq("id", session.userId)
+      .maybeSingle(),
+  ]);
 
   if (courseError || !course) {
     throw new Error("Không tìm thấy khóa học.");
+  }
+
+  if (userError || !user?.wallet_address) {
+    throw new Error("Vui lòng liên kết ví MetaMask trước khi thanh toán.");
+  }
+
+  if (String(user.wallet_address).toLowerCase() !== input.walletAddress.toLowerCase()) {
+    throw new Error("Ví thanh toán không khớp ví đã liên kết với tài khoản.");
   }
 
   if (!course.is_active) {
