@@ -122,13 +122,16 @@ export function DashboardSidebar({
               <span className="block text-xs font-bold text-muted">{account.roleLabel}</span>
             </span>
           </Link>
-          <Link
+          <button
             className="mt-3 flex h-10 items-center justify-center gap-2 rounded-lg bg-primary-soft text-sm font-black text-primary hover:bg-[#ffe1e9]"
-            href={account.logoutHref}
+            onClick={() => {
+              window.location.replace(account.logoutHref);
+            }}
+            type="button"
           >
             <LogOut size={16} />
             Đăng xuất
-          </Link>
+          </button>
         </div>
       ) : null}
     </aside>

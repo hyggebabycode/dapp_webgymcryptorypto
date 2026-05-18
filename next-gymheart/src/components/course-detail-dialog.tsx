@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { CalendarDays, CheckCircle2, Clock, Dumbbell, UserRound, Users, X } from "lucide-react";
+import { CalendarDays, CheckCircle2, Clock, Dumbbell, Users, X } from "lucide-react";
 import { AddToCartButton, type CartItem } from "@/components/cart/add-to-cart-button";
 import { formatBaseAsTest } from "@/lib/currency";
 import type { Course } from "@/lib/data/courses";
@@ -53,13 +53,51 @@ export function CourseDetailDialog({
   isEnrolled: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [coachOpen, setCoachOpen] = useState(false);
   const coachName = course.coach?.full_name || "Chưa gán HLV";
+  const coachAvatar =
+    course.coach?.avatar_url ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(coachName)}&background=f42559&color=fff&size=160`;
+  const coachDetails = course.coach
+    ? [
+        course.coach.specialization ? `Chuyên môn: ${course.coach.specialization}` : null,
+        course.coach.years_of_experience != null
+          ? `Kinh nghiệm: ${course.coach.years_of_experience} năm`
+          : "Kinh nghiệm: Chưa cập nhật",
+        course.coach.certification
+          ? `Chứng chỉ: ${course.coach.certification}`
+          : "Chứng chỉ: Chưa cập nhật",
+      ]
+    : [];
+  const coachPopupDetails = course.coach
+    ? [
+        course.coach.specialization
+          ? `Chuyên môn: ${course.coach.specialization}`
+          : "Chuyên môn: Chưa cập nhật",
+        course.coach.years_of_experience != null
+          ? `Kinh nghiệm: ${course.coach.years_of_experience} năm`
+          : "Kinh nghiệm: Chưa cập nhật",
+        course.coach.certification
+          ? `Chứng chỉ: ${course.coach.certification}`
+          : "Chứng chỉ: Chưa cập nhật",
+      ]
+    : [];
+
+  function closeDialog() {
+    setCoachOpen(false);
+    setOpen(false);
+  }
 
   useEffect(() => {
     if (!open) return;
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key !== "Escape") return;
+      if (coachOpen) {
+        setCoachOpen(false);
+        return;
+      }
+      closeDialog();
     };
     const previousOverflow = document.body.style.overflow;
 
@@ -70,7 +108,7 @@ export function CourseDetailDialog({
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [open]);
+  }, [open, coachOpen]);
 
   return (
     <>
@@ -94,7 +132,7 @@ export function CourseDetailDialog({
           <button
             aria-label="Đóng chi tiết khóa học"
             className="absolute inset-0"
-            onClick={() => setOpen(false)}
+            onClick={closeDialog}
             type="button"
           />
           <section className="relative max-h-[92vh] w-full max-w-5xl overflow-hidden rounded-2xl bg-white shadow-2xl">
@@ -163,7 +201,7 @@ export function CourseDetailDialog({
                   <button
                     aria-label="Đóng"
                     className="inline-flex size-10 items-center justify-center rounded-full bg-white text-muted hover:bg-primary-soft hover:text-primary"
-                    onClick={() => setOpen(false)}
+                    onClick={closeDialog}
                     type="button"
                   >
                     <X size={22} />
@@ -171,13 +209,34 @@ export function CourseDetailDialog({
                 </div>
 
                 <div className="mt-6 space-y-3">
-                  <div className="flex items-center gap-3 rounded-xl bg-white p-4">
-                    <UserRound className="text-primary" size={22} />
-                    <div>
-                      <p className="text-xs font-black uppercase text-muted">HLV đứng lớp</p>
-                      <p className="font-black">{coachName}</p>
-                      {course.coach?.specialization ? (
-                        <p className="text-sm font-bold text-muted">{course.coach.specialization}</p>
+                  <div className="flex items-start gap-3 rounded-xl bg-white p-4">
+                    <div
+                      aria-label={`Avatar của ${coachName}`}
+                      className="inline-flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary-soft text-sm font-black text-primary"
+                      style={{ backgroundImage: `url(${coachAvatar})`, backgroundSize: "cover" }}
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-black uppercase text-muted">HLV đứng lớp</p>
+                          <p className="font-black">{coachName}</p>
+                        </div>
+                        {course.coach ? (
+                          <button
+                            className="inline-flex h-8 items-center justify-center rounded-full border border-primary px-3 text-xs font-black text-primary hover:bg-primary-soft"
+                            onClick={() => setCoachOpen(true)}
+                            type="button"
+                          >
+                            Chi tiết HLV
+                          </button>
+                        ) : null}
+                      </div>
+                      {course.coach ? (
+                        <div className="mt-2 space-y-1 text-sm font-bold text-muted">
+                          {coachDetails.map((detail, index) =>
+                            detail ? <p key={`${course.id}-coach-${index}`}>{detail}</p> : null,
+                          )}
+                        </div>
                       ) : null}
                     </div>
                   </div>
@@ -212,7 +271,7 @@ export function CourseDetailDialog({
                     <Link
                       className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-primary text-sm font-black text-white"
                       href="/my-courses"
-                      onClick={() => setOpen(false)}
+                      onClick={closeDialog}
                     >
                       Xem khóa học của tôi
                     </Link>
@@ -222,7 +281,7 @@ export function CourseDetailDialog({
                       <Link
                         className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-primary text-sm font-black text-white"
                         href={`/courses/${course.id}`}
-                        onClick={() => setOpen(false)}
+                        onClick={closeDialog}
                       >
                         Thanh toán khóa học
                       </Link>
@@ -231,13 +290,55 @@ export function CourseDetailDialog({
                     <Link
                       className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-primary text-sm font-black text-white"
                       href={`/login?next=/courses/${course.id}`}
-                      onClick={() => setOpen(false)}
+                      onClick={closeDialog}
                     >
                       Đăng nhập để đăng ký
                     </Link>
                   )}
                 </div>
               </aside>
+            </div>
+          </section>
+        </div>
+      ) : null}
+      {open && coachOpen ? (
+        <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/60 p-4">
+          <button
+            aria-label="Đóng chi tiết HLV"
+            className="absolute inset-0"
+            onClick={() => setCoachOpen(false)}
+            type="button"
+          />
+          <section className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-black uppercase text-muted">Chi tiết HLV</p>
+                <p className="mt-1 text-xl font-black text-primary">{coachName}</p>
+              </div>
+              <button
+                aria-label="Đóng"
+                className="inline-flex size-10 items-center justify-center rounded-full bg-primary-soft text-primary hover:bg-[#ffe1e9]"
+                onClick={() => setCoachOpen(false)}
+                type="button"
+              >
+                <X size={22} />
+              </button>
+            </div>
+            <div className="mt-5 flex items-center gap-4">
+              <div
+                aria-label={`Avatar của ${coachName}`}
+                className="inline-flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary-soft text-lg font-black text-primary"
+                style={{ backgroundImage: `url(${coachAvatar})`, backgroundSize: "cover" }}
+              />
+              <div className="space-y-1">
+                <p className="text-sm font-bold text-muted">Thông tin nổi bật</p>
+                <p className="text-lg font-black">{coachName}</p>
+              </div>
+            </div>
+            <div className="mt-4 space-y-2 text-sm font-bold text-muted">
+              {coachPopupDetails.map((detail, index) => (
+                <p key={`coach-detail-${course.id}-${index}`}>{detail}</p>
+              ))}
             </div>
           </section>
         </div>

@@ -30,6 +30,17 @@ export default async function CourseDetailPage({
   const isEnrolled = enrolledCourseIds.has(course.id);
   const hasLinkedWallet = Boolean(userResult.data?.wallet_address);
   const coachName = course.coach?.full_name || "Chưa gán HLV";
+  const coachDetails = course.coach
+    ? [
+        course.coach.specialization ? `Chuyên môn: ${course.coach.specialization}` : null,
+        course.coach.years_of_experience != null
+          ? `Kinh nghiệm: ${course.coach.years_of_experience} năm`
+          : "Kinh nghiệm: Chưa cập nhật",
+        course.coach.certification
+          ? `Chứng chỉ: ${course.coach.certification}`
+          : "Chứng chỉ: Chưa cập nhật",
+      ]
+    : [];
   if (!course.is_active && session?.role !== "admin" && !isEnrolled) {
     notFound();
   }
@@ -80,8 +91,12 @@ export default async function CourseDetailPage({
             <UserRound className="mb-2 text-primary" size={20} />
             <p className="text-sm font-bold text-muted">HLV đứng lớp</p>
             <p className="mt-2 text-xl font-black">{coachName}</p>
-            {course.coach?.specialization ? (
-              <p className="mt-1 text-sm font-bold text-muted">{course.coach.specialization}</p>
+            {course.coach ? (
+              <div className="mt-2 space-y-1 text-sm font-bold text-muted">
+                {coachDetails.map((detail, index) =>
+                  detail ? <p key={`${course.id}-coach-${index}`}>{detail}</p> : null,
+                )}
+              </div>
             ) : null}
           </div>
         </div>

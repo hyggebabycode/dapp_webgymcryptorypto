@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { Heart, LogOut, Search } from "lucide-react";
+import { Heart, Search } from "lucide-react";
 import { CartButton } from "@/components/cart/cart-button";
+import { LogoutButton } from "@/components/logout-button";
 import { MemberAccountMenu } from "@/components/member-account-menu";
 import { NotificationButton, type NotificationItem } from "@/components/notification-button";
-import { logoutAction } from "@/lib/auth/actions";
 import type { SessionPayload } from "@/lib/auth/session";
 import { compactAddress, paymentAmountToTest } from "@/lib/currency";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -184,15 +184,7 @@ export async function Header({ session }: { session: SessionPayload | null }) {
             ) : null}
             {!showMemberActions ? <NotificationButton notifications={notifications} /> : null}
             {member ? <MemberAccountMenu member={member} /> : null}
-            <form action={logoutAction}>
-              <button
-                className="inline-flex h-10 items-center gap-2 rounded-full bg-primary-soft px-4 text-sm font-black text-primary hover:bg-[#ffe1e9]"
-                type="submit"
-              >
-                <LogOut size={16} />
-                <span className="hidden sm:inline">Đăng xuất</span>
-              </button>
-            </form>
+            <LogoutButton />
           </div>
         ) : (
           <Link

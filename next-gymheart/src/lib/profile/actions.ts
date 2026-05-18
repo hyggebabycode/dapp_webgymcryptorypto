@@ -20,6 +20,20 @@ function clean(value: FormDataEntryValue | null) {
   return text.length > 0 ? text : null;
 }
 
+function isSchemaColumnError(error: unknown, columns: string | string[]) {
+  const maybeError = error as {
+    message?: string;
+    details?: string;
+    hint?: string;
+  };
+  const text = [maybeError.message, maybeError.details, maybeError.hint]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  const columnList = Array.isArray(columns) ? columns : [columns];
+  return columnList.some((column) => text.includes(column.toLowerCase()));
+}
+
 export async function updateProfileAction(formData: FormData) {
   const session = await requireActiveSession("/profile");
 
@@ -280,21 +294,40 @@ export async function requestCoachRoleAction(formData: FormData) {
     note ? `Ghi chú: ${note}` : "",
   ].filter(Boolean).join("\n") || null;
 
-  const { error } = await supabase
+  const updatePayload = {
+    requested_role: "coach",
+    pt_request_status: "pending",
+    specialization,
+    years_of_experience: yearsOfExperience,
+    certification,
+    bio,
+    pt_request_note: ptRequestNote,
+    updated_at: new Date().toISOString(),
+  };
+
+  let result = await supabase
     .from("users")
-    .update({
-      requested_role: "coach",
-      pt_request_status: "pending",
-      specialization,
-      years_of_experience: yearsOfExperience,
-      certification,
-      bio,
-      pt_request_note: ptRequestNote,
-      updated_at: new Date().toISOString(),
-    })
+    .update(updatePayload)
     .eq("id", session.userId);
 
-  if (error) {
+  if (
+    result.error &&
+    isSchemaColumnError(result.error, ["pt_request_status", "pt_request_note"])
+  ) {
+    result = await supabase
+      .from("users")
+      .update({
+        requested_role: updatePayload.requested_role,
+        specialization: updatePayload.specialization,
+        years_of_experience: updatePayload.years_of_experience,
+        certification: updatePayload.certification,
+        bio: updatePayload.bio,
+        updated_at: updatePayload.updated_at,
+      })
+      .eq("id", session.userId);
+  }
+
+  if (result.error) {
     return { ok: false, message: "Chưa gửi được đăng ký HLV. Vui lòng thử lại." };
   }
 

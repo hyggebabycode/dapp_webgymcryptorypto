@@ -22,6 +22,7 @@ export type Course = {
     specialization: string | null;
     avatar_url: string | null;
     years_of_experience: number | null;
+    certification: string | null;
   } | null;
 };
 
@@ -46,7 +47,8 @@ const courseSelect = `
     full_name,
     specialization,
     avatar_url,
-    years_of_experience
+    years_of_experience,
+    certification
   )
 `;
 
@@ -62,12 +64,14 @@ function normalizeCourse(row: Record<string, unknown>) {
           specialization?: string | null;
           avatar_url?: string | null;
           years_of_experience?: number | null;
+          certification?: string | null;
         }
       | Array<{
           full_name?: string | null;
           specialization?: string | null;
           avatar_url?: string | null;
           years_of_experience?: number | null;
+          certification?: string | null;
         }>
       | null
       | undefined,
@@ -96,6 +100,7 @@ function normalizeCourse(row: Record<string, unknown>) {
           specialization: coach.specialization ?? null,
           avatar_url: coach.avatar_url ?? null,
           years_of_experience: coach.years_of_experience ?? null,
+          certification: coach.certification ?? null,
         }
       : null,
   } satisfies Course;

@@ -658,7 +658,7 @@ export async function removeStudentEnrollmentAction(formData: FormData) {
   const supabase = await createSupabaseServerClient();
   const { data: enrollment } = await supabase
     .from("class_enrollments")
-    .select("id, courses!inner(coach_id)")
+    .select("id, course_id, courses!inner(coach_id)")
     .eq("id", enrollmentId)
     .eq("courses.coach_id", session.userId)
     .maybeSingle();
