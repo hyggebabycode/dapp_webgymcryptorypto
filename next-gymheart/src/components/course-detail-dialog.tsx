@@ -2,8 +2,18 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { CalendarDays, CheckCircle2, Clock, Dumbbell, Users, X } from "lucide-react";
-import { AddToCartButton, type CartItem } from "@/components/cart/add-to-cart-button";
+import {
+  CalendarDays,
+  CheckCircle2,
+  Clock,
+  Dumbbell,
+  Users,
+  X,
+} from "lucide-react";
+import {
+  AddToCartButton,
+  type CartItem,
+} from "@/components/cart/add-to-cart-button";
 import { formatBaseAsTest } from "@/lib/currency";
 import type { Course } from "@/lib/data/courses";
 
@@ -60,7 +70,9 @@ export function CourseDetailDialog({
     `https://ui-avatars.com/api/?name=${encodeURIComponent(coachName)}&background=f42559&color=fff&size=160`;
   const coachDetails = course.coach
     ? [
-        course.coach.specialization ? `Chuyên môn: ${course.coach.specialization}` : null,
+        course.coach.specialization
+          ? `Chuyên môn: ${course.coach.specialization}`
+          : null,
         course.coach.years_of_experience != null
           ? `Kinh nghiệm: ${course.coach.years_of_experience} năm`
           : "Kinh nghiệm: Chưa cập nhật",
@@ -156,34 +168,47 @@ export function CourseDetailDialog({
                         </span>
                       ) : null}
                     </div>
-                    <h2 className="text-3xl font-black tracking-tight">{course.course_name}</h2>
+                    <h2 className="text-3xl font-black tracking-tight">
+                      {course.course_name}
+                    </h2>
                     <p className="mt-4 whitespace-pre-line text-sm leading-7 text-muted">
-                      {course.description || "Khóa học đang được cập nhật mô tả chi tiết."}
+                      {course.description ||
+                        "Khóa học đang được cập nhật mô tả chi tiết."}
                     </p>
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="rounded-xl bg-primary-soft p-4">
-                      <p className="text-xs font-black uppercase text-muted">Lịch học</p>
+                      <p className="text-xs font-black uppercase text-muted">
+                        Lịch học
+                      </p>
                       <p className="mt-2 font-black">
-                        {course.schedule_description || "Chưa cập nhật lịch học"}
+                        {course.schedule_description ||
+                          "Chưa cập nhật lịch học"}
                       </p>
                     </div>
                     <div className="rounded-xl bg-primary-soft p-4">
-                      <p className="text-xs font-black uppercase text-muted">Thời gian</p>
+                      <p className="text-xs font-black uppercase text-muted">
+                        Thời gian
+                      </p>
                       <p className="mt-2 font-black">
-                        {formatDate(course.start_date)} - {formatDate(course.end_date)}
+                        {formatDate(course.start_date)} -{" "}
+                        {formatDate(course.end_date)}
                       </p>
                     </div>
                   </div>
 
                   <div className="grid gap-5 sm:grid-cols-2">
                     <div>
-                      <h3 className="mb-3 text-lg font-black">Lợi ích khóa học</h3>
+                      <h3 className="mb-3 text-lg font-black">
+                        Lợi ích khóa học
+                      </h3>
                       <DetailList items={course.benefits} />
                     </div>
                     <div>
-                      <h3 className="mb-3 text-lg font-black">Yêu cầu tham gia</h3>
+                      <h3 className="mb-3 text-lg font-black">
+                        Yêu cầu tham gia
+                      </h3>
                       <DetailList items={course.requirements} />
                     </div>
                   </div>
@@ -193,7 +218,9 @@ export function CourseDetailDialog({
               <aside className="border-t border-border-soft bg-[#fff7f9] p-6 lg:border-l lg:border-t-0">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-sm font-black uppercase text-muted">Chi tiết khóa học</p>
+                    <p className="text-sm font-black uppercase text-muted">
+                      Chi tiết khóa học
+                    </p>
                     <p className="mt-2 text-3xl font-black text-primary">
                       {formatBaseAsTest(course.price)}
                     </p>
@@ -213,12 +240,17 @@ export function CourseDetailDialog({
                     <div
                       aria-label={`Avatar của ${coachName}`}
                       className="inline-flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary-soft text-sm font-black text-primary"
-                      style={{ backgroundImage: `url(${coachAvatar})`, backgroundSize: "cover" }}
+                      style={{
+                        backgroundImage: `url(${coachAvatar})`,
+                        backgroundSize: "cover",
+                      }}
                     />
                     <div className="flex-1">
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="text-xs font-black uppercase text-muted">HLV đứng lớp</p>
+                          <p className="text-xs font-black uppercase text-muted">
+                            HLV đứng lớp
+                          </p>
                           <p className="font-black">{coachName}</p>
                         </div>
                         {course.coach ? (
@@ -234,7 +266,11 @@ export function CourseDetailDialog({
                       {course.coach ? (
                         <div className="mt-2 space-y-1 text-sm font-bold text-muted">
                           {coachDetails.map((detail, index) =>
-                            detail ? <p key={`${course.id}-coach-${index}`}>{detail}</p> : null,
+                            detail ? (
+                              <p key={`${course.id}-coach-${index}`}>
+                                {detail}
+                              </p>
+                            ) : null,
                           )}
                         </div>
                       ) : null}
@@ -243,12 +279,16 @@ export function CourseDetailDialog({
                   <div className="grid grid-cols-2 gap-3">
                     <div className="rounded-xl bg-white p-4">
                       <Clock className="mb-2 text-primary" size={20} />
-                      <p className="text-xs font-black uppercase text-muted">Thời lượng</p>
+                      <p className="text-xs font-black uppercase text-muted">
+                        Thời lượng
+                      </p>
                       <p className="font-black">{course.duration_weeks} tuần</p>
                     </div>
                     <div className="rounded-xl bg-white p-4">
                       <Users className="mb-2 text-primary" size={20} />
-                      <p className="text-xs font-black uppercase text-muted">Sĩ số</p>
+                      <p className="text-xs font-black uppercase text-muted">
+                        Sĩ số
+                      </p>
                       <p className="font-black">
                         {course.current_students}/{course.max_students}
                       </p>
@@ -256,13 +296,21 @@ export function CourseDetailDialog({
                   </div>
                   <div className="rounded-xl bg-white p-4">
                     <CalendarDays className="mb-2 text-primary" size={20} />
-                    <p className="text-xs font-black uppercase text-muted">Khai giảng</p>
-                    <p className="font-black">{formatDate(course.start_date)}</p>
+                    <p className="text-xs font-black uppercase text-muted">
+                      Khai giảng
+                    </p>
+                    <p className="font-black">
+                      {formatDate(course.start_date)}
+                    </p>
                   </div>
                   <div className="rounded-xl bg-white p-4">
                     <Dumbbell className="mb-2 text-primary" size={20} />
-                    <p className="text-xs font-black uppercase text-muted">Cấp độ</p>
-                    <p className="font-black">{levelLabels[course.level] || course.level}</p>
+                    <p className="text-xs font-black uppercase text-muted">
+                      Cấp độ
+                    </p>
+                    <p className="font-black">
+                      {levelLabels[course.level] || course.level}
+                    </p>
                   </div>
                 </div>
 
@@ -277,7 +325,10 @@ export function CourseDetailDialog({
                     </Link>
                   ) : isAuthenticated ? (
                     <>
-                      <AddToCartButton course={cartItem} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-primary bg-white px-4 text-sm font-black text-primary hover:bg-primary-soft" />
+                      <AddToCartButton
+                        course={cartItem}
+                        className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-primary bg-white px-4 text-sm font-black text-primary hover:bg-primary-soft"
+                      />
                       <Link
                         className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-primary text-sm font-black text-white"
                         href={`/courses/${course.id}`}
@@ -312,8 +363,12 @@ export function CourseDetailDialog({
           <section className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs font-black uppercase text-muted">Chi tiết HLV</p>
-                <p className="mt-1 text-xl font-black text-primary">{coachName}</p>
+                <p className="text-xs font-black uppercase text-muted">
+                  Chi tiết HLV
+                </p>
+                <p className="mt-1 text-xl font-black text-primary">
+                  {coachName}
+                </p>
               </div>
               <button
                 aria-label="Đóng"
@@ -328,10 +383,15 @@ export function CourseDetailDialog({
               <div
                 aria-label={`Avatar của ${coachName}`}
                 className="inline-flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary-soft text-lg font-black text-primary"
-                style={{ backgroundImage: `url(${coachAvatar})`, backgroundSize: "cover" }}
+                style={{
+                  backgroundImage: `url(${coachAvatar})`,
+                  backgroundSize: "cover",
+                }}
               />
               <div className="space-y-1">
-                <p className="text-sm font-bold text-muted">Thông tin nổi bật</p>
+                <p className="text-sm font-bold text-muted">
+                  Thông tin nổi bật
+                </p>
                 <p className="text-lg font-black">{coachName}</p>
               </div>
             </div>

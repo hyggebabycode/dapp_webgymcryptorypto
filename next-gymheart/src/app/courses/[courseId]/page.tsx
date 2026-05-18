@@ -21,7 +21,11 @@ export default async function CourseDetailPage({
     getCourseById(courseId),
     getEnrolledCourseIds(session?.userId),
     session
-      ? supabase.from("users").select("wallet_address").eq("id", session.userId).maybeSingle()
+      ? supabase
+          .from("users")
+          .select("wallet_address")
+          .eq("id", session.userId)
+          .maybeSingle()
       : Promise.resolve({ data: null }),
   ]);
 
@@ -32,7 +36,9 @@ export default async function CourseDetailPage({
   const coachName = course.coach?.full_name || "Chưa gán HLV";
   const coachDetails = course.coach
     ? [
-        course.coach.specialization ? `Chuyên môn: ${course.coach.specialization}` : null,
+        course.coach.specialization
+          ? `Chuyên môn: ${course.coach.specialization}`
+          : null,
         course.coach.years_of_experience != null
           ? `Kinh nghiệm: ${course.coach.years_of_experience} năm`
           : "Kinh nghiệm: Chưa cập nhật",
@@ -65,7 +71,8 @@ export default async function CourseDetailPage({
             ) : null}
           </div>
           <p className="mt-4 whitespace-pre-line leading-8 text-muted">
-            {course.description || "Khóa học đang được cập nhật mô tả chi tiết."}
+            {course.description ||
+              "Khóa học đang được cập nhật mô tả chi tiết."}
           </p>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-3">
@@ -94,7 +101,9 @@ export default async function CourseDetailPage({
             {course.coach ? (
               <div className="mt-2 space-y-1 text-sm font-bold text-muted">
                 {coachDetails.map((detail, index) =>
-                  detail ? <p key={`${course.id}-coach-${index}`}>{detail}</p> : null,
+                  detail ? (
+                    <p key={`${course.id}-coach-${index}`}>{detail}</p>
+                  ) : null,
                 )}
               </div>
             ) : null}
