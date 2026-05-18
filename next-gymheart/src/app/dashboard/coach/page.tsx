@@ -9,53 +9,59 @@ type CourseRow = {
   id: string;
 };
 
-type ScheduleRow = {
-  id: string;
-};
-
 type EnrollmentRow = {
   id: string;
+  user_id: string;
   progress_percentage: number | null;
   status: string;
+};
+
+type LessonPlanRow = {
+  course_id: string;
+};
+
+type CourseLessonRow = {
+  course_id: string;
 };
 
 export default async function CoachDashboardPage() {
   const session = await getSession();
   const supabase = await createSupabaseServerClient();
-  const [coursesResult, schedulesResult, lessonsResult] = await Promise.all([
+  const [coursesResult, lessonPlansResult] = await Promise.all([
     supabase.from("courses").select("id").eq("coach_id", session?.userId).eq("is_active", true),
     supabase
-      .from("schedules")
-      .select("id")
-      .eq("coach_id", session?.userId)
-      .eq("is_cancelled", false),
-    supabase
       .from("lesson_plans")
-      .select("id", { count: "exact", head: true })
+      .select("course_id")
       .eq("coach_id", session?.userId),
   ]);
 
   const courses = (coursesResult.data || []) as CourseRow[];
-  const schedules = (schedulesResult.data || []) as ScheduleRow[];
+  const lessonPlans = (lessonPlansResult.data || []) as LessonPlanRow[];
   const courseIds = courses.map((course) => course.id);
-  const { data: enrollmentsData } = courseIds.length
-    ? await supabase
-        .from("class_enrollments")
-        .select("id, progress_percentage, status")
-        .in("course_id", courseIds)
-        .eq("status", "active")
-        .eq("payment_status", "paid")
-    : { data: [] };
-  const enrollments = (enrollmentsData || []) as EnrollmentRow[];
+  const [enrollmentsResult, courseLessonsResult] = courseIds.length
+    ? await Promise.all([
+        supabase
+          .from("class_enrollments")
+          .select("id, user_id, progress_percentage, status")
+          .in("course_id", courseIds)
+          .eq("status", "active")
+          .eq("payment_status", "paid"),
+        supabase.from("course_lessons").select("course_id").in("course_id", courseIds),
+      ])
+    : [{ data: [] }, { data: [] }];
+  const courseLessons = (courseLessonsResult.data || []) as CourseLessonRow[];
+  const enrollments = (enrollmentsResult.data || []) as EnrollmentRow[];
+  const studentCount = new Set(enrollments.map((enrollment) => enrollment.user_id)).size;
+  const roadmapCount = new Set([...lessonPlans.map((lessonPlan) => lessonPlan.course_id), ...courseLessons.map((lesson) => lesson.course_id)].filter(Boolean)).size;
   const averageProgress =
     enrollments.length > 0
       ? Math.round(enrollments.reduce((sum, item) => sum + Number(item.progress_percentage || 0), 0) / enrollments.length)
       : 0;
 
   const stats = [
-    { label: "Học viên của tôi", value: enrollments.length, icon: Users, href: "/dashboard/coach/students" },
-    { label: "Lớp tuần này", value: schedules.length, icon: CalendarDays, href: "/dashboard/coach/schedule" },
-    { label: "Giáo án", value: lessonsResult.count || 0, icon: NotebookPen, href: "/dashboard/coach/courses" },
+    { label: "Học viên của tôi", value: studentCount, icon: Users, href: "/dashboard/coach/students" },
+    { label: "Khóa phải dạy", value: courses.length, icon: CalendarDays, href: "/dashboard/coach/schedule" },
+    { label: "Lộ trình dạy", value: roadmapCount, icon: NotebookPen, href: "/dashboard/coach/courses" },
     { label: "Tiến độ TB", value: `${averageProgress}%`, icon: Star, href: "/dashboard/coach/students" },
   ];
 

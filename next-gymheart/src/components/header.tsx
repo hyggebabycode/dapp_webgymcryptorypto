@@ -46,6 +46,7 @@ const navItemsByRole = {
 type MemberInfo = {
   fullName: string;
   role: string;
+  avatarUrl: string | null;
   walletAddress: string | null;
   requestedRole: string | null;
   ptRequestStatus: string | null;
@@ -70,7 +71,7 @@ async function getMemberHeaderData(session: SessionPayload | null) {
   const [userResult, paidResult] = await Promise.all([
     supabase
       .from("users")
-      .select("full_name, role, wallet_address, requested_role, pt_request_status")
+      .select("full_name, role, avatar_url, wallet_address, requested_role, pt_request_status")
       .eq("id", session.userId)
       .maybeSingle(),
     supabase
@@ -86,6 +87,7 @@ async function getMemberHeaderData(session: SessionPayload | null) {
   const member: MemberInfo = {
     fullName: user?.full_name || session.fullName,
     role: user?.role || session.role,
+    avatarUrl: (user?.avatar_url as string | null) || null,
     walletAddress: (user?.wallet_address as string | null) || null,
     requestedRole: (user?.requested_role as string | null) || null,
     ptRequestStatus: (user?.pt_request_status as string | null) || null,

@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 
 type CourseRow = {
   id: string;
+  course_name: string;
 };
 
 type EnrollmentRow = {
@@ -51,8 +52,9 @@ export default async function CoachStudentsPage({
   const supabase = await createSupabaseServerClient();
   const { data: coursesData } = await supabase
     .from("courses")
-    .select("id")
-    .eq("coach_id", session?.userId);
+    .select("id, course_name")
+    .eq("coach_id", session?.userId)
+    .order("course_name");
   const courses = (coursesData || []) as CourseRow[];
   const courseIds = courses.map((course) => course.id);
   const { data: enrollmentsData } = courseIds.length
@@ -64,7 +66,16 @@ export default async function CoachStudentsPage({
         .eq("payment_status", "paid")
     : { data: [] };
 
-  const enrollments = (enrollmentsData || []) as EnrollmentRow[];
+  const enrollments = ((enrollmentsData || []) as EnrollmentRow[]).sort((left, right) => {
+    const leftCourse = one(left.courses)?.course_name || "";
+    const rightCourse = one(right.courses)?.course_name || "";
+    const courseCompare = leftCourse.localeCompare(rightCourse, "vi", { sensitivity: "base" });
+    if (courseCompare !== 0) return courseCompare;
+
+    const leftStudent = one(left.users)?.full_name || "";
+    const rightStudent = one(right.users)?.full_name || "";
+    return leftStudent.localeCompare(rightStudent, "vi", { sensitivity: "base" });
+  });
   const message = messageText(params.updated, params.error);
 
   return (
@@ -126,7 +137,7 @@ export default async function CoachStudentsPage({
                 <span className="text-xs font-black">{progress}%</span>
               </div>
               {enrollment.notes ? <p className="mt-3 line-clamp-2 text-sm text-muted">{enrollment.notes}</p> : null}
-              <StudentProgressDialog enrollmentId={enrollment.id} studentName={studentName} defaultProgress={progress} />
+              <StudentProgressDialog enrollmentId={enrollment.id} studentName={studentName} defaultProgress={progress} defaultNotes={enrollment.notes} />
               <StudentActions
                 student={{
                   enrollmentId: enrollment.id,

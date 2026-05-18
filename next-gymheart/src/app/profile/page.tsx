@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { Camera, Mail, Save, ShieldCheck, UserRound } from "lucide-react";
 import { ChangePasswordDialog } from "@/components/profile/change-password-dialog";
+import { ProfileWalletCard } from "@/components/profile/profile-wallet-card";
 import { getSession } from "@/lib/auth/session";
 import { updateProfileAction } from "@/lib/profile/actions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -15,6 +16,7 @@ type ProfileRow = {
   date_of_birth: string | null;
   gender: string | null;
   address: string | null;
+  wallet_address: string | null;
   role: string;
 };
 
@@ -45,7 +47,7 @@ export default async function ProfilePage({
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("users")
-    .select("email, full_name, phone, avatar_url, date_of_birth, gender, address, role")
+    .select("email, full_name, phone, avatar_url, date_of_birth, gender, address, wallet_address, role")
     .eq("id", session.userId)
     .single();
 
@@ -99,7 +101,6 @@ export default async function ProfilePage({
         <form
           action={updateProfileAction}
           className="rounded-xl border border-pink-100 bg-white p-6 shadow-sm"
-          encType="multipart/form-data"
         >
           <div className="grid gap-5 md:grid-cols-2">
             <label className="block">
@@ -175,6 +176,8 @@ export default async function ProfilePage({
               placeholder="Địa chỉ liên hệ"
             />
           </label>
+
+          <ProfileWalletCard walletAddress={profile.wallet_address} />
 
           <div className="mt-6 flex flex-col justify-between gap-3 rounded-xl border border-pink-100 bg-primary-soft p-5 md:flex-row md:items-center">
             <div>

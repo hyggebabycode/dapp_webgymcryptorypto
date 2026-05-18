@@ -1,6 +1,6 @@
 import { AddScheduleDialog } from "@/components/coach/add-schedule-dialog";
-import { CoachScheduleActions, type CoachScheduleRecord } from "@/components/coach/schedule-actions";
-import { RealtimeFilter } from "@/components/realtime-filter";
+import type { CoachScheduleRecord } from "@/components/coach/schedule-actions";
+import { CoachWeeklySchedule, type CoachWeeklyScheduleRecord } from "@/components/coach/coach-weekly-schedule";
 import { getSession } from "@/lib/auth/session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -13,16 +13,6 @@ type ScheduleRow = CoachScheduleRecord & {
 type CourseOption = {
   id: string;
   course_name: string;
-};
-
-const dayNames: Record<number, string> = {
-  0: "Chủ nhật",
-  1: "Thứ hai",
-  2: "Thứ ba",
-  3: "Thứ tư",
-  4: "Thứ năm",
-  5: "Thứ sáu",
-  6: "Thứ bảy",
 };
 
 function one<T>(value: T | T[] | null) {
@@ -58,8 +48,31 @@ export default async function CoachSchedulePage({
     supabase.from("courses").select("id, course_name").eq("coach_id", session?.userId).eq("is_active", true).order("course_name"),
   ]);
 
-  const schedules = (schedulesResult.data || []) as ScheduleRow[];
+  const schedules = ((schedulesResult.data || []) as ScheduleRow[]).sort((left, right) => {
+    const leftCourse = one(left.courses)?.course_name || "";
+    const rightCourse = one(right.courses)?.course_name || "";
+    const courseCompare = leftCourse.localeCompare(rightCourse, "vi", { sensitivity: "base" });
+    if (courseCompare !== 0) return courseCompare;
+
+    const dayCompare = Number(left.day_of_week) - Number(right.day_of_week);
+    if (dayCompare !== 0) return dayCompare;
+
+    return String(left.start_time || "").localeCompare(String(right.start_time || ""));
+  });
   const courses = (coursesResult.data || []) as CourseOption[];
+  const scheduleRecords: CoachWeeklyScheduleRecord[] = schedules.map((schedule) => ({
+    id: schedule.id,
+    course_id: schedule.course_id,
+    courseName: one(schedule.courses)?.course_name || "Khóa học",
+    title: schedule.title,
+    description: schedule.description,
+    day_of_week: schedule.day_of_week,
+    start_time: schedule.start_time,
+    end_time: schedule.end_time,
+    location: schedule.location,
+    room_number: schedule.room_number,
+    max_capacity: schedule.max_capacity,
+  }));
   const message = messageText(params.updated, params.error);
 
   return (
@@ -78,48 +91,7 @@ export default async function CoachSchedulePage({
         </div>
       ) : null}
 
-      <RealtimeFilter
-        className="mb-6"
-        initialQuery={params.q || ""}
-        placeholder="Tìm lịch dạy theo tên buổi, khóa học hoặc phòng tập..."
-        scopeId="coach-schedules-list"
-      />
-
-      <div className="grid gap-3 md:grid-cols-2" id="coach-schedules-list">
-        {schedules.map((schedule) => {
-          const course = one(schedule.courses);
-          return (
-            <article
-              className="rounded-xl bg-background p-4"
-              data-filter-item
-              data-search={`${schedule.title} ${schedule.description || ""} ${course?.course_name || ""} ${schedule.location || ""} ${schedule.room_number || ""}`}
-              key={schedule.id}
-            >
-              <p className="font-black">{schedule.title}</p>
-              <p className="mt-2 text-sm text-muted">
-                {course?.course_name} · {dayNames[schedule.day_of_week]} · {schedule.start_time} - {schedule.end_time}
-              </p>
-              <p className="mt-1 text-sm text-muted">{schedule.location || "Phòng tập"} {schedule.room_number ? `· ${schedule.room_number}` : ""}</p>
-              {schedule.description ? <p className="mt-2 text-sm text-muted">{schedule.description}</p> : null}
-              <CoachScheduleActions
-                courses={courses}
-                schedule={{
-                  id: schedule.id,
-                  course_id: schedule.course_id,
-                  title: schedule.title,
-                  description: schedule.description,
-                  day_of_week: schedule.day_of_week,
-                  start_time: schedule.start_time,
-                  end_time: schedule.end_time,
-                  location: schedule.location,
-                  room_number: schedule.room_number,
-                  max_capacity: schedule.max_capacity,
-                }}
-              />
-            </article>
-          );
-        })}
-      </div>
+      <CoachWeeklySchedule courses={courses} initialDate={new Date().toISOString()} schedules={scheduleRecords} />
     </section>
   );
 }

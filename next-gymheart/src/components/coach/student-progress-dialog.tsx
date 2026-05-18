@@ -8,9 +8,10 @@ type Props = {
   enrollmentId: string;
   studentName: string;
   defaultProgress: number;
+  defaultNotes?: string | null;
 };
 
-export function StudentProgressDialog({ enrollmentId, studentName, defaultProgress }: Props) {
+export function StudentProgressDialog({ enrollmentId, studentName, defaultProgress, defaultNotes }: Props) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -38,7 +39,7 @@ export function StudentProgressDialog({ enrollmentId, studentName, defaultProgre
               </label>
               <label className="block">
                 <span className="mb-2 block text-sm font-black">Ghi chú</span>
-                <textarea className="min-h-24 w-full rounded-lg border border-pink-100 px-4 py-3 outline-none focus:border-primary" name="notes" />
+                <textarea className="min-h-24 w-full rounded-lg border border-pink-100 px-4 py-3 outline-none focus:border-primary" name="notes" defaultValue={defaultNotes || ""} />
               </label>
             </div>
             <div className="flex gap-3 border-t border-pink-100 bg-primary-soft p-6">

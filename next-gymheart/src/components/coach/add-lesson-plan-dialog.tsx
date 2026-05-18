@@ -15,15 +15,15 @@ export function AddLessonPlanDialog({ courses }: { courses: CourseOption[] }) {
   return (
     <>
       <button className="h-10 rounded-lg bg-primary px-4 text-sm font-black text-white" onClick={() => setOpen(true)} type="button">
-        Thêm giáo án
+        Thêm tuần học
       </button>
       {open ? (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 p-4">
           <form action={addLessonPlanAction} className="max-h-[92vh] w-full max-w-3xl overflow-hidden rounded-3xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-pink-100 px-6 py-5">
               <div>
-                <h2 className="text-2xl font-black">Thêm giáo án</h2>
-                <p className="mt-1 text-sm text-muted">Ghi chi tiết mục tiêu, bài tập và thiết bị cho buổi học.</p>
+                <h2 className="text-2xl font-black">Thêm tuần vào lộ trình</h2>
+                <p className="mt-1 text-sm text-muted">Ghi chi tiết mục tiêu, bài tập và thiết bị cho từng tuần học.</p>
               </div>
               <button aria-label="Đóng" className="inline-flex size-10 items-center justify-center rounded-full text-muted hover:bg-primary-soft hover:text-primary" onClick={() => setOpen(false)} type="button">
                 <X size={22} />
@@ -86,13 +86,13 @@ export function AddLessonPlanDialog({ courses }: { courses: CourseOption[] }) {
                 </label>
                 <label className="flex items-center gap-2 text-sm font-black">
                   <input className="size-4 accent-primary" name="is_published" type="checkbox" />
-                  Công khai giáo án
+                  Công khai tuần học
                 </label>
               </div>
             </div>
             <div className="flex gap-3 border-t border-pink-100 bg-primary-soft p-6">
               <button className="h-11 flex-1 rounded-lg border border-primary bg-white font-black text-primary" onClick={() => setOpen(false)} type="button">Hủy</button>
-              <button className="h-11 flex-1 rounded-lg bg-primary font-black text-white" type="submit">Lưu giáo án</button>
+              <button className="h-11 flex-1 rounded-lg bg-primary font-black text-white" type="submit">Lưu tuần học</button>
             </div>
           </form>
         </div>

@@ -1,5 +1,7 @@
 "use server";
 
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
 import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -79,6 +81,81 @@ export async function updateProfileAction(formData: FormData) {
 function cleanNumber(value: FormDataEntryValue | null, fallback = 0) {
   const number = Number(value || fallback);
   return Number.isFinite(number) ? number : fallback;
+}
+
+function formatFileSize(size: number) {
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function fileFromFormData(value: FormDataEntryValue | null) {
+  if (!value || typeof value === "string") return null;
+
+  const maybeFile = value as File;
+  if (!maybeFile.name || maybeFile.size <= 0) return null;
+
+  return maybeFile;
+}
+
+function safeStorageName(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 80);
+}
+
+function isAllowedPtFile(file: File) {
+  const allowedTypes = new Set([
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "image/png",
+    "image/jpeg",
+  ]);
+  const allowedExtension = /\.(pdf|doc|docx|png|jpe?g)$/i.test(file.name);
+  return allowedTypes.has(file.type) || allowedExtension;
+}
+
+async function uploadPtApplicationFile(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  file: File,
+  email: string,
+) {
+  const bucket = "pt-application-files";
+  const folder = safeStorageName(email) || "pt";
+  const storedName = `${crypto.randomUUID()}-${safeStorageName(file.name) || "cv"}`;
+  const filePath = `${folder}/${storedName}`;
+
+  let uploadResult = await supabase.storage.from(bucket).upload(filePath, file, {
+    contentType: file.type || "application/octet-stream",
+    upsert: false,
+  });
+
+  if (uploadResult.error) {
+    await supabase.storage.createBucket(bucket, { public: false });
+    uploadResult = await supabase.storage.from(bucket).upload(filePath, file, {
+      contentType: file.type || "application/octet-stream",
+      upsert: false,
+    });
+  }
+
+  if (!uploadResult.error) {
+    return { storagePath: `${bucket}/${uploadResult.data.path}`, publicPath: null };
+  }
+
+  try {
+    const publicPath = `/uploads/pt-applications/${filePath}`;
+    const diskPath = path.join(process.cwd(), "public", "uploads", "pt-applications", folder, storedName);
+    await mkdir(path.dirname(diskPath), { recursive: true });
+    await writeFile(diskPath, Buffer.from(await file.arrayBuffer()));
+
+    return { storagePath: null, publicPath };
+  } catch {
+    return null;
+  }
 }
 
 export async function verifyCurrentPasswordAction(currentPassword: string) {
@@ -174,13 +251,31 @@ export async function requestCoachRoleAction(formData: FormData) {
   const bio = clean(formData.get("bio"));
   const availability = clean(formData.get("availability"));
   const note = clean(formData.get("note"));
+  const portfolioFile = fileFromFormData(formData.get("portfolio_file"));
 
   if (!specialization || !bio) {
     return { ok: false, message: "Vui lòng nhập chuyên môn và giới thiệu bản thân." };
   }
 
   const supabase = await createSupabaseServerClient();
+  if (!portfolioFile) {
+    return { ok: false, message: "Vui lòng tải CV hoặc file chứng nhận để admin xét duyệt." };
+  }
+  if (!isAllowedPtFile(portfolioFile)) {
+    return { ok: false, message: "CV/chứng nhận chỉ hỗ trợ PDF, DOC, DOCX, PNG, JPG." };
+  }
+  if (portfolioFile.size > 8 * 1024 * 1024) {
+    return { ok: false, message: "CV/chứng nhận không được quá 8MB." };
+  }
+
+  const uploadedPortfolioPath = await uploadPtApplicationFile(supabase, portfolioFile, session.email);
+  if (!uploadedPortfolioPath) {
+    return { ok: false, message: "Không upload được CV/chứng nhận. Vui lòng thử file khác." };
+  }
+
+  const cvNote = `File chứng nhận/CV: ${portfolioFile.name} (${formatFileSize(portfolioFile.size)})${uploadedPortfolioPath.storagePath ? `\nĐường dẫn storage: ${uploadedPortfolioPath.storagePath}` : ""}${uploadedPortfolioPath.publicPath ? `\nĐường dẫn file: ${uploadedPortfolioPath.publicPath}` : ""}`;
   const ptRequestNote = [
+    cvNote,
     availability ? `Thời gian có thể dạy: ${availability}` : "",
     note ? `Ghi chú: ${note}` : "",
   ].filter(Boolean).join("\n") || null;

@@ -22,11 +22,19 @@ export type CoachScheduleRecord = {
   max_capacity: number | null;
 };
 
-export function CoachScheduleActions({ courses, schedule }: { courses: CourseOption[]; schedule: CoachScheduleRecord }) {
+export function CoachScheduleActions({
+  className = "mt-4 flex gap-2",
+  courses,
+  schedule,
+}: {
+  className?: string;
+  courses: CourseOption[];
+  schedule: CoachScheduleRecord;
+}) {
   const [editOpen, setEditOpen] = useState(false);
 
   return (
-    <div className="mt-4 flex gap-2">
+    <div className={className}>
       <button className="rounded-lg border border-blue-100 px-3 py-2 text-xs font-black text-blue-600 hover:bg-blue-50" onClick={() => setEditOpen(true)} type="button">
         Sửa
       </button>
@@ -43,7 +51,7 @@ export function CoachScheduleActions({ courses, schedule }: { courses: CourseOpt
       </form>
 
       {editOpen ? (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 p-4">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/55 p-4">
           <form action={updateCoachScheduleAction} className="w-full max-w-2xl rounded-3xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-pink-100 px-6 py-5">
               <div>

@@ -1,5 +1,6 @@
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { getSession } from "@/lib/auth/session";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const adminItems = [
   { href: "/dashboard/admin", label: "Tổng quan", icon: "layout" },
@@ -17,6 +18,10 @@ export default async function AdminDashboardLayout({
   children: React.ReactNode;
 }>) {
   const session = await getSession();
+  const supabase = await createSupabaseServerClient();
+  const { data: profile } = session
+    ? await supabase.from("users").select("full_name, avatar_url").eq("id", session.userId).maybeSingle()
+    : { data: null };
 
   return (
     <>
@@ -33,10 +38,11 @@ export default async function AdminDashboardLayout({
           account={
             session
               ? {
-                  fullName: session.fullName,
+                  fullName: profile?.full_name || session.fullName,
                   roleLabel: "Quản trị viên",
                   profileHref: "/profile",
                   logoutHref: "/logout",
+                  avatarUrl: profile?.avatar_url || null,
                 }
               : null
           }

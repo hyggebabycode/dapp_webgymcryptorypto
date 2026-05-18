@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Bell, CheckCircle2, X } from "lucide-react";
 
 export type NotificationItem = {
@@ -10,20 +10,59 @@ export type NotificationItem = {
   tone?: "success" | "info" | "warning";
 };
 
+const SEEN_NOTIFICATIONS_KEY = "gymheart_seen_notifications";
+
+function readSeenNotificationIds() {
+  if (typeof window === "undefined") return new Set<string>();
+
+  try {
+    const raw = window.localStorage.getItem(SEEN_NOTIFICATIONS_KEY);
+    const parsed = raw ? (JSON.parse(raw) as unknown) : [];
+    return new Set(Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string") : []);
+  } catch {
+    return new Set<string>();
+  }
+}
+
 export function NotificationButton({
   notifications = [],
 }: {
   notifications?: NotificationItem[];
 }) {
   const [open, setOpen] = useState(false);
-  const unreadCount = notifications.length;
+  const [seenIds, setSeenIds] = useState<Set<string>>(() => readSeenNotificationIds());
+  const notificationIds = useMemo(() => notifications.map((item) => item.id), [notifications]);
+  const unreadCount = notifications.filter((item) => !seenIds.has(item.id)).length;
+
+  function markCurrentNotificationsSeen() {
+    if (notificationIds.length === 0) return;
+
+    setSeenIds((current) => {
+      const next = new Set(current);
+      for (const id of notificationIds) next.add(id);
+
+      try {
+        window.localStorage.setItem(SEEN_NOTIFICATIONS_KEY, JSON.stringify(Array.from(next)));
+      } catch {
+        // localStorage can be unavailable, but the badge should still clear in this session.
+      }
+
+      return next;
+    });
+  }
 
   return (
     <div className="relative">
       <button
         aria-label="Thông báo"
         className="relative inline-flex size-10 items-center justify-center rounded-full bg-primary-soft text-primary"
-        onClick={() => setOpen((value) => !value)}
+        onClick={() => {
+          setOpen((value) => {
+            const nextOpen = !value;
+            if (nextOpen) markCurrentNotificationsSeen();
+            return nextOpen;
+          });
+        }}
         type="button"
       >
         <Bell size={18} />

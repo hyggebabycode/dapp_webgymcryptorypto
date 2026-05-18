@@ -6,6 +6,38 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
+function parseCvStoragePath(note?: string | null) {
+  const match = (note || "").match(/Đường dẫn storage:\s*([^\s]+)/i);
+  return match?.[1] || null;
+}
+
+function parseCvPublicPath(note?: string | null) {
+  const match = (note || "").match(/Đường dẫn file:\s*([^\s]+)/i);
+  const publicPath = match?.[1] || null;
+  return publicPath?.startsWith("/uploads/") ? publicPath : null;
+}
+
+function parseCvLabel(note?: string | null) {
+  const match = (note || "").match(/File chứng nhận\/CV:\s*([^\n]+)/i);
+  return match?.[1] || null;
+}
+
+async function getSignedCvUrl(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  note?: string | null,
+) {
+  const storagePath = parseCvStoragePath(note);
+  if (!storagePath) return null;
+
+  const [bucket, ...pathParts] = storagePath.split("/");
+  const path = pathParts.join("/");
+  if (!bucket || !path) return null;
+
+  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 60 * 30);
+  if (error) return null;
+  return data.signedUrl;
+}
+
 function messageText(updated?: string, error?: string) {
   if (updated) return "Đã cập nhật huấn luyện viên thành công.";
   if (error === "self_delete") return "Không thể xóa tài khoản đang đăng nhập.";
@@ -25,7 +57,7 @@ export default async function AdminCoachesPage({
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("users")
-    .select("id, full_name, email, phone, avatar_url, bio, role, requested_role, specialization, years_of_experience, certification, is_active, created_at")
+    .select("id, full_name, email, phone, avatar_url, bio, role, requested_role, specialization, years_of_experience, certification, is_active, created_at, pt_request_note")
     .eq("role", "coach")
     .order("full_name");
 
@@ -38,6 +70,18 @@ export default async function AdminCoachesPage({
       (coach.specialization || "").toLowerCase().includes(keyword)
     );
   });
+  const coachesWithCv = await Promise.all(
+    coaches.map(async (coach) => {
+      const noteSignedUrl = await getSignedCvUrl(supabase, coach.pt_request_note);
+      const publicFileUrl = parseCvPublicPath(coach.pt_request_note);
+
+      return {
+        ...coach,
+        cvSignedUrl: noteSignedUrl || publicFileUrl || null,
+        cvLabel: parseCvLabel(coach.pt_request_note) || null,
+      };
+    }),
+  );
   const message = messageText(params.updated, params.error);
 
   return (
@@ -77,7 +121,7 @@ export default async function AdminCoachesPage({
       </form>
 
       <div className="space-y-4">
-        {coaches.map((coach) => (
+        {coachesWithCv.map((coach) => (
           <article className="rounded-2xl border border-pink-100 bg-background p-5 hover:border-primary" key={coach.id}>
             <div className="grid gap-4 xl:grid-cols-[1.2fr_1fr_1fr_280px] xl:items-center">
               <div className="flex items-start gap-4">
@@ -122,7 +166,7 @@ export default async function AdminCoachesPage({
           </article>
         ))}
 
-        {coaches.length === 0 ? (
+        {coachesWithCv.length === 0 ? (
           <div className="rounded-xl bg-primary-soft px-4 py-5 text-sm font-bold text-muted">
             Chưa tìm thấy huấn luyện viên phù hợp.
           </div>

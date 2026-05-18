@@ -105,9 +105,16 @@ export default async function AdminUsersPage({
               >
                 <td className="px-4 py-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex size-10 items-center justify-center rounded-full bg-primary text-xs font-black text-white">
-                      {initials(user.full_name)}
-                    </div>
+                    {user.avatar_url ? (
+                      <div
+                        className="flex size-10 items-center justify-center rounded-full bg-cover bg-center"
+                        style={{ backgroundImage: `url(${user.avatar_url})` }}
+                      />
+                    ) : (
+                      <div className="flex size-10 items-center justify-center rounded-full bg-primary text-xs font-black text-white">
+                        {initials(user.full_name)}
+                      </div>
+                    )}
                     <div>
                       <p className="font-black">{user.full_name}</p>
                       <p className="text-xs text-muted">{user.phone || "Chưa có SĐT"}</p>

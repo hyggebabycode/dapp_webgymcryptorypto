@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Eye, Pencil, Power, Trash2, X } from "lucide-react";
+import { Eye, FileText, Pencil, Power, Trash2, X } from "lucide-react";
 import {
   deleteUserAction,
   toggleUserStatusAction,
@@ -23,6 +23,9 @@ export type AdminUserRecord = {
   certification: string | null;
   is_active: boolean;
   created_at: string | null;
+  pt_request_note?: string | null;
+  cvSignedUrl?: string | null;
+  cvLabel?: string | null;
 };
 
 type Props = {
@@ -34,6 +37,7 @@ export function UserRowActions({ user, mode = "users" }: Props) {
   const [detailOpen, setDetailOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const isAdmin = user.role === "admin";
+  const showCvSection = mode === "coaches";
 
   return (
     <div className="grid w-[236px] grid-cols-2 gap-2 text-xs font-black">
@@ -114,6 +118,30 @@ export function UserRowActions({ user, mode = "users" }: Props) {
               <Info label="Kinh nghiệm" value={`${user.years_of_experience ?? 0} năm`} />
               <Info className="md:col-span-2" label="Chứng chỉ" value={user.certification || "Chưa cập nhật"} />
               <Info className="md:col-span-2" label="Giới thiệu" value={user.bio || "Chưa cập nhật"} />
+              {showCvSection ? (
+                <div className="rounded-xl bg-background p-4 md:col-span-2">
+                  <p className="text-xs font-black uppercase text-muted">CV / file chứng nhận</p>
+                  {user.cvSignedUrl ? (
+                    <a
+                      className="mt-3 inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-black text-white"
+                      href={user.cvSignedUrl}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      <FileText size={16} />
+                      Xem CV / chứng nhận
+                    </a>
+                  ) : user.cvLabel ? (
+                    <p className="mt-2 text-sm font-bold text-muted">
+                      Ứng viên có gửi file: {user.cvLabel}. Chưa tạo được link xem file.
+                    </p>
+                  ) : (
+                    <p className="mt-2 text-sm font-bold text-muted">
+                      Chưa tìm thấy file CV/chứng nhận trong hệ thống.
+                    </p>
+                  )}
+                </div>
+              ) : null}
             </div>
           </div>
         </div>
@@ -121,7 +149,7 @@ export function UserRowActions({ user, mode = "users" }: Props) {
 
       {editOpen ? (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 p-4">
-          <form action={updateUserAction} className="max-h-[92vh] w-full max-w-3xl overflow-hidden rounded-3xl bg-white shadow-2xl" encType="multipart/form-data">
+          <form action={updateUserAction} className="max-h-[92vh] w-full max-w-3xl overflow-hidden rounded-3xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-pink-100 px-6 py-5">
               <div>
                 <h2 className="text-2xl font-black">Sửa tài khoản</h2>

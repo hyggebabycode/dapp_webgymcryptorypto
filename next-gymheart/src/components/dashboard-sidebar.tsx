@@ -41,6 +41,7 @@ type SidebarAccount = {
   roleLabel: string;
   profileHref: string;
   logoutHref: string;
+  avatarUrl?: string | null;
 };
 
 function initials(name: string) {
@@ -106,9 +107,16 @@ export function DashboardSidebar({
       {account ? (
         <div className="mt-auto border-t border-pink-100 pt-4">
           <Link className="flex items-center gap-3 rounded-lg p-2 hover:bg-primary-soft" href={account.profileHref}>
-            <span className="inline-flex size-10 items-center justify-center rounded-full bg-primary text-sm font-black text-white">
-              {initials(account.fullName)}
-            </span>
+            {account.avatarUrl ? (
+              <span
+                className="inline-flex size-10 items-center justify-center rounded-full bg-cover bg-center"
+                style={{ backgroundImage: `url(${account.avatarUrl})` }}
+              />
+            ) : (
+              <span className="inline-flex size-10 items-center justify-center rounded-full bg-primary text-sm font-black text-white">
+                {initials(account.fullName)}
+              </span>
+            )}
             <span className="min-w-0">
               <span className="block truncate text-sm font-black">{account.fullName}</span>
               <span className="block text-xs font-bold text-muted">{account.roleLabel}</span>

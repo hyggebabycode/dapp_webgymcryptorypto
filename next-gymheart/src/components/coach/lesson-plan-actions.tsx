@@ -26,18 +26,26 @@ export type LessonPlanRecord = {
   is_published: boolean;
 };
 
-export function LessonPlanActions({ courses, lesson }: { courses: CourseOption[]; lesson: LessonPlanRecord }) {
+export function LessonPlanActions({
+  className = "mt-3 flex gap-2",
+  courses,
+  lesson,
+}: {
+  className?: string;
+  courses: CourseOption[];
+  lesson: LessonPlanRecord;
+}) {
   const [editOpen, setEditOpen] = useState(false);
 
   return (
-    <div className="mt-3 flex gap-2">
+    <div className={className}>
       <button className="rounded-lg border border-blue-100 px-3 py-2 text-xs font-black text-blue-600 hover:bg-blue-50" onClick={() => setEditOpen(true)} type="button">
         Sửa
       </button>
       <form
         action={deleteLessonPlanAction}
         onSubmit={(event) => {
-          if (!window.confirm(`Xóa giáo án ${lesson.lesson_title}?`)) event.preventDefault();
+          if (!window.confirm(`Xóa tuần học ${lesson.lesson_title}?`)) event.preventDefault();
         }}
       >
         <input name="lesson_id" type="hidden" value={lesson.id} />
@@ -47,11 +55,11 @@ export function LessonPlanActions({ courses, lesson }: { courses: CourseOption[]
       </form>
 
       {editOpen ? (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 p-4">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/55 p-4">
           <form action={updateLessonPlanAction} className="max-h-[92vh] w-full max-w-3xl overflow-hidden rounded-3xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-pink-100 px-6 py-5">
               <div>
-                <h2 className="text-2xl font-black">Sửa giáo án</h2>
+                <h2 className="text-2xl font-black">Sửa tuần trong lộ trình</h2>
                 <p className="mt-1 text-sm text-muted">Cập nhật mục tiêu, bài tập và trạng thái công khai.</p>
               </div>
               <button aria-label="Đóng" className="inline-flex size-10 items-center justify-center rounded-full text-muted hover:bg-primary-soft hover:text-primary" onClick={() => setEditOpen(false)} type="button">
@@ -82,13 +90,13 @@ export function LessonPlanActions({ courses, lesson }: { courses: CourseOption[]
                 <Field className="md:col-span-2" label="Video hướng dẫn" name="video_url" defaultValue={lesson.video_url || ""} />
                 <label className="flex items-center gap-2 text-sm font-black">
                   <input className="size-4 accent-primary" name="is_published" type="checkbox" defaultChecked={lesson.is_published} />
-                  Công khai giáo án
+                  Công khai tuần học
                 </label>
               </div>
             </div>
             <div className="flex gap-3 border-t border-pink-100 bg-primary-soft p-6">
               <button className="h-11 flex-1 rounded-lg border border-primary bg-white font-black text-primary" onClick={() => setEditOpen(false)} type="button">Hủy</button>
-              <button className="h-11 flex-1 rounded-lg bg-primary font-black text-white" type="submit">Lưu giáo án</button>
+              <button className="h-11 flex-1 rounded-lg bg-primary font-black text-white" type="submit">Lưu tuần học</button>
             </div>
           </form>
         </div>

@@ -19,7 +19,7 @@ export function AddUserDialog() {
       </button>
       {open ? (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 p-4">
-          <form action={addUserAction} className="w-full max-w-xl rounded-3xl bg-white shadow-2xl" encType="multipart/form-data">
+          <form action={addUserAction} className="w-full max-w-xl rounded-3xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-pink-100 px-6 py-5">
               <div>
                 <h2 className="text-2xl font-black">Thêm người dùng</h2>
