@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireActiveSession } from "@/lib/auth/guards";
 import { getSession } from "@/lib/auth/session";
+import { refreshCourseEnrollmentStats } from "@/lib/courses/enrollment-stats";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type CourseLesson = {
@@ -53,7 +54,9 @@ export async function getCourseRoadmapAction(courseId: string) {
 
   const { data: lessonPlans, error: lessonPlanError } = await supabase
     .from("lesson_plans")
-    .select("id, week_number, lesson_title, objectives, warm_up, main_exercises, cool_down, notes")
+    .select(
+      "id, week_number, lesson_title, objectives, warm_up, main_exercises, cool_down, notes",
+    )
     .eq("course_id", courseId)
     .eq("is_published", true)
     .order("week_number");
@@ -75,7 +78,9 @@ export async function getCourseRoadmapAction(courseId: string) {
       id: String(lesson.id),
       lesson_order: Number(lesson.week_number || 1),
       title: String(lesson.lesson_title || `Buổi ${lesson.week_number}`),
-      content: blocks.join("\n") || "Huấn luyện viên sẽ cập nhật nội dung chi tiết trước buổi học.",
+      content:
+        blocks.join("\n") ||
+        "Huấn luyện viên sẽ cập nhật nội dung chi tiết trước buổi học.",
       objectives: lesson.objectives ?? null,
     } satisfies CourseLesson;
   });
@@ -91,7 +96,9 @@ export async function getCourseScheduleAction(courseId: string) {
       .maybeSingle(),
     supabase
       .from("schedules")
-      .select("id, title, description, day_of_week, start_time, end_time, location, room_number")
+      .select(
+        "id, title, description, day_of_week, start_time, end_time, location, room_number",
+      )
       .eq("course_id", courseId)
       .eq("is_cancelled", false)
       .order("day_of_week")
@@ -103,7 +110,10 @@ export async function getCourseScheduleAction(courseId: string) {
     return [];
   }
 
-  const schedules = (scheduleResult.data || []) as Omit<CourseSchedule, "occurrence_date" | "occurrence_label">[];
+  const schedules = (scheduleResult.data || []) as Omit<
+    CourseSchedule,
+    "occurrence_date" | "occurrence_label"
+  >[];
   const startDate = parseDateOnly(courseResult.data?.start_date ?? null);
   const endDate = parseDateOnly(courseResult.data?.end_date ?? null);
 
@@ -116,8 +126,14 @@ export async function getCourseScheduleAction(courseId: string) {
   }
 
   const occurrences: CourseSchedule[] = [];
-  for (const date = new Date(startDate); date.getTime() <= endDate.getTime(); date.setDate(date.getDate() + 1)) {
-    const daySchedules = schedules.filter((schedule) => Number(schedule.day_of_week) === date.getDay());
+  for (
+    const date = new Date(startDate);
+    date.getTime() <= endDate.getTime();
+    date.setDate(date.getDate() + 1)
+  ) {
+    const daySchedules = schedules.filter(
+      (schedule) => Number(schedule.day_of_week) === date.getDay(),
+    );
     for (const schedule of daySchedules) {
       const occurrenceDate = formatDateOnly(date);
       occurrences.push({
@@ -130,7 +146,9 @@ export async function getCourseScheduleAction(courseId: string) {
   }
 
   return occurrences.sort((left, right) => {
-    const dateCompare = String(left.occurrence_date).localeCompare(String(right.occurrence_date));
+    const dateCompare = String(left.occurrence_date).localeCompare(
+      String(right.occurrence_date),
+    );
     if (dateCompare !== 0) return dateCompare;
     return left.start_time.localeCompare(right.start_time);
   });
@@ -139,7 +157,12 @@ export async function getCourseScheduleAction(courseId: string) {
 function parseDateOnly(value: string | null) {
   if (!value) return null;
   const [year, month, day] = value.split("-").map(Number);
-  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return null;
+  if (
+    !Number.isFinite(year) ||
+    !Number.isFinite(month) ||
+    !Number.isFinite(day)
+  )
+    return null;
   return new Date(year, month - 1, day);
 }
 
@@ -166,7 +189,9 @@ export async function getCartCoursesAction(courseIds: string[]) {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("courses")
-    .select("id, course_name, description, price, duration_weeks, max_students, current_students, image_url")
+    .select(
+      "id, course_name, description, price, duration_weeks, max_students, current_students, image_url",
+    )
     .eq("is_active", true)
     .in("id", uniqueIds);
 
@@ -187,6 +212,15 @@ export async function cancelEnrollmentAction(formData: FormData) {
   if (!enrollmentId) return;
 
   const supabase = await createSupabaseServerClient();
+  const { data: enrollment } = await supabase
+    .from("class_enrollments")
+    .select("course_id")
+    .eq("id", enrollmentId)
+    .eq("user_id", session.userId)
+    .maybeSingle();
+
+  if (!enrollment) return;
+
   const { error } = await supabase
     .from("class_enrollments")
     .update({
@@ -200,7 +234,10 @@ export async function cancelEnrollmentAction(formData: FormData) {
     console.error("Failed to cancel enrollment", error);
   }
 
+  await refreshCourseEnrollmentStats(supabase, enrollment.course_id);
+
   revalidatePath("/my-courses");
   revalidatePath("/dashboard/user");
   revalidatePath("/courses");
+  revalidatePath(`/courses/${enrollment.course_id}`);
 }

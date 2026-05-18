@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { writeAuditLog } from "@/lib/audit";
 import { requireRole } from "@/lib/auth/guards";
+import { refreshCourseEnrollmentStats } from "@/lib/courses/enrollment-stats";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 async function requireCoach() {
@@ -20,11 +21,20 @@ function cleanNumber(value: FormDataEntryValue | null, fallback = 0) {
   return Number.isFinite(number) ? number : fallback;
 }
 
-function minNumber(value: FormDataEntryValue | null, fallback: number, min: number) {
+function minNumber(
+  value: FormDataEntryValue | null,
+  fallback: number,
+  min: number,
+) {
   return Math.max(min, cleanNumber(value, fallback));
 }
 
-function clampNumber(value: FormDataEntryValue | null, fallback: number, min: number, max: number) {
+function clampNumber(
+  value: FormDataEntryValue | null,
+  fallback: number,
+  min: number,
+  max: number,
+) {
   return Math.max(min, Math.min(max, cleanNumber(value, fallback)));
 }
 
@@ -99,7 +109,11 @@ export async function addCoachScheduleAction(formData: FormData) {
     redirect("/dashboard/coach/schedule?error=missing");
   }
 
-  if (timeToMinutes(startTime) == null || timeToMinutes(endTime) == null || timeToMinutes(startTime)! >= timeToMinutes(endTime)!) {
+  if (
+    timeToMinutes(startTime) == null ||
+    timeToMinutes(endTime) == null ||
+    timeToMinutes(startTime)! >= timeToMinutes(endTime)!
+  ) {
     redirect("/dashboard/coach/schedule?error=time_invalid");
   }
 
@@ -115,23 +129,34 @@ export async function addCoachScheduleAction(formData: FormData) {
     redirect("/dashboard/coach/schedule?error=course");
   }
 
-  if (await hasCoachScheduleConflict({ coachId: session.userId, dayOfWeek, startTime, endTime })) {
+  if (
+    await hasCoachScheduleConflict({
+      coachId: session.userId,
+      dayOfWeek,
+      startTime,
+      endTime,
+    })
+  ) {
     redirect("/dashboard/coach/schedule?error=schedule_conflict");
   }
 
-  const { data: createdSchedule, error } = await supabase.from("schedules").insert({
-    course_id: courseId,
-    coach_id: session.userId,
-    title,
-    description: clean(formData.get("description")),
-    day_of_week: dayOfWeek,
-    start_time: startTime,
-    end_time: endTime,
-    location: clean(formData.get("location")),
-    room_number: clean(formData.get("room_number")),
-    max_capacity: minNumber(formData.get("max_capacity"), 20, 1),
-    is_recurring: true,
-  }).select("id").single();
+  const { data: createdSchedule, error } = await supabase
+    .from("schedules")
+    .insert({
+      course_id: courseId,
+      coach_id: session.userId,
+      title,
+      description: clean(formData.get("description")),
+      day_of_week: dayOfWeek,
+      start_time: startTime,
+      end_time: endTime,
+      location: clean(formData.get("location")),
+      room_number: clean(formData.get("room_number")),
+      max_capacity: minNumber(formData.get("max_capacity"), 20, 1),
+      is_recurring: true,
+    })
+    .select("id")
+    .single();
 
   if (error) {
     redirect("/dashboard/coach/schedule?error=create_failed");
@@ -159,11 +184,22 @@ export async function updateCoachScheduleAction(formData: FormData) {
   const endTime = clean(formData.get("end_time"));
   const dayOfWeek = cleanNumber(formData.get("day_of_week"));
 
-  if (!scheduleId || !courseId || !title || !startTime || !endTime || !isValidDay(dayOfWeek)) {
+  if (
+    !scheduleId ||
+    !courseId ||
+    !title ||
+    !startTime ||
+    !endTime ||
+    !isValidDay(dayOfWeek)
+  ) {
     redirect("/dashboard/coach/schedule?error=missing");
   }
 
-  if (timeToMinutes(startTime) == null || timeToMinutes(endTime) == null || timeToMinutes(startTime)! >= timeToMinutes(endTime)!) {
+  if (
+    timeToMinutes(startTime) == null ||
+    timeToMinutes(endTime) == null ||
+    timeToMinutes(startTime)! >= timeToMinutes(endTime)!
+  ) {
     redirect("/dashboard/coach/schedule?error=time_invalid");
   }
 
@@ -179,7 +215,15 @@ export async function updateCoachScheduleAction(formData: FormData) {
     redirect("/dashboard/coach/schedule?error=course");
   }
 
-  if (await hasCoachScheduleConflict({ coachId: session.userId, dayOfWeek, startTime, endTime, excludeScheduleId: scheduleId })) {
+  if (
+    await hasCoachScheduleConflict({
+      coachId: session.userId,
+      dayOfWeek,
+      startTime,
+      endTime,
+      excludeScheduleId: scheduleId,
+    })
+  ) {
     redirect("/dashboard/coach/schedule?error=schedule_conflict");
   }
 
@@ -289,22 +333,26 @@ export async function addLessonPlanAction(formData: FormData) {
     redirect("/dashboard/coach/courses?error=lesson_duplicate");
   }
 
-  const { data: createdLesson, error } = await supabase.from("lesson_plans").insert({
-    course_id: courseId,
-    coach_id: session.userId,
-    week_number: weekNumber,
-    lesson_title: lessonTitle,
-    objectives: clean(formData.get("objectives")),
-    warm_up: clean(formData.get("warm_up")),
-    main_exercises: clean(formData.get("main_exercises")),
-    cool_down: clean(formData.get("cool_down")),
-    equipment_needed: cleanLines(formData.get("equipment_needed")),
-    duration_minutes: minNumber(formData.get("duration_minutes"), 60, 1),
-    difficulty_level: clampNumber(formData.get("difficulty_level"), 3, 1, 5),
-    notes: clean(formData.get("notes")),
-    video_url: clean(formData.get("video_url")),
-    is_published: formData.get("is_published") === "on",
-  }).select("id").single();
+  const { data: createdLesson, error } = await supabase
+    .from("lesson_plans")
+    .insert({
+      course_id: courseId,
+      coach_id: session.userId,
+      week_number: weekNumber,
+      lesson_title: lessonTitle,
+      objectives: clean(formData.get("objectives")),
+      warm_up: clean(formData.get("warm_up")),
+      main_exercises: clean(formData.get("main_exercises")),
+      cool_down: clean(formData.get("cool_down")),
+      equipment_needed: cleanLines(formData.get("equipment_needed")),
+      duration_minutes: minNumber(formData.get("duration_minutes"), 60, 1),
+      difficulty_level: clampNumber(formData.get("difficulty_level"), 3, 1, 5),
+      notes: clean(formData.get("notes")),
+      video_url: clean(formData.get("video_url")),
+      is_published: formData.get("is_published") === "on",
+    })
+    .select("id")
+    .single();
 
   if (error) {
     redirect("/dashboard/coach/courses?error=create_failed");
@@ -551,7 +599,10 @@ export async function deleteCourseLessonAction(formData: FormData) {
 export async function updateStudentProgressAction(formData: FormData) {
   const session = await requireCoach();
   const enrollmentId = clean(formData.get("enrollment_id"));
-  const progress = Math.max(0, Math.min(100, cleanNumber(formData.get("progress_percentage"))));
+  const progress = Math.max(
+    0,
+    Math.min(100, cleanNumber(formData.get("progress_percentage"))),
+  );
 
   if (!enrollmentId) {
     redirect("/dashboard/coach/students?error=missing");
@@ -560,7 +611,7 @@ export async function updateStudentProgressAction(formData: FormData) {
   const supabase = await createSupabaseServerClient();
   const { data: enrollment } = await supabase
     .from("class_enrollments")
-    .select("id, courses!inner(coach_id)")
+    .select("id, course_id, courses!inner(coach_id)")
     .eq("id", enrollmentId)
     .eq("courses.coach_id", session.userId)
     .maybeSingle();
@@ -637,7 +688,13 @@ export async function removeStudentEnrollmentAction(formData: FormData) {
     entityId: enrollmentId,
   });
 
+  await refreshCourseEnrollmentStats(supabase, enrollment.course_id);
+
   revalidatePath("/dashboard/coach");
   revalidatePath("/dashboard/coach/students");
+  revalidatePath("/dashboard/coach/courses");
+  revalidatePath("/dashboard/admin/courses");
+  revalidatePath("/courses");
+  revalidatePath(`/courses/${enrollment.course_id}`);
   redirect("/dashboard/coach/students?updated=removed");
 }

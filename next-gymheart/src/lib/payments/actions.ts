@@ -6,6 +6,7 @@ import { writeAuditLog } from "@/lib/audit";
 import { requireActiveSession } from "@/lib/auth/guards";
 import { baseAmountToTest } from "@/lib/currency";
 import { env } from "@/lib/env";
+import { refreshCourseEnrollmentStats } from "@/lib/courses/enrollment-stats";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type RecordWeb3PaymentInput = {
@@ -114,7 +115,10 @@ export async function recordWeb3PaymentAction(input: RecordWeb3PaymentInput) {
 
   const supabase = await createSupabaseServerClient();
   const now = new Date().toISOString();
-  const [{ data: course, error: courseError }, { data: user, error: userError }] = await Promise.all([
+  const [
+    { data: course, error: courseError },
+    { data: user, error: userError },
+  ] = await Promise.all([
     supabase
       .from("courses")
       .select("id, price, is_active, current_students, max_students")
@@ -135,7 +139,10 @@ export async function recordWeb3PaymentAction(input: RecordWeb3PaymentInput) {
     throw new Error("Vui lòng liên kết ví MetaMask trước khi thanh toán.");
   }
 
-  if (String(user.wallet_address).toLowerCase() !== input.walletAddress.toLowerCase()) {
+  if (
+    String(user.wallet_address).toLowerCase() !==
+    input.walletAddress.toLowerCase()
+  ) {
     throw new Error("Ví thanh toán không khớp ví đã liên kết với tài khoản.");
   }
 
@@ -143,7 +150,9 @@ export async function recordWeb3PaymentAction(input: RecordWeb3PaymentInput) {
     throw new Error("Khóa học này hiện không mở đăng ký.");
   }
 
-  if (Number(course.current_students || 0) >= Number(course.max_students || 0)) {
+  if (
+    Number(course.current_students || 0) >= Number(course.max_students || 0)
+  ) {
     throw new Error("Khóa học đã đủ số lượng học viên.");
   }
 
@@ -182,7 +191,8 @@ export async function recordWeb3PaymentAction(input: RecordWeb3PaymentInput) {
 
   if (
     existingTx.data &&
-    (existingTx.data.user_id !== session.userId || existingTx.data.course_id !== input.courseId)
+    (existingTx.data.user_id !== session.userId ||
+      existingTx.data.course_id !== input.courseId)
   ) {
     throw new Error("Mã giao dịch này đã được ghi nhận cho đăng ký khác.");
   }
@@ -219,11 +229,15 @@ export async function recordWeb3PaymentAction(input: RecordWeb3PaymentInput) {
       return existingEnrollment.data.id as string;
     }
 
-    const { data: createdEnrollment, error } = await supabase.from("class_enrollments").insert({
-      user_id: session.userId,
-      course_id: input.courseId,
-      ...buildPayload(includeWeb3Columns),
-    }).select("id").single();
+    const { data: createdEnrollment, error } = await supabase
+      .from("class_enrollments")
+      .insert({
+        user_id: session.userId,
+        course_id: input.courseId,
+        ...buildPayload(includeWeb3Columns),
+      })
+      .select("id")
+      .single();
 
     if (error) throw error;
     return createdEnrollment.id as string;
@@ -233,7 +247,14 @@ export async function recordWeb3PaymentAction(input: RecordWeb3PaymentInput) {
   try {
     savedEnrollmentId = await save(true);
   } catch (error) {
-    if (!isSchemaColumnError(error, ["tx_hash", "payment_token_amount", "payment_currency", "payer_wallet"])) {
+    if (
+      !isSchemaColumnError(error, [
+        "tx_hash",
+        "payment_token_amount",
+        "payment_currency",
+        "payer_wallet",
+      ])
+    ) {
       throw error;
     }
 
@@ -259,9 +280,14 @@ export async function recordWeb3PaymentAction(input: RecordWeb3PaymentInput) {
     .eq("user_id", session.userId)
     .eq("course_id", input.courseId);
 
-  if (cartClear.error && !isSchemaColumnError(cartClear.error, ["cart_items"])) {
+  if (
+    cartClear.error &&
+    !isSchemaColumnError(cartClear.error, ["cart_items"])
+  ) {
     throw cartClear.error;
   }
+
+  await refreshCourseEnrollmentStats(supabase, input.courseId);
 
   revalidatePath("/cart");
   revalidatePath("/courses");

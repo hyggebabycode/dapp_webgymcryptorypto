@@ -9,6 +9,17 @@ import {
 } from "@/lib/admin/actions";
 import { PasswordField } from "@/components/auth/password-field";
 
+type EnrollmentCourse = {
+  course_name: string;
+};
+
+type EnrollmentRecord = {
+  id: string;
+  status: string;
+  payment_status: string | null;
+  courses: EnrollmentCourse | EnrollmentCourse[] | null;
+};
+
 export type AdminUserRecord = {
   id: string;
   full_name: string;
@@ -26,6 +37,7 @@ export type AdminUserRecord = {
   pt_request_note?: string | null;
   cvSignedUrl?: string | null;
   cvLabel?: string | null;
+  enrollments?: EnrollmentRecord[];
 };
 
 type Props = {
@@ -33,11 +45,43 @@ type Props = {
   mode?: "users" | "coaches";
 };
 
+const enrollmentStatusLabel: Record<string, string> = {
+  pending: "Chờ duyệt",
+  active: "Đang học",
+  completed: "Hoàn thành",
+  cancelled: "Đã hủy",
+};
+
+const paymentStatusLabel: Record<string, string> = {
+  paid: "Đã thanh toán",
+  pending: "Chưa thanh toán",
+};
+
+function one<T>(value: T | T[] | null) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
 export function UserRowActions({ user, mode = "users" }: Props) {
   const [detailOpen, setDetailOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const isAdmin = user.role === "admin";
   const showCvSection = mode === "coaches";
+  const enrollmentLabels = (user.enrollments || [])
+    .map((enrollment) => {
+      const course = one(enrollment.courses);
+      const courseName = course?.course_name || "Khóa học";
+      const statusLabel =
+        enrollmentStatusLabel[enrollment.status] || enrollment.status;
+      const paymentLabel = enrollment.payment_status
+        ? paymentStatusLabel[enrollment.payment_status] ||
+          enrollment.payment_status
+        : "";
+      const statusText = statusLabel ? ` · ${statusLabel}` : "";
+      const paymentText = paymentLabel ? ` · ${paymentLabel}` : "";
+      return `${courseName}${statusText}${paymentText}`;
+    })
+    .filter(Boolean);
+  const showEnrollmentInfo = user.role === "user" || enrollmentLabels.length > 0;
 
   return (
     <div className="grid w-[236px] grid-cols-2 gap-2 text-xs font-black">
@@ -155,6 +199,14 @@ export function UserRowActions({ user, mode = "users" }: Props) {
                 label="Giới thiệu"
                 value={user.bio || "Chưa cập nhật"}
               />
+              {showEnrollmentInfo ? (
+                <ListInfo
+                  className="md:col-span-2"
+                  emptyLabel="Chưa đăng ký khóa học"
+                  label="Khóa học"
+                  values={enrollmentLabels}
+                />
+              ) : null}
               {showCvSection ? (
                 <div className="rounded-xl bg-background p-4 md:col-span-2">
                   <p className="text-xs font-black uppercase text-muted">
@@ -351,6 +403,33 @@ function Info({
     <div className={`rounded-xl bg-background p-4 ${className}`}>
       <p className="text-xs font-black uppercase text-muted">{label}</p>
       <p className="mt-1 font-bold">{value}</p>
+    </div>
+  );
+}
+
+function ListInfo({
+  className = "",
+  label,
+  values,
+  emptyLabel = "Chưa cập nhật",
+}: {
+  className?: string;
+  label: string;
+  values: string[];
+  emptyLabel?: string;
+}) {
+  return (
+    <div className={`rounded-xl bg-background p-4 ${className}`}>
+      <p className="text-xs font-black uppercase text-muted">{label}</p>
+      {values.length > 0 ? (
+        <ul className="mt-2 list-disc space-y-1 pl-5">
+          {values.map((value, index) => (
+            <li key={`${label}-${index}`}>{value}</li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-1 font-bold">{emptyLabel}</p>
+      )}
     </div>
   );
 }

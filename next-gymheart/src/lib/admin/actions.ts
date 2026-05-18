@@ -5,23 +5,38 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { writeAuditLog } from "@/lib/audit";
 import { requireRole } from "@/lib/auth/guards";
+import { refreshCourseEnrollmentStats } from "@/lib/courses/enrollment-stats";
 import { imageFieldToUrl, ImageUploadError } from "@/lib/image-upload";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const allowedRoles = new Set(["admin", "coach", "user"]);
-const allowedCourseLevels = new Set(["beginner", "intermediate", "advanced", "all_levels"]);
+const allowedCourseLevels = new Set([
+  "beginner",
+  "intermediate",
+  "advanced",
+  "all_levels",
+]);
 
 async function requireAdmin() {
   return requireRole("admin", "/dashboard/admin");
 }
 
-function adminMessagePath(section: "users" | "coaches" | "enrollments", status: "updated" | "error", code: string) {
-  const hash = section === "enrollments" && code.includes("pt") ? "#pt-requests" : "";
+function adminMessagePath(
+  section: "users" | "coaches" | "enrollments",
+  status: "updated" | "error",
+  code: string,
+) {
+  const hash =
+    section === "enrollments" && code.includes("pt") ? "#pt-requests" : "";
   return `/dashboard/admin/${section}?${status}=${code}${hash}`;
 }
 
 function isSchemaColumnError(error: unknown, columns: string | string[]) {
-  const maybeError = error as { message?: string; details?: string; hint?: string };
+  const maybeError = error as {
+    message?: string;
+    details?: string;
+    hint?: string;
+  };
   const text = [maybeError.message, maybeError.details, maybeError.hint]
     .filter(Boolean)
     .join(" ")
@@ -34,7 +49,9 @@ export async function approvePtRequestAction(formData: FormData) {
   const session = await requireAdmin();
   const userId = String(formData.get("user_id") || "");
   if (!userId) {
-    redirect("/dashboard/admin/enrollments?error=approve_pt_failed#pt-requests");
+    redirect(
+      "/dashboard/admin/enrollments?error=approve_pt_failed#pt-requests",
+    );
   }
 
   const supabase = await createSupabaseServerClient();
@@ -51,7 +68,10 @@ export async function approvePtRequestAction(formData: FormData) {
     .select("id")
     .maybeSingle();
 
-  if (result.error && isSchemaColumnError(result.error, ["pt_request_status", "pt_request_note"])) {
+  if (
+    result.error &&
+    isSchemaColumnError(result.error, ["pt_request_status", "pt_request_note"])
+  ) {
     result = await supabase
       .from("users")
       .update({
@@ -66,7 +86,9 @@ export async function approvePtRequestAction(formData: FormData) {
   }
 
   if (result.error || !result.data) {
-    redirect("/dashboard/admin/enrollments?error=approve_pt_failed#pt-requests");
+    redirect(
+      "/dashboard/admin/enrollments?error=approve_pt_failed#pt-requests",
+    );
   }
 
   await writeAuditLog({
@@ -175,7 +197,12 @@ function cleanCourseLevel(value: FormDataEntryValue | null) {
   return allowedCourseLevels.has(level) ? level : null;
 }
 
-async function imageOrRedirect(formData: FormData, fileField: string, urlField: string, redirectPath: string) {
+async function imageOrRedirect(
+  formData: FormData,
+  fileField: string,
+  urlField: string,
+  redirectPath: string,
+) {
   try {
     return await imageFieldToUrl(formData, fileField, urlField);
   } catch (error) {
@@ -192,7 +219,9 @@ function parseCourseLessons(value: FormDataEntryValue | null) {
     .map((line) => line.trim())
     .filter(Boolean)
     .map((line, index) => {
-      const [rawTitle, rawContent, rawObjectives] = line.split("|").map((item) => item?.trim());
+      const [rawTitle, rawContent, rawObjectives] = line
+        .split("|")
+        .map((item) => item?.trim());
       const title = rawTitle || `Buổi ${index + 1}`;
 
       return {
@@ -222,15 +251,25 @@ function parseScheduleDay(value: string) {
   return null;
 }
 
-function parseCourseSchedules(value: FormDataEntryValue | null, courseName: string, coachId: string, maxCapacity: number) {
+function parseCourseSchedules(
+  value: FormDataEntryValue | null,
+  courseName: string,
+  coachId: string,
+  maxCapacity: number,
+) {
   return String(value || "")
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean)
     .map((line) => {
-      const [rawDay, rawStartTime, rawEndTime, rawLocation, rawRoom, rawDescription] = line
-        .split("|")
-        .map((item) => item?.trim());
+      const [
+        rawDay,
+        rawStartTime,
+        rawEndTime,
+        rawLocation,
+        rawRoom,
+        rawDescription,
+      ] = line.split("|").map((item) => item?.trim());
       const dayOfWeek = parseScheduleDay(rawDay || "");
       const startTime = rawStartTime || "";
       const endTime = rawEndTime || "";
@@ -252,7 +291,10 @@ function parseCourseSchedules(value: FormDataEntryValue | null, courseName: stri
     });
 }
 
-async function replaceCourseLessons(courseId: string, lessons: ReturnType<typeof parseCourseLessons>) {
+async function replaceCourseLessons(
+  courseId: string,
+  lessons: ReturnType<typeof parseCourseLessons>,
+) {
   const supabase = await createSupabaseServerClient();
   await supabase.from("course_lessons").delete().eq("course_id", courseId);
   if (lessons.length === 0) return;
@@ -270,7 +312,10 @@ async function replaceCourseLessons(courseId: string, lessons: ReturnType<typeof
   if (error) throw error;
 }
 
-async function replaceCourseSchedules(courseId: string, schedules: ReturnType<typeof parseCourseSchedules>) {
+async function replaceCourseSchedules(
+  courseId: string,
+  schedules: ReturnType<typeof parseCourseSchedules>,
+) {
   const supabase = await createSupabaseServerClient();
   await supabase.from("schedules").delete().eq("course_id", courseId);
   if (schedules.length === 0) return;
@@ -285,22 +330,33 @@ async function replaceCourseSchedules(courseId: string, schedules: ReturnType<ty
   if (error) throw error;
 }
 
-function hasInvalidParsedSchedule(schedules: ReturnType<typeof parseCourseSchedules>) {
+function hasInvalidParsedSchedule(
+  schedules: ReturnType<typeof parseCourseSchedules>,
+) {
   return schedules.some((schedule) => {
     const start = timeToMinutes(schedule.start_time);
     const end = timeToMinutes(schedule.end_time);
-    return schedule.day_of_week == null || start == null || end == null || start >= end;
+    return (
+      schedule.day_of_week == null ||
+      start == null ||
+      end == null ||
+      start >= end
+    );
   });
 }
 
-function hasInternalScheduleOverlap(schedules: ReturnType<typeof parseCourseSchedules>) {
+function hasInternalScheduleOverlap(
+  schedules: ReturnType<typeof parseCourseSchedules>,
+) {
   return schedules.some((schedule, index) => {
     const start = timeToMinutes(schedule.start_time);
     const end = timeToMinutes(schedule.end_time);
-    if (schedule.day_of_week == null || start == null || end == null) return false;
+    if (schedule.day_of_week == null || start == null || end == null)
+      return false;
 
     return schedules.some((other, otherIndex) => {
-      if (index >= otherIndex || other.day_of_week !== schedule.day_of_week) return false;
+      if (index >= otherIndex || other.day_of_week !== schedule.day_of_week)
+        return false;
       const otherStart = timeToMinutes(other.start_time);
       const otherEnd = timeToMinutes(other.end_time);
       if (otherStart == null || otherEnd == null) return false;
@@ -330,7 +386,10 @@ function scheduleConflictSignature(
     .join("\n");
 }
 
-async function ensureAssignableCoach(coachId: string | null, errorPath: string) {
+async function ensureAssignableCoach(
+  coachId: string | null,
+  errorPath: string,
+) {
   if (!coachId) return null;
 
   const supabase = await createSupabaseServerClient();
@@ -402,7 +461,13 @@ export async function addCourseAction(formData: FormData) {
   const startDate = clean(formData.get("start_date"));
   const endDate = clean(formData.get("end_date"));
 
-  if (!courseName || !level || price <= 0 || durationWeeks <= 0 || maxStudents <= 0) {
+  if (
+    !courseName ||
+    !level ||
+    price <= 0 ||
+    durationWeeks <= 0 ||
+    maxStudents <= 0
+  ) {
     redirect("/dashboard/admin/courses?error=missing");
   }
 
@@ -411,13 +476,21 @@ export async function addCourseAction(formData: FormData) {
   }
 
   const supabase = await createSupabaseServerClient();
-  const coachId = await ensureAssignableCoach(clean(formData.get("coach_id")), "/dashboard/admin/courses?error=coach_invalid");
+  const coachId = await ensureAssignableCoach(
+    clean(formData.get("coach_id")),
+    "/dashboard/admin/courses?error=coach_invalid",
+  );
   if (!coachId) {
     redirect("/dashboard/admin/courses?error=coach_invalid");
   }
 
   const lessons = parseCourseLessons(formData.get("lessons"));
-  const schedules = parseCourseSchedules(formData.get("schedules"), courseName, coachId, maxStudents);
+  const schedules = parseCourseSchedules(
+    formData.get("schedules"),
+    courseName,
+    coachId,
+    maxStudents,
+  );
   if (hasInvalidParsedSchedule(schedules)) {
     redirect("/dashboard/admin/courses?error=time_invalid");
   }
@@ -437,25 +510,34 @@ export async function addCourseAction(formData: FormData) {
       redirect("/dashboard/admin/courses?error=schedule_conflict");
     }
   }
-  const courseImageUrl = await imageOrRedirect(formData, "image_file", "image_url", "/dashboard/admin/courses?error=image_invalid");
+  const courseImageUrl = await imageOrRedirect(
+    formData,
+    "image_file",
+    "image_url",
+    "/dashboard/admin/courses?error=image_invalid",
+  );
 
-  const { data: createdCourse, error } = await supabase.from("courses").insert({
-    course_name: courseName,
-    description: clean(formData.get("description")),
-    price,
-    duration_weeks: durationWeeks,
-    level,
-    max_students: maxStudents > 0 ? maxStudents : 20,
-    image_url: courseImageUrl,
-    coach_id: coachId,
-    start_date: startDate,
-    end_date: endDate,
-    schedule_description: clean(formData.get("schedule_description")),
-    benefits: cleanLines(formData.get("benefits")),
-    requirements: cleanLines(formData.get("requirements")),
-    is_active: true,
-    created_by: session.userId,
-  }).select("id").single();
+  const { data: createdCourse, error } = await supabase
+    .from("courses")
+    .insert({
+      course_name: courseName,
+      description: clean(formData.get("description")),
+      price,
+      duration_weeks: durationWeeks,
+      level,
+      max_students: maxStudents > 0 ? maxStudents : 20,
+      image_url: courseImageUrl,
+      coach_id: coachId,
+      start_date: startDate,
+      end_date: endDate,
+      schedule_description: clean(formData.get("schedule_description")),
+      benefits: cleanLines(formData.get("benefits")),
+      requirements: cleanLines(formData.get("requirements")),
+      is_active: true,
+      created_by: session.userId,
+    })
+    .select("id")
+    .single();
 
   if (error) {
     redirect("/dashboard/admin/courses?error=create_failed");
@@ -493,7 +575,14 @@ export async function updateCourseAction(formData: FormData) {
   const startDate = clean(formData.get("start_date"));
   const endDate = clean(formData.get("end_date"));
 
-  if (!courseId || !courseName || !level || price <= 0 || durationWeeks <= 0 || maxStudents <= 0) {
+  if (
+    !courseId ||
+    !courseName ||
+    !level ||
+    price <= 0 ||
+    durationWeeks <= 0 ||
+    maxStudents <= 0
+  ) {
     redirect("/dashboard/admin/courses?error=missing");
   }
 
@@ -502,30 +591,39 @@ export async function updateCourseAction(formData: FormData) {
   }
 
   const supabase = await createSupabaseServerClient();
-  const coachId = await ensureAssignableCoach(clean(formData.get("coach_id")), "/dashboard/admin/courses?error=coach_invalid");
+  const coachId = await ensureAssignableCoach(
+    clean(formData.get("coach_id")),
+    "/dashboard/admin/courses?error=coach_invalid",
+  );
   if (!coachId) {
     redirect("/dashboard/admin/courses?error=coach_invalid");
   }
 
-  const [{ data: currentCourse }, { data: currentSchedules }] = await Promise.all([
-    supabase
-      .from("courses")
-      .select("current_students, coach_id")
-      .eq("id", courseId)
-      .maybeSingle(),
-    supabase
-      .from("schedules")
-      .select("coach_id, day_of_week, start_time, end_time")
-      .eq("course_id", courseId)
-      .eq("is_cancelled", false),
-  ]);
+  const [{ data: currentCourse }, { data: currentSchedules }] =
+    await Promise.all([
+      supabase
+        .from("courses")
+        .select("current_students, coach_id")
+        .eq("id", courseId)
+        .maybeSingle(),
+      supabase
+        .from("schedules")
+        .select("coach_id, day_of_week, start_time, end_time")
+        .eq("course_id", courseId)
+        .eq("is_cancelled", false),
+    ]);
 
   if (Number(currentCourse?.current_students || 0) > maxStudents) {
     redirect("/dashboard/admin/courses?error=capacity_invalid");
   }
 
   const lessons = parseCourseLessons(formData.get("lessons"));
-  const schedules = parseCourseSchedules(formData.get("schedules"), courseName, coachId, maxStudents);
+  const schedules = parseCourseSchedules(
+    formData.get("schedules"),
+    courseName,
+    coachId,
+    maxStudents,
+  );
   if (hasInvalidParsedSchedule(schedules)) {
     redirect("/dashboard/admin/courses?error=time_invalid");
   }
@@ -533,12 +631,12 @@ export async function updateCourseAction(formData: FormData) {
   const scheduleTimesChanged =
     scheduleConflictSignature(schedules, coachId) !==
     scheduleConflictSignature(
-      ((currentSchedules || []) as Array<{
+      (currentSchedules || []) as Array<{
         coach_id: string | null;
         day_of_week: number | null;
         start_time: string;
         end_time: string;
-      }>),
+      }>,
       (currentCourse?.coach_id as string | null) || undefined,
     );
 
@@ -561,7 +659,12 @@ export async function updateCourseAction(formData: FormData) {
       }
     }
   }
-  const courseImageUrl = await imageOrRedirect(formData, "image_file", "image_url", "/dashboard/admin/courses?error=image_invalid");
+  const courseImageUrl = await imageOrRedirect(
+    formData,
+    "image_file",
+    "image_url",
+    "/dashboard/admin/courses?error=image_invalid",
+  );
 
   const { error } = await supabase
     .from("courses")
@@ -641,7 +744,9 @@ export async function toggleCourseStatusAction(formData: FormData) {
   revalidatePath("/dashboard/admin");
   revalidatePath("/dashboard/admin/courses");
   revalidatePath("/courses");
-  redirect(`/dashboard/admin/courses?updated=${nextActive ? "shown" : "hidden"}`);
+  redirect(
+    `/dashboard/admin/courses?updated=${nextActive ? "shown" : "hidden"}`,
+  );
 }
 
 export async function deleteCourseAction(formData: FormData) {
@@ -687,18 +792,37 @@ export async function addAdminScheduleAction(formData: FormData) {
   const startTime = clean(formData.get("start_time"));
   const endTime = clean(formData.get("end_time"));
 
-  if (!courseId || !coachId || !title || !startTime || !endTime || !isValidDay(dayOfWeek)) {
+  if (
+    !courseId ||
+    !coachId ||
+    !title ||
+    !startTime ||
+    !endTime ||
+    !isValidDay(dayOfWeek)
+  ) {
     redirect("/dashboard/admin/schedules?error=missing");
   }
 
-  if (timeToMinutes(startTime) == null || timeToMinutes(endTime) == null || timeToMinutes(startTime)! >= timeToMinutes(endTime)!) {
+  if (
+    timeToMinutes(startTime) == null ||
+    timeToMinutes(endTime) == null ||
+    timeToMinutes(startTime)! >= timeToMinutes(endTime)!
+  ) {
     redirect("/dashboard/admin/schedules?error=time_invalid");
   }
 
   const supabase = await createSupabaseServerClient();
   const [{ data: course }, { data: coach }] = await Promise.all([
-    supabase.from("courses").select("id, is_active").eq("id", courseId).maybeSingle(),
-    supabase.from("users").select("id, role, is_active").eq("id", coachId).maybeSingle(),
+    supabase
+      .from("courses")
+      .select("id, is_active")
+      .eq("id", courseId)
+      .maybeSingle(),
+    supabase
+      .from("users")
+      .select("id, role, is_active")
+      .eq("id", coachId)
+      .maybeSingle(),
   ]);
 
   if (!course?.is_active || coach?.role !== "coach" || !coach?.is_active) {
@@ -709,19 +833,23 @@ export async function addAdminScheduleAction(formData: FormData) {
     redirect("/dashboard/admin/schedules?error=schedule_conflict");
   }
 
-  const { data: createdSchedule, error } = await supabase.from("schedules").insert({
-    course_id: courseId,
-    coach_id: coachId,
-    title,
-    description: clean(formData.get("description")),
-    day_of_week: dayOfWeek,
-    start_time: startTime,
-    end_time: endTime,
-    location: clean(formData.get("location")),
-    room_number: clean(formData.get("room_number")),
-    max_capacity: cleanNumber(formData.get("max_capacity"), 20),
-    is_recurring: true,
-  }).select("id").single();
+  const { data: createdSchedule, error } = await supabase
+    .from("schedules")
+    .insert({
+      course_id: courseId,
+      coach_id: coachId,
+      title,
+      description: clean(formData.get("description")),
+      day_of_week: dayOfWeek,
+      start_time: startTime,
+      end_time: endTime,
+      location: clean(formData.get("location")),
+      room_number: clean(formData.get("room_number")),
+      max_capacity: cleanNumber(formData.get("max_capacity"), 20),
+      is_recurring: true,
+    })
+    .select("id")
+    .single();
 
   if (error) {
     redirect("/dashboard/admin/schedules?error=create_failed");
@@ -751,25 +879,53 @@ export async function updateScheduleAction(formData: FormData) {
 
   const dayOfWeek = cleanNumber(formData.get("day_of_week"));
 
-  if (!scheduleId || !courseId || !coachId || !title || !startTime || !endTime || !isValidDay(dayOfWeek)) {
+  if (
+    !scheduleId ||
+    !courseId ||
+    !coachId ||
+    !title ||
+    !startTime ||
+    !endTime ||
+    !isValidDay(dayOfWeek)
+  ) {
     redirect("/dashboard/admin/schedules?error=missing");
   }
 
-  if (timeToMinutes(startTime) == null || timeToMinutes(endTime) == null || timeToMinutes(startTime)! >= timeToMinutes(endTime)!) {
+  if (
+    timeToMinutes(startTime) == null ||
+    timeToMinutes(endTime) == null ||
+    timeToMinutes(startTime)! >= timeToMinutes(endTime)!
+  ) {
     redirect("/dashboard/admin/schedules?error=time_invalid");
   }
 
   const supabase = await createSupabaseServerClient();
   const [{ data: course }, { data: coach }] = await Promise.all([
-    supabase.from("courses").select("id, is_active").eq("id", courseId).maybeSingle(),
-    supabase.from("users").select("id, role, is_active").eq("id", coachId).maybeSingle(),
+    supabase
+      .from("courses")
+      .select("id, is_active")
+      .eq("id", courseId)
+      .maybeSingle(),
+    supabase
+      .from("users")
+      .select("id, role, is_active")
+      .eq("id", coachId)
+      .maybeSingle(),
   ]);
 
   if (!course?.is_active || coach?.role !== "coach" || !coach?.is_active) {
     redirect("/dashboard/admin/schedules?error=invalid_assignment");
   }
 
-  if (await hasScheduleConflict({ coachId, dayOfWeek, startTime, endTime, excludeScheduleId: scheduleId })) {
+  if (
+    await hasScheduleConflict({
+      coachId,
+      dayOfWeek,
+      startTime,
+      endTime,
+      excludeScheduleId: scheduleId,
+    })
+  ) {
     redirect("/dashboard/admin/schedules?error=schedule_conflict");
   }
 
@@ -842,7 +998,9 @@ export async function deleteScheduleAction(formData: FormData) {
 export async function addCoachAction(formData: FormData) {
   const session = await requireAdmin();
   const fullName = clean(formData.get("full_name"));
-  const email = String(formData.get("email") || "").trim().toLowerCase();
+  const email = String(formData.get("email") || "")
+    .trim()
+    .toLowerCase();
   const password = String(formData.get("password") || "123456");
 
   if (!fullName || !email || password.length < 6) {
@@ -851,23 +1009,32 @@ export async function addCoachAction(formData: FormData) {
 
   const supabase = await createSupabaseServerClient();
   const passwordHash = await bcrypt.hash(password, 10);
-  const avatarUrl = await imageOrRedirect(formData, "avatar_file", "avatar_url", "/dashboard/admin/coaches?error=image_invalid");
-  const { data: createdCoach, error } = await supabase.from("users").insert({
-    full_name: fullName,
-    email,
-    phone: clean(formData.get("phone")),
-    avatar_url: avatarUrl,
-    gender: clean(formData.get("gender")),
-    date_of_birth: clean(formData.get("date_of_birth")),
-    address: clean(formData.get("address")),
-    bio: clean(formData.get("bio")),
-    specialization: clean(formData.get("specialization")),
-    years_of_experience: cleanNumber(formData.get("years_of_experience")),
-    certification: clean(formData.get("certification")),
-    role: "coach",
-    password_hash: passwordHash,
-    is_active: true,
-  }).select("id").single();
+  const avatarUrl = await imageOrRedirect(
+    formData,
+    "avatar_file",
+    "avatar_url",
+    "/dashboard/admin/coaches?error=image_invalid",
+  );
+  const { data: createdCoach, error } = await supabase
+    .from("users")
+    .insert({
+      full_name: fullName,
+      email,
+      phone: clean(formData.get("phone")),
+      avatar_url: avatarUrl,
+      gender: clean(formData.get("gender")),
+      date_of_birth: clean(formData.get("date_of_birth")),
+      address: clean(formData.get("address")),
+      bio: clean(formData.get("bio")),
+      specialization: clean(formData.get("specialization")),
+      years_of_experience: cleanNumber(formData.get("years_of_experience")),
+      certification: clean(formData.get("certification")),
+      role: "coach",
+      password_hash: passwordHash,
+      is_active: true,
+    })
+    .select("id")
+    .single();
 
   if (error) {
     redirect("/dashboard/admin/coaches?error=create_failed");
@@ -889,7 +1056,9 @@ export async function addCoachAction(formData: FormData) {
 export async function addPtRequestAction(formData: FormData) {
   const session = await requireAdmin();
   const fullName = clean(formData.get("full_name"));
-  const email = String(formData.get("email") || "").trim().toLowerCase();
+  const email = String(formData.get("email") || "")
+    .trim()
+    .toLowerCase();
   const password = String(formData.get("password") || "123456");
 
   if (!fullName || !email || password.length < 6) {
@@ -908,7 +1077,12 @@ export async function addPtRequestAction(formData: FormData) {
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
-  const avatarUrl = await imageOrRedirect(formData, "avatar_file", "avatar_url", "/dashboard/admin/enrollments?error=image_invalid#pt-requests");
+  const avatarUrl = await imageOrRedirect(
+    formData,
+    "avatar_file",
+    "avatar_url",
+    "/dashboard/admin/enrollments?error=image_invalid#pt-requests",
+  );
   const payload = {
     full_name: fullName,
     email,
@@ -921,11 +1095,20 @@ export async function addPtRequestAction(formData: FormData) {
     years_of_experience: cleanNumber(formData.get("years_of_experience")),
     certification: clean(formData.get("certification")),
     bio: clean(formData.get("bio")),
-    pt_request_note: [
-      clean(formData.get("availability")) ? `Thời gian có thể dạy: ${clean(formData.get("availability"))}` : "",
-      clean(formData.get("portfolio_url")) ? `Hồ sơ/portfolio: ${clean(formData.get("portfolio_url"))}` : "",
-      clean(formData.get("note")) ? `Ghi chú: ${clean(formData.get("note"))}` : "",
-    ].filter(Boolean).join("\n") || null,
+    pt_request_note:
+      [
+        clean(formData.get("availability"))
+          ? `Thời gian có thể dạy: ${clean(formData.get("availability"))}`
+          : "",
+        clean(formData.get("portfolio_url"))
+          ? `Hồ sơ/portfolio: ${clean(formData.get("portfolio_url"))}`
+          : "",
+        clean(formData.get("note"))
+          ? `Ghi chú: ${clean(formData.get("note"))}`
+          : "",
+      ]
+        .filter(Boolean)
+        .join("\n") || null,
     requested_role: "coach",
     pt_request_status: "pending",
     role: "user",
@@ -934,7 +1117,9 @@ export async function addPtRequestAction(formData: FormData) {
     updated_at: new Date().toISOString(),
   };
 
-  let result = await supabase.from("users").upsert(payload, { onConflict: "email" });
+  let result = await supabase
+    .from("users")
+    .upsert(payload, { onConflict: "email" });
 
   if (result.error && isSchemaColumnError(result.error, "pt_request_status")) {
     result = await supabase.from("users").upsert(
@@ -979,7 +1164,9 @@ export async function addPtRequestAction(formData: FormData) {
 export async function addUserAction(formData: FormData) {
   const session = await requireAdmin();
   const fullName = clean(formData.get("full_name"));
-  const email = String(formData.get("email") || "").trim().toLowerCase();
+  const email = String(formData.get("email") || "")
+    .trim()
+    .toLowerCase();
   const phone = clean(formData.get("phone"));
   const role = cleanRole(formData.get("role"));
   const password = String(formData.get("password") || "123456");
@@ -990,16 +1177,25 @@ export async function addUserAction(formData: FormData) {
 
   const supabase = await createSupabaseServerClient();
   const passwordHash = await bcrypt.hash(password, 10);
-  const avatarUrl = await imageOrRedirect(formData, "avatar_file", "avatar_url", "/dashboard/admin/users?error=image_invalid");
-  const { data: createdUser, error } = await supabase.from("users").insert({
-    full_name: fullName,
-    email,
-    phone,
-    avatar_url: avatarUrl,
-    role,
-    password_hash: passwordHash,
-    is_active: true,
-  }).select("id").single();
+  const avatarUrl = await imageOrRedirect(
+    formData,
+    "avatar_file",
+    "avatar_url",
+    "/dashboard/admin/users?error=image_invalid",
+  );
+  const { data: createdUser, error } = await supabase
+    .from("users")
+    .insert({
+      full_name: fullName,
+      email,
+      phone,
+      avatar_url: avatarUrl,
+      role,
+      password_hash: passwordHash,
+      is_active: true,
+    })
+    .select("id")
+    .single();
 
   if (error) {
     redirect("/dashboard/admin/users?error=create_failed");
@@ -1022,16 +1218,25 @@ export async function updateUserAction(formData: FormData) {
   const session = await requireAdmin();
   const userId = String(formData.get("user_id") || "");
   const fullName = clean(formData.get("full_name"));
-  const email = String(formData.get("email") || "").trim().toLowerCase();
+  const email = String(formData.get("email") || "")
+    .trim()
+    .toLowerCase();
   const role = cleanRole(formData.get("role"));
-  const redirectTo = String(formData.get("redirect_to") || "users") as "users" | "coaches";
+  const redirectTo = String(formData.get("redirect_to") || "users") as
+    | "users"
+    | "coaches";
 
   if (!userId || !fullName || !email || !role) {
     redirect(adminMessagePath(redirectTo, "error", "missing"));
   }
 
   const supabase = await createSupabaseServerClient();
-  const avatarUrl = await imageOrRedirect(formData, "avatar_file", "avatar_url", adminMessagePath(redirectTo, "error", "image_invalid"));
+  const avatarUrl = await imageOrRedirect(
+    formData,
+    "avatar_file",
+    "avatar_url",
+    adminMessagePath(redirectTo, "error", "image_invalid"),
+  );
   const updatePayload: Record<string, string | number | boolean | null> = {
     full_name: fullName,
     email,
@@ -1056,7 +1261,10 @@ export async function updateUserAction(formData: FormData) {
     updatePayload.password_hash = await bcrypt.hash(password.trim(), 10);
   }
 
-  const { error } = await supabase.from("users").update(updatePayload).eq("id", userId);
+  const { error } = await supabase
+    .from("users")
+    .update(updatePayload)
+    .eq("id", userId);
 
   if (error) {
     redirect(adminMessagePath(redirectTo, "error", "update_failed"));
@@ -1080,7 +1288,9 @@ export async function toggleUserStatusAction(formData: FormData) {
   const session = await requireAdmin();
   const userId = String(formData.get("user_id") || "");
   const nextActive = String(formData.get("next_active")) === "true";
-  const redirectTo = String(formData.get("redirect_to") || "users") as "users" | "coaches";
+  const redirectTo = String(formData.get("redirect_to") || "users") as
+    | "users"
+    | "coaches";
 
   if (!userId || userId === session.userId) {
     redirect(adminMessagePath(redirectTo, "error", "self_status"));
@@ -1110,20 +1320,32 @@ export async function toggleUserStatusAction(formData: FormData) {
   revalidatePath("/dashboard/admin");
   revalidatePath("/dashboard/admin/users");
   revalidatePath("/dashboard/admin/coaches");
-  redirect(adminMessagePath(redirectTo, "updated", nextActive ? "activated" : "deactivated"));
+  redirect(
+    adminMessagePath(
+      redirectTo,
+      "updated",
+      nextActive ? "activated" : "deactivated",
+    ),
+  );
 }
 
 export async function deleteUserAction(formData: FormData) {
   const session = await requireAdmin();
   const userId = String(formData.get("user_id") || "");
-  const redirectTo = String(formData.get("redirect_to") || "users") as "users" | "coaches";
+  const redirectTo = String(formData.get("redirect_to") || "users") as
+    | "users"
+    | "coaches";
 
   if (!userId || userId === session.userId) {
     redirect(adminMessagePath(redirectTo, "error", "self_delete"));
   }
 
   const supabase = await createSupabaseServerClient();
-  const { data: target } = await supabase.from("users").select("role").eq("id", userId).maybeSingle();
+  const { data: target } = await supabase
+    .from("users")
+    .select("role")
+    .eq("id", userId)
+    .maybeSingle();
   if (target?.role === "admin") {
     redirect(adminMessagePath(redirectTo, "error", "admin_delete"));
   }
@@ -1158,19 +1380,26 @@ export async function updateEnrollmentStatusAction(formData: FormData) {
   const enrollmentId = String(formData.get("enrollment_id") || "");
   const status = String(formData.get("status") || "active");
 
-  if (!enrollmentId || !["pending", "active", "completed", "cancelled"].includes(status)) {
-    redirect("/dashboard/admin/enrollments?error=enrollment_missing#course-enrollments");
+  if (
+    !enrollmentId ||
+    !["pending", "active", "completed", "cancelled"].includes(status)
+  ) {
+    redirect(
+      "/dashboard/admin/enrollments?error=enrollment_missing#course-enrollments",
+    );
   }
 
   const supabase = await createSupabaseServerClient();
   const { data: current, error: currentError } = await supabase
     .from("class_enrollments")
-    .select("payment_status, payment_date")
+    .select("payment_status, payment_date, course_id")
     .eq("id", enrollmentId)
     .maybeSingle();
 
   if (currentError || !current) {
-    redirect("/dashboard/admin/enrollments?error=enrollment_missing#course-enrollments");
+    redirect(
+      "/dashboard/admin/enrollments?error=enrollment_missing#course-enrollments",
+    );
   }
 
   const now = new Date().toISOString();
@@ -1186,14 +1415,20 @@ export async function updateEnrollmentStatusAction(formData: FormData) {
     .update({
       status,
       payment_status: paymentStatus,
-      payment_date: shouldMarkPaid ? current.payment_date || now : current.payment_date,
+      payment_date: shouldMarkPaid
+        ? current.payment_date || now
+        : current.payment_date,
       updated_at: now,
     })
     .eq("id", enrollmentId);
 
   if (error) {
-    redirect("/dashboard/admin/enrollments?error=enrollment_update_failed#course-enrollments");
+    redirect(
+      "/dashboard/admin/enrollments?error=enrollment_update_failed#course-enrollments",
+    );
   }
+
+  await refreshCourseEnrollmentStats(supabase, current.course_id);
 
   await writeAuditLog({
     actorUserId: session.userId,
@@ -1205,11 +1440,17 @@ export async function updateEnrollmentStatusAction(formData: FormData) {
 
   revalidatePath("/dashboard/admin");
   revalidatePath("/dashboard/admin/enrollments");
+  revalidatePath("/dashboard/admin/courses");
   revalidatePath("/dashboard/coach");
+  revalidatePath("/dashboard/coach/courses");
   revalidatePath("/dashboard/coach/students");
   revalidatePath("/my-courses");
   revalidatePath("/schedule");
-  redirect("/dashboard/admin/enrollments?updated=enrollment_saved#course-enrollments");
+  revalidatePath("/courses");
+  revalidatePath(`/courses/${current.course_id}`);
+  redirect(
+    "/dashboard/admin/enrollments?updated=enrollment_saved#course-enrollments",
+  );
 }
 
 export async function deleteEnrollmentAction(formData: FormData) {
@@ -1217,10 +1458,18 @@ export async function deleteEnrollmentAction(formData: FormData) {
   const enrollmentId = String(formData.get("enrollment_id") || "");
 
   if (!enrollmentId) {
-    redirect("/dashboard/admin/enrollments?error=enrollment_missing#course-enrollments");
+    redirect(
+      "/dashboard/admin/enrollments?error=enrollment_missing#course-enrollments",
+    );
   }
 
   const supabase = await createSupabaseServerClient();
+  const { data: targetEnrollment } = await supabase
+    .from("class_enrollments")
+    .select("course_id")
+    .eq("id", enrollmentId)
+    .maybeSingle();
+
   const { error } = await supabase
     .from("class_enrollments")
     .update({
@@ -1230,7 +1479,9 @@ export async function deleteEnrollmentAction(formData: FormData) {
     .eq("id", enrollmentId);
 
   if (error) {
-    redirect("/dashboard/admin/enrollments?error=enrollment_delete_failed#course-enrollments");
+    redirect(
+      "/dashboard/admin/enrollments?error=enrollment_delete_failed#course-enrollments",
+    );
   }
 
   await writeAuditLog({
@@ -1240,11 +1491,21 @@ export async function deleteEnrollmentAction(formData: FormData) {
     entityId: enrollmentId,
   });
 
+  await refreshCourseEnrollmentStats(supabase, targetEnrollment?.course_id);
+
   revalidatePath("/dashboard/admin");
   revalidatePath("/dashboard/admin/enrollments");
+  revalidatePath("/dashboard/admin/courses");
   revalidatePath("/dashboard/coach");
+  revalidatePath("/dashboard/coach/courses");
   revalidatePath("/dashboard/coach/students");
   revalidatePath("/my-courses");
   revalidatePath("/schedule");
-  redirect("/dashboard/admin/enrollments?updated=enrollment_deleted#course-enrollments");
+  revalidatePath("/courses");
+  if (targetEnrollment?.course_id) {
+    revalidatePath(`/courses/${targetEnrollment.course_id}`);
+  }
+  redirect(
+    "/dashboard/admin/enrollments?updated=enrollment_deleted#course-enrollments",
+  );
 }

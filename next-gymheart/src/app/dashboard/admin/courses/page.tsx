@@ -1,6 +1,9 @@
 import { CalendarDays, Users } from "lucide-react";
 import { AddCourseDialog } from "@/components/admin/add-course-dialog";
-import { CourseCardActions, type CourseAdminRecord } from "@/components/admin/course-card-actions";
+import {
+  CourseCardActions,
+  type CourseAdminRecord,
+} from "@/components/admin/course-card-actions";
 import { RealtimeFilter } from "@/components/realtime-filter";
 import { formatBaseAsTest } from "@/lib/currency";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -16,12 +19,31 @@ type CoachOption = {
   full_name: string;
 };
 
-type CourseLessonRow = NonNullable<CourseAdminRecord["course_lessons"]>[number] & {
+type CourseLessonRow = NonNullable<
+  CourseAdminRecord["course_lessons"]
+>[number] & {
   course_id: string;
 };
 
 type ScheduleRow = NonNullable<CourseAdminRecord["schedules"]>[number] & {
   course_id: string;
+};
+
+type EnrollmentRow = {
+  id: string;
+  course_id: string;
+  status: string;
+  payment_status: string | null;
+  users:
+    | {
+        full_name: string;
+        email: string;
+      }
+    | {
+        full_name: string;
+        email: string;
+      }[]
+    | null;
 };
 
 const levelLabel: Record<string, string> = {
@@ -38,13 +60,20 @@ function one<T>(value: T | T[] | null) {
 function messageText(updated?: string, error?: string) {
   if (updated) return "Đã cập nhật khóa học thành công.";
   if (error === "date_invalid") return "Ngày kết thúc phải sau ngày bắt đầu.";
-  if (error === "coach_invalid") return "Huấn luyện viên được gán phải đang hoạt động.";
-  if (error === "capacity_invalid") return "Sức chứa không được nhỏ hơn số học viên hiện tại.";
-  if (error === "time_invalid") return "Lịch học có dòng chưa đúng thứ hoặc giờ kết thúc không sau giờ bắt đầu.";
-  if (error === "schedule_conflict") return "Lịch học bị trùng giờ với lịch khác của huấn luyện viên.";
-  if (error === "image_invalid") return "Ảnh tải lên phải là file ảnh và dung lượng không quá 3MB.";
-  if (error === "lesson_failed") return "Khóa học đã lưu nhưng lộ trình học chưa được cập nhật. Vui lòng thử sửa lại lộ trình.";
-  if (error === "course_detail_failed") return "Khóa học đã lưu nhưng lịch học hoặc lộ trình chưa được cập nhật. Vui lòng kiểm tra lại định dạng.";
+  if (error === "coach_invalid")
+    return "Huấn luyện viên được gán phải đang hoạt động.";
+  if (error === "capacity_invalid")
+    return "Sức chứa không được nhỏ hơn số học viên hiện tại.";
+  if (error === "time_invalid")
+    return "Lịch học có dòng chưa đúng thứ hoặc giờ kết thúc không sau giờ bắt đầu.";
+  if (error === "schedule_conflict")
+    return "Lịch học bị trùng giờ với lịch khác của huấn luyện viên.";
+  if (error === "image_invalid")
+    return "Ảnh tải lên phải là file ảnh và dung lượng không quá 3MB.";
+  if (error === "lesson_failed")
+    return "Khóa học đã lưu nhưng lộ trình học chưa được cập nhật. Vui lòng thử sửa lại lộ trình.";
+  if (error === "course_detail_failed")
+    return "Khóa học đã lưu nhưng lịch học hoặc lộ trình chưa được cập nhật. Vui lòng kiểm tra lại định dạng.";
   if (error) return "Không thể xử lý khóa học. Vui lòng kiểm tra dữ liệu.";
   return null;
 }
@@ -52,7 +81,12 @@ function messageText(updated?: string, error?: string) {
 export default async function AdminCoursesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string; updated?: string; error?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    status?: string;
+    updated?: string;
+    error?: string;
+  }>;
 }) {
   const params = await searchParams;
   const supabase = await createSupabaseServerClient();
@@ -74,27 +108,41 @@ export default async function AdminCoursesPage({
   const coaches = (coachesResult.data || []) as CoachOption[];
   const baseCourses = (coursesResult.data || []) as CourseRow[];
   const courseIds = baseCourses.map((course) => course.id);
-  const [lessonsResult, schedulesResult] = courseIds.length > 0
-    ? await Promise.all([
-        supabase
-          .from("course_lessons")
-          .select("id, course_id, lesson_order, title, content, objectives")
-          .in("course_id", courseIds)
-          .order("lesson_order"),
-        supabase
-          .from("schedules")
-          .select("id, course_id, title, description, day_of_week, start_time, end_time, location, room_number, max_capacity, is_cancelled")
-          .in("course_id", courseIds)
-          .order("day_of_week")
-          .order("start_time"),
-      ])
-    : [{ data: [] }, { data: [] }];
+  const [lessonsResult, schedulesResult, enrollmentsResult] =
+    courseIds.length > 0
+      ? await Promise.all([
+          supabase
+            .from("course_lessons")
+            .select("id, course_id, lesson_order, title, content, objectives")
+            .in("course_id", courseIds)
+            .order("lesson_order"),
+          supabase
+            .from("schedules")
+            .select(
+              "id, course_id, title, description, day_of_week, start_time, end_time, location, room_number, max_capacity, is_cancelled",
+            )
+            .in("course_id", courseIds)
+            .order("day_of_week")
+            .order("start_time"),
+          supabase
+            .from("class_enrollments")
+            .select(
+              "id, course_id, status, payment_status, users(full_name, email)",
+            )
+            .neq("status", "cancelled")
+            .in("course_id", courseIds),
+        ])
+      : [{ data: [] }, { data: [] }, { data: [] }];
   const lessons = (lessonsResult.data || []) as CourseLessonRow[];
   const schedules = (schedulesResult.data || []) as ScheduleRow[];
+  const enrollments = (enrollmentsResult.data || []) as EnrollmentRow[];
   const courses = baseCourses.map((course) => ({
     ...course,
     course_lessons: lessons.filter((lesson) => lesson.course_id === course.id),
     schedules: schedules.filter((schedule) => schedule.course_id === course.id),
+    enrollments: enrollments.filter(
+      (enrollment) => enrollment.course_id === course.id,
+    ),
   }));
   const message = messageText(params.updated, params.error);
 
@@ -103,13 +151,17 @@ export default async function AdminCoursesPage({
       <div className="mb-5 flex flex-col justify-between gap-3 md:flex-row md:items-center">
         <div>
           <h1 className="text-3xl font-black">Quản lý khóa học</h1>
-          <p className="mt-2 text-sm text-muted">Thêm, sửa, ẩn, xóa và theo dõi khóa học đang có trên hệ thống.</p>
+          <p className="mt-2 text-sm text-muted">
+            Thêm, sửa, ẩn, xóa và theo dõi khóa học đang có trên hệ thống.
+          </p>
         </div>
         <AddCourseDialog coaches={coaches} />
       </div>
 
       {message ? (
-        <div className={`mb-5 rounded-lg px-4 py-3 text-sm font-bold ${params.error ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"}`}>
+        <div
+          className={`mb-5 rounded-lg px-4 py-3 text-sm font-bold ${params.error ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"}`}
+        >
           {message}
         </div>
       ) : null}
@@ -150,22 +202,32 @@ export default async function AdminCoursesPage({
                 <div className="p-5">
                   <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <h3 className="text-lg font-black">{course.course_name}</h3>
+                      <h3 className="text-lg font-black">
+                        {course.course_name}
+                      </h3>
                       <p className="mt-1 text-sm text-muted">
-                        {levelLabel[course.level] || course.level} · {course.duration_weeks} tuần · {coach?.full_name || "Chưa gán HLV"}
+                        {levelLabel[course.level] || course.level} ·{" "}
+                        {course.duration_weeks} tuần ·{" "}
+                        {coach?.full_name || "Chưa gán HLV"}
                       </p>
                     </div>
-                    <span className={`rounded-full px-2 py-1 text-xs font-black ${course.is_active ? "bg-green-100 text-green-700" : "bg-slate-200 text-slate-600"}`}>
+                    <span
+                      className={`rounded-full px-2 py-1 text-xs font-black ${course.is_active ? "bg-green-100 text-green-700" : "bg-slate-200 text-slate-600"}`}
+                    >
                       {course.is_active ? "Đang mở" : "Đã ẩn"}
                     </span>
                   </div>
-                  <p className="line-clamp-2 text-sm text-muted">{course.description || "Chưa có mô tả."}</p>
+                  <p className="line-clamp-2 text-sm text-muted">
+                    {course.description || "Chưa có mô tả."}
+                  </p>
                   <div className="mt-4 grid gap-2 text-sm text-muted md:grid-cols-2">
                     <p className="flex items-center gap-2">
-                      <Users size={16} /> {course.current_students}/{course.max_students} học viên
+                      <Users size={16} /> {course.current_students}/
+                      {course.max_students} học viên
                     </p>
                     <p className="flex items-center gap-2">
-                      <CalendarDays size={16} /> {course.schedule_description || "Chưa có lịch"}
+                      <CalendarDays size={16} />{" "}
+                      {course.schedule_description || "Chưa có lịch"}
                     </p>
                   </div>
                   <p className="mt-4 text-xl font-black text-primary">
@@ -192,6 +254,7 @@ export default async function AdminCoursesPage({
                       coach_id: course.coach_id,
                       course_lessons: course.course_lessons,
                       schedules: course.schedules,
+                      enrollments: course.enrollments,
                     }}
                   />
                 </div>
