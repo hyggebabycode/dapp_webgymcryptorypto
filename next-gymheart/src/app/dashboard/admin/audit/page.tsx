@@ -15,6 +15,7 @@ type AuditLogRow = {
 };
 
 const actionLabels: Record<string, string> = {
+  attendance_check_in: "Check-in học viên",
   approve_pt_request: "Duyệt yêu cầu PT",
   archive_course: "Ẩn khóa học",
   archive_enrollment: "Lưu trữ đăng ký",
@@ -45,6 +46,7 @@ const actionLabels: Record<string, string> = {
 };
 
 const entityLabels: Record<string, string> = {
+  attendance_checkin: "Điểm danh",
   course: "Khóa học",
   enrollment: "Đăng ký",
   lesson_plan: "Giáo án",

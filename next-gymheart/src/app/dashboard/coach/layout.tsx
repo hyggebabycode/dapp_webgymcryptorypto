@@ -8,6 +8,7 @@ const coachItems = [
   { href: "/dashboard/coach/schedule", label: "Lịch dạy", icon: "calendar" },
   { href: "/dashboard/coach/courses", label: "Khóa phụ trách", icon: "graduation" },
   { href: "/profile", label: "Hồ sơ cá nhân", icon: "user" },
+  { href: "/dashboard/coach/check-in", label: "Check-in", icon: "scan" },
 ] as const;
 
 export default async function CoachDashboardLayout({

@@ -48,6 +48,26 @@ function removePaidCourseFromLocalCart(courseId: string) {
   }
 }
 
+function isUserRejectedError(error: unknown) {
+  const maybeError = error as {
+    code?: number | string;
+    action?: string;
+    reason?: string;
+    info?: {
+      error?: {
+        code?: number | string;
+      };
+    };
+  };
+
+  return (
+    maybeError.code === 4001 ||
+    maybeError.code === "ACTION_REJECTED" ||
+    maybeError.reason === "rejected" ||
+    maybeError.info?.error?.code === 4001
+  );
+}
+
 async function ensureSapphireNetwork() {
   if (!window.ethereum) {
     throw new Error("Vui lòng cài MetaMask.");
@@ -143,6 +163,7 @@ export function useWeb3Payment() {
   return {
     contractAddress: PAYMENT_CONTRACT_ADDRESS,
     isPaying,
+    isUserRejectedError,
     payCourse,
     status,
   };

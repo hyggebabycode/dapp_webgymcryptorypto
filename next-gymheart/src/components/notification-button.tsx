@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { Bell, CheckCircle2, X } from "lucide-react";
 
 export type NotificationItem = {
@@ -11,17 +11,33 @@ export type NotificationItem = {
 };
 
 const SEEN_NOTIFICATIONS_KEY = "gymheart_seen_notifications";
+const SEEN_NOTIFICATIONS_EVENT = "gymheart-seen-notifications-changed";
 
-function readSeenNotificationIds() {
-  if (typeof window === "undefined") return new Set<string>();
-
+function parseSeenNotificationIds(raw: string | null) {
   try {
-    const raw = window.localStorage.getItem(SEEN_NOTIFICATIONS_KEY);
     const parsed = raw ? (JSON.parse(raw) as unknown) : [];
     return new Set(Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string") : []);
   } catch {
     return new Set<string>();
   }
+}
+
+function subscribeToSeenNotifications(onStoreChange: () => void) {
+  window.addEventListener("storage", onStoreChange);
+  window.addEventListener(SEEN_NOTIFICATIONS_EVENT, onStoreChange);
+
+  return () => {
+    window.removeEventListener("storage", onStoreChange);
+    window.removeEventListener(SEEN_NOTIFICATIONS_EVENT, onStoreChange);
+  };
+}
+
+function getSeenNotificationsSnapshot() {
+  return window.localStorage.getItem(SEEN_NOTIFICATIONS_KEY) || "[]";
+}
+
+function getServerSeenNotificationsSnapshot() {
+  return "[]";
 }
 
 export function NotificationButton({
@@ -30,25 +46,27 @@ export function NotificationButton({
   notifications?: NotificationItem[];
 }) {
   const [open, setOpen] = useState(false);
-  const [seenIds, setSeenIds] = useState<Set<string>>(() => readSeenNotificationIds());
+  const seenSnapshot = useSyncExternalStore(
+    subscribeToSeenNotifications,
+    getSeenNotificationsSnapshot,
+    getServerSeenNotificationsSnapshot,
+  );
+  const seenIds = useMemo(() => parseSeenNotificationIds(seenSnapshot), [seenSnapshot]);
   const notificationIds = useMemo(() => notifications.map((item) => item.id), [notifications]);
   const unreadCount = notifications.filter((item) => !seenIds.has(item.id)).length;
 
-  function markCurrentNotificationsSeen() {
-    if (notificationIds.length === 0) return;
+  function markCurrentNotificationsSeen(ids: string[]) {
+    if (ids.length === 0) return;
 
-    setSeenIds((current) => {
-      const next = new Set(current);
-      for (const id of notificationIds) next.add(id);
+    const next = new Set(seenIds);
+    for (const id of ids) next.add(id);
 
-      try {
-        window.localStorage.setItem(SEEN_NOTIFICATIONS_KEY, JSON.stringify(Array.from(next)));
-      } catch {
-        // localStorage can be unavailable, but the badge should still clear in this session.
-      }
-
-      return next;
-    });
+    try {
+      window.localStorage.setItem(SEEN_NOTIFICATIONS_KEY, JSON.stringify(Array.from(next)));
+      window.dispatchEvent(new Event(SEEN_NOTIFICATIONS_EVENT));
+    } catch {
+      // localStorage can be unavailable, but the badge should still clear in this session.
+    }
   }
 
   return (
@@ -57,11 +75,9 @@ export function NotificationButton({
         aria-label="Thông báo"
         className="relative inline-flex size-10 items-center justify-center rounded-full bg-primary-soft text-primary"
         onClick={() => {
-          setOpen((value) => {
-            const nextOpen = !value;
-            if (nextOpen) markCurrentNotificationsSeen();
-            return nextOpen;
-          });
+          const nextOpen = !open;
+          if (nextOpen) markCurrentNotificationsSeen(notificationIds);
+          setOpen(nextOpen);
         }}
         type="button"
       >

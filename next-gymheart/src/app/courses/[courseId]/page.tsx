@@ -1,7 +1,11 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { CheckCircle2, Clock, UserRound, Users } from "lucide-react";
+import QRCode from "qrcode";
+import { CheckInQrDialog } from "@/components/attendance/check-in-qr-dialog";
 import { Web3Button } from "@/components/web3-button";
+import { createCheckInToken } from "@/lib/attendance/actions";
 import { getSession } from "@/lib/auth/session";
 import { formatBaseAsTest } from "@/lib/currency";
 import { getCourseById, getEnrolledCourseIds } from "@/lib/data/courses";
@@ -17,7 +21,7 @@ export default async function CourseDetailPage({
   const { courseId } = await params;
   const session = await getSession();
   const supabase = await createSupabaseServerClient();
-  const [course, enrolledCourseIds, userResult] = await Promise.all([
+  const [course, enrolledCourseIds, userResult, enrollmentResult] = await Promise.all([
     getCourseById(courseId),
     getEnrolledCourseIds(session?.userId),
     session
@@ -27,12 +31,41 @@ export default async function CourseDetailPage({
           .eq("id", session.userId)
           .maybeSingle()
       : Promise.resolve({ data: null }),
+    session
+      ? supabase
+          .from("class_enrollments")
+          .select("id")
+          .eq("user_id", session.userId)
+          .eq("course_id", courseId)
+          .eq("payment_status", "paid")
+          .in("status", ["active", "completed"])
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
 
   if (!course) notFound();
 
   const isEnrolled = enrolledCourseIds.has(course.id);
   const hasLinkedWallet = Boolean(userResult.data?.wallet_address);
+  let checkInQr: { qrDataUrl: string } | null = null;
+  if (session && enrollmentResult.data) {
+    const headerList = await headers();
+    const host = headerList.get("host") || "localhost:3000";
+    const protocol = headerList.get("x-forwarded-proto") || "http";
+    const token = createCheckInToken({
+      courseId: course.id,
+      enrollmentId: String(enrollmentResult.data.id),
+      userId: session.userId,
+    });
+    const checkInUrl = `${protocol}://${host}/check-in?token=${encodeURIComponent(token)}`;
+    checkInQr = {
+      qrDataUrl: await QRCode.toDataURL(checkInUrl, {
+        errorCorrectionLevel: "M",
+        margin: 2,
+        width: 320,
+      }),
+    };
+  }
   const coachName = course.coach?.full_name || "Chưa gán HLV";
   const coachDetails = course.coach
     ? [
@@ -119,11 +152,19 @@ export default async function CourseDetailPage({
               Vào khu vực khóa học của tôi để theo dõi trạng thái và lịch tập.
             </p>
             <Link
-              href="/dashboard/user"
+              href="/my-courses"
               className="mt-5 inline-flex h-12 w-full items-center justify-center rounded-lg bg-primary font-black text-white"
             >
               Xem khóa học của tôi
             </Link>
+            {checkInQr ? (
+              <div className="mt-3">
+                <CheckInQrDialog
+                  courseName={course.course_name}
+                  qrDataUrl={checkInQr.qrDataUrl}
+                />
+              </div>
+            ) : null}
           </div>
         ) : session ? (
           <Web3Button

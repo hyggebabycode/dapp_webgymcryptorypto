@@ -10,6 +10,7 @@ const adminItems = [
   { href: "/dashboard/admin/enrollments", label: "Đăng ký", icon: "clipboard" },
   { href: "/dashboard/admin/schedules", label: "Lịch học", icon: "calendar" },
   { href: "/dashboard/admin/audit", label: "Nhật ký", icon: "history" },
+  { href: "/dashboard/admin/check-in", label: "Check-in", icon: "scan" },
 ] as const;
 
 export default async function AdminDashboardLayout({

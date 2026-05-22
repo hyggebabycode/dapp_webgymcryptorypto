@@ -11,6 +11,7 @@ import {
   History,
   LayoutDashboard,
   LogOut,
+  ScanLine,
   UserRound,
   Users,
   type LucideIcon,
@@ -24,6 +25,7 @@ const iconMap = {
   heart: Heart,
   history: History,
   layout: LayoutDashboard,
+  scan: ScanLine,
   user: UserRound,
   users: Users,
 } satisfies Record<string, LucideIcon>;

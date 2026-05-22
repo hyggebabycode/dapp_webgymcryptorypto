@@ -1,9 +1,13 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Clock, CreditCard, Users } from "lucide-react";
+import QRCode from "qrcode";
+import { CheckInQrDialog } from "@/components/attendance/check-in-qr-dialog";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { CourseRoadmapDialog } from "@/components/course-roadmap-dialog";
 import { RealtimeFilter } from "@/components/realtime-filter";
+import { createCheckInToken } from "@/lib/attendance/actions";
 import { cancelEnrollmentAction } from "@/lib/courses/actions";
 import { getSession } from "@/lib/auth/session";
 import { formatBaseAsTest } from "@/lib/currency";
@@ -52,6 +56,13 @@ function normalizedStatus(enrollment: EnrollmentRow) {
   return enrollment.payment_status !== "paid" ? "pending" : enrollment.status;
 }
 
+function isCheckInEnabled(enrollment: EnrollmentRow) {
+  return (
+    enrollment.payment_status === "paid" &&
+    ["active", "completed"].includes(enrollment.status)
+  );
+}
+
 export default async function MyCoursesPage({
   searchParams,
 }: {
@@ -73,6 +84,32 @@ export default async function MyCoursesPage({
     .order("enrollment_date", { ascending: false });
 
   const enrollments = (data || []) as EnrollmentRow[];
+  const headerList = await headers();
+  const host = headerList.get("host") || "localhost:3000";
+  const protocol = headerList.get("x-forwarded-proto") || "http";
+  const origin = `${protocol}://${host}`;
+  const checkInQrByEnrollment = new Map(
+    await Promise.all(
+      enrollments
+        .filter((enrollment) => isCheckInEnabled(enrollment))
+        .map(async (enrollment) => {
+          const course = getCourse(enrollment.courses);
+          const token = createCheckInToken({
+            courseId: course?.id || enrollment.id,
+            enrollmentId: enrollment.id,
+            userId: session.userId,
+          });
+          const checkInUrl = `${origin}/check-in?token=${encodeURIComponent(token)}`;
+          const qrDataUrl = await QRCode.toDataURL(checkInUrl, {
+            errorCorrectionLevel: "M",
+            margin: 2,
+            width: 320,
+          });
+
+          return [enrollment.id, { checkInUrl, qrDataUrl }] as const;
+        }),
+    ),
+  );
 
   return (
     <section className="mx-auto max-w-[1280px] px-4 py-10 sm:px-8">
@@ -141,7 +178,7 @@ export default async function MyCoursesPage({
                     </p>
                   </div>
 
-                  <div className="mt-6 grid grid-cols-[1fr_96px] gap-3">
+                  <div className="mt-6 grid gap-3 sm:grid-cols-[1fr_auto_auto]">
                     {status === "pending" ? (
                       <Link
                         className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-primary px-5 text-sm font-black text-white hover:opacity-90"
@@ -157,10 +194,16 @@ export default async function MyCoursesPage({
                         label={status === "completed" ? "Xem lại lộ trình" : "Tiếp tục học"}
                       />
                     )}
+                    {checkInQrByEnrollment.has(enrollment.id) ? (
+                      <CheckInQrDialog
+                        courseName={course.course_name}
+                        qrDataUrl={checkInQrByEnrollment.get(enrollment.id)!.qrDataUrl}
+                      />
+                    ) : null}
                     <form action={cancelEnrollmentAction}>
                       <input name="enrollment_id" type="hidden" value={enrollment.id} />
                       <ConfirmSubmitButton
-                        className="h-11 w-24 rounded-lg bg-primary-soft text-sm font-black text-primary hover:bg-pink-100"
+                        className="h-11 w-full rounded-lg bg-primary-soft px-4 text-sm font-black text-primary hover:bg-pink-100 sm:w-24"
                         message={`Hủy đăng ký khóa ${course.course_name}?`}
                       >
                         Hủy

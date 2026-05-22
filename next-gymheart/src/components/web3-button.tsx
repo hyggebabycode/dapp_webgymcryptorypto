@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Wallet } from "lucide-react";
 import { useWeb3Payment } from "@/hooks/useWeb3Payment";
@@ -13,7 +14,8 @@ export function Web3Button({
   hasLinkedWallet: boolean;
 }) {
   const router = useRouter();
-  const { contractAddress, isPaying, payCourse, status } = useWeb3Payment();
+  const { contractAddress, isPaying, isUserRejectedError, payCourse, status } = useWeb3Payment();
+  const [errorMessage, setErrorMessage] = useState("");
 
   return (
     <div className="rounded-xl border border-border-soft bg-white p-5 shadow-sm">
@@ -49,14 +51,30 @@ export function Web3Button({
         className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-primary font-black text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
         disabled={isPaying || !hasLinkedWallet}
         onClick={async () => {
-          await payCourse(course);
-          router.refresh();
+          setErrorMessage("");
+          try {
+            await payCourse(course);
+            router.refresh();
+          } catch (error) {
+            setErrorMessage(
+              isUserRejectedError(error)
+                ? "Bạn đã từ chối giao dịch trong MetaMask. Chưa có khoản thanh toán nào được ghi nhận."
+                : error instanceof Error
+                  ? error.message
+                  : "Không xử lý được thanh toán. Vui lòng thử lại.",
+            );
+          }
         }}
         type="button"
       >
         <Wallet size={18} />
         {isPaying ? "Đang xử lý..." : "Thanh toán Token"}
       </button>
+      {errorMessage ? (
+        <div className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
+          {errorMessage}
+        </div>
+      ) : null}
     </div>
   );
 }

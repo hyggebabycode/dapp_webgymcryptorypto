@@ -1,6 +1,7 @@
 import { CourseCard } from "@/components/course-card";
 import { RealtimeFilter } from "@/components/realtime-filter";
 import { getSession } from "@/lib/auth/session";
+import { baseAmountToTest } from "@/lib/currency";
 import { getCourses, getEnrolledCourseIds } from "@/lib/data/courses";
 
 export const dynamic = "force-dynamic";
@@ -13,10 +14,16 @@ const levelOptions = [
   { value: "all_levels", label: "Mọi cấp độ" },
 ];
 
+const priceSortOptions = [
+  { value: "", label: "Sắp xếp theo giá" },
+  { value: "price_asc", label: "Giá thấp đến cao" },
+  { value: "price_desc", label: "Giá cao đến thấp" },
+];
+
 export default async function CoursesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ search?: string; level?: string }>;
+  searchParams: Promise<{ search?: string; level?: string; sort?: string }>;
 }) {
   const params = await searchParams;
   const session = await getSession();
@@ -24,6 +31,15 @@ export default async function CoursesPage({
     getCourses(),
     getEnrolledCourseIds(session?.userId),
   ]);
+  const sortedCourses = courses.slice().sort((left, right) => {
+    if (params.sort === "price_asc") {
+      return baseAmountToTest(left.price) - baseAmountToTest(right.price);
+    }
+    if (params.sort === "price_desc") {
+      return baseAmountToTest(right.price) - baseAmountToTest(left.price);
+    }
+    return 0;
+  });
 
   return (
     <section className="mx-auto max-w-[1200px] px-4 py-12 sm:px-10">
@@ -38,19 +54,24 @@ export default async function CoursesPage({
         className="mb-8"
         initialQuery={params.search || ""}
         initialSelect={params.level || ""}
+        initialSort={params.sort || ""}
         placeholder="Tìm kiếm khóa học..."
         scopeId="course-list"
         selectDataKey="level"
         selectLabel="Cấp độ"
         selectOptions={levelOptions}
+        sortDataKey="sortPrice"
+        sortLabel="Sắp xếp theo giá"
+        sortOptions={priceSortOptions}
       />
 
-      {courses.length > 0 ? (
+      {sortedCourses.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3" id="course-list">
-          {courses.map((course) => (
+          {sortedCourses.map((course) => (
             <div
               data-filter-item
               data-level={course.level}
+              data-sort-price={baseAmountToTest(course.price)}
               data-search={`${course.course_name} ${course.description || ""} ${course.coach?.full_name || ""}`}
               key={course.id}
             >
